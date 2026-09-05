@@ -1,0 +1,83 @@
+@'
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.secret
+secrets/
+
+# Dataset content
+data/raw/
+data/interim/
+data/processed/
+
+# Video / media
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.webm
+*.flv
+
+# ML features
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# Models / checkpoints
+*.pt
+*.pth
+*.pkl
+*.ckpt
+*.onnx
+*.weights
+*.safetensors
+
+# Training output
+checkpoints/
+runs/
+wandb/
+
+# Archives
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+
+# Sentinel runtime-validation large/external content
+sentinel_runtime_validation/videos/
+sentinel_runtime_validation/reference_features/
+sentinel_runtime_validation/generated_features/
+sentinel_runtime_validation/extractor_candidate/
+
+# Runtime/generated files
+runtime/
+temp/
+tmp/
+logs/
+'@ | Set-Content .gitignore

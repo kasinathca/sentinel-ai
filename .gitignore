@@ -1,4 +1,3 @@
-@'
 # Python
 __pycache__/
 *.py[cod]
@@ -21,12 +20,13 @@ ENV/
 Thumbs.db
 desktop.ini
 
-# Secrets
+# Secrets / machine-local config
 .env
 .env.*
 !.env.example
 *.secret
 secrets/
+*.local.json
 
 # Dataset content
 data/raw/
@@ -75,9 +75,14 @@ sentinel_runtime_validation/reference_features/
 sentinel_runtime_validation/generated_features/
 sentinel_runtime_validation/extractor_candidate/
 
-# Runtime/generated files
+# AI worker runtime/generated content
+ai_worker/runtime_work/
+ai_worker/logs/
+ai_worker/tmp/
+ai_worker/temp/
+
+# Generic runtime/generated files
 runtime/
 temp/
 tmp/
 logs/
-'@ | Set-Content .gitignore

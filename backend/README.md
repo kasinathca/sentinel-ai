@@ -1,49 +1,91 @@
-# Sentinel AI Backend — Phase 2L AI Integration Slice
+# Sentinel AI Backend
 
-This is the first FastAPI backend implementation slice. It implements the transport-neutral consumption side of the frozen violence worker contract without choosing the final backend↔worker transport.
+Current implementation milestone: **Phase 2M — persistence foundation**.
+
+The backend is a FastAPI modular monolith. The AI worker remains a separate process/component.
 
 ## Implemented
 
-- FastAPI application factory and `GET /api/v1/health`;
-- strict worker success/failure validation;
-- frozen model-version registry adapter;
+### Phase 2L — AI integration
+
+- FastAPI application factory and health endpoint;
+- strict violence-worker success/failure validation;
+- frozen model/version contract validation;
 - rolling state keyed by `(camera_id, model_version_id)`;
 - frozen `score >= 0.906` + `3-of-5` criterion;
-- explicit worker failure handling;
-- event-domain condition handoff port;
-- development JSONL replay adapter;
-- backend↔worker frozen-value parity test.
+- transport-neutral JSONL replay adapter.
 
-## Deliberately not implemented yet
+### Phase 2M — persistence foundation
 
-Authentication, PostgreSQL migrations, worker HTTP/queue/IPC transport, persistent event creation, duplicate/cooldown/retrigger behavior, evidence, WebSockets, acknowledgement, detector/tracker integration.
+- SQLAlchemy 2.x model layer;
+- Alembic migration foundation;
+- `cameras`, `models`, `model_versions`, `violence_event_policies`, `events`, and `violence_event_context`;
+- idempotent frozen violence model/version/global-policy seed;
+- database-backed `ModelRegistry` adapter;
+- explicit violence-event persistence service.
 
-## Setup
+## Important event-lifecycle boundary
 
-```powershell
-python -m venv .ackend\.venv
-.ackend\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r .ackendequirements-dev.txt
-$env:PYTHONPATH = ".ackend"
-python -m unittest discover -s .ackend	ests -p "test_*.py" -v
+Phase 2M does **not** automatically persist every `candidate_condition=True` observation. The Fighting fixture has multiple consecutive qualified observations, and duplicate/cooldown/retrigger behavior remains unresolved.
+
+```text
+validated worker observation
+→ frozen rolling criterion
+→ candidate condition
+→ event-domain lifecycle decision (future slice)
+→ explicit ViolenceEventPersistenceService call
 ```
 
-## Run API
+## Database configuration
 
-```powershell
-uvicorn app.main:app --app-dir .ackend --host 127.0.0.1 --port 8000
+Environment variable: `SENTINEL_DATABASE_URL`.
+
+Local development default:
+
+```text
+sqlite+pysqlite:///./backend/runtime/sentinel.db
 ```
 
-## Replay worker outputs without selecting a transport
+PostgreSQL example:
 
-```powershell
-$env:PYTHONPATH = ".ackend"
-python .ackend\scriptseplay_violence_worker_jsonl.py --input ".i_workeruntime_work\demo-fighting-results.jsonl"
-python .ackend\scriptseplay_violence_worker_jsonl.py --input ".i_workeruntime_work\demo-normal-results.jsonl"
+```text
+postgresql+psycopg://user:password@localhost:5432/sentinel
 ```
 
-Expected Fighting: 19 accepted, 10 qualified, first index 4, candidate true.
-Expected Normal: 26 accepted, 0 qualified, candidate false.
+Do not commit database credentials.
 
-`candidate_condition=True` is only a condition handoff. It does not require a new persistent event; duplicate/cooldown/retrigger/persistence remain event-domain responsibilities.
+## Update environment and run tests
+
+```powershell
+.\backend\.venv\Scripts\Activate.ps1
+python -m pip install -r .\backend\requirements-dev.txt
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python -m unittest discover -s .\backend\tests -p "test_*.py" -v
+```
+
+## Initialize local development database
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+```
+
+This runs Alembic to `head` and seeds the immutable selected violence model/version and frozen global `0.906 / 3-of-5` policy. `cooldown_ms` remains `NULL`.
+
+## Replay worker outputs
+
+```powershell
+python .\backend\scripts\replay_violence_worker_jsonl.py --input ".\ai_worker\runtime_work\demo-fighting-results.jsonl"
+python .\backend\scripts\replay_violence_worker_jsonl.py --input ".\ai_worker\runtime_work\demo-normal-results.jsonl"
+```
+
+## Deliberately unresolved
+
+- backend ↔ AI-worker HTTP/queue/IPC transport;
+- authentication mechanism;
+- event duplicate/cooldown/retrigger semantics;
+- automatic event creation from rolling criterion;
+- evidence persistence;
+- WebSocket publication;
+- acknowledgement;
+- detector/tracker integration.

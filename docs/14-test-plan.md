@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Verification and Test Plan"
 document_id: "SEN-TEST"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -44,21 +44,11 @@ authoritative_for:
 > - end-to-end workflows;
 > - final demonstration acceptance.
 >
-> This document does **not** claim that any test has already passed.
+> This document remains the master test plan for the whole Sentinel system.
 >
-> At the time of this update, execution evidence exists for the violence-model training/evaluation path and for an in-progress runtime feature-compatibility diagnostic.
->
-> Current high-level state:
->
-> ```text
-> violence model-level evaluation = PASS (EXP-VIO-TEMPORAL-001 produced valid measured outputs)
-> runtime I3D feature compatibility = FAIL (current candidate has not matched reference features; investigation remains active)
-> final integrated E2E suite = NOT_YET_EXECUTED
-> security acceptance = NOT_YET_EXECUTED
-> final performance acceptance = NOT_YET_EXECUTED
-> ```
->
-> A `PASS` here means the named test/experiment produced its defined evidence; it does not promote the experimental violence model to final deployment status.
+> As of 2026-09-12, the **violence model/runtime qualification suite has
+> execution evidence**, while most backend/frontend/detector/tracker/full-E2E
+> test families remain pending.
 >
 > Individual test cases become factual only when execution evidence exists.
 
@@ -1072,103 +1062,19 @@ Required:
 
 # 41. Violence Evaluation Execution
 
-Final qualification still requires:
+Required:
 
-- exact final model/version;
+- exact model;
 - exact test dataset;
-- committed split hash;
-- fixed deployed threshold;
+- exact split hash;
+- fixed threshold;
 - confusion matrix;
 - precision;
 - recall;
 - F1;
-- qualitative false-positive review;
-- qualitative false-negative review;
-- raw-video inference latency;
-- runtime feature compatibility.
-
-## TC-ML-VIO-001 — Reproducible temporal baseline execution
-
-**Requirement links:** `MLR-VIO-003`, `MLR-EXP-001`  
-**Execution:** `EXP-VIO-TEMPORAL-001`  
-**Status:** `PASS`
-
-Observed:
-
-```text
-architecture = BiGRU + Temporal Attention
-train / validation / test = 1938 / 485 / 407
-parameters = 822,530
-configured epochs = 8
-best epoch = 3
-positive-class weight = 5.417
-```
-
-Evidence includes the training/evaluation script path and generated report figures/artifacts.
-
-## TC-ML-VIO-002 — Validation threshold selection
-
-**Requirement links:** `MLR-VIO-005`  
-**Status:** `PASS`
-
-Observed validation-selected classifier threshold:
-
-```text
-0.8346
-```
-
-The value was selected before held-out test evaluation. Final requirement verification remains pending because the deployed event criterion/runtime path is not yet baselined.
-
-## TC-ML-VIO-003 — Frozen held-out test evaluation
-
-**Requirement links:** `MLR-VIO-003`, `MLR-VIO-004`  
-**Status:** `PASS`
-
-Observed test evidence:
-
-| Metric | Result |
-|---|---:|
-| Accuracy | 0.94595 |
-| Balanced accuracy | 0.90922 |
-| Precision | 0.95699 |
-| Recall | 0.83178 |
-| Specificity | 0.98667 |
-| F1 | 0.8900 |
-| ROC-AUC | 0.98156 |
-| PR-AUC | 0.94488 |
-| TN / FP / FN / TP | 296 / 4 / 18 / 89 |
-
-The quantitative FP/FN counts exist. The qualitative false-positive/false-negative review required by `MLR-VIO-006` remains `NOT_YET_EXECUTED`.
-
-## TC-WRK-VIO-COMPAT-001 — Raw-video I3D feature compatibility
-
-**Requirement links:** `MLR-INF-002`, `MLR-VIO-001`  
-**Experiment:** `EXP-VIO-RUNTIME-COMPAT-001`  
-**Status:** `FAIL`
-
-Investigation remains active; a later passing compatibility configuration must be recorded as new execution evidence rather than rewriting this failure.
-
-Purpose:
-
-```text
-raw XD-Violence video
-→ candidate I3D runtime extractor
-→ generated feature tensor
-→ compare against supplied reference I3D tensor
-```
-
-Current observed issue:
-
-- reference/generated crop-layout compatibility has not been established;
-- exact 10-crop diagnostics produce a generated representation that does not directly match the 5-crop reference representation;
-- decode/crop semantics are still being diagnosed;
-- feature-equivalence acceptance criterion has not been met.
-
-Consequence:
-
-```text
-Do not integrate EXP-VIO-TEMPORAL-001 as the final raw-video worker yet.
-```
+- false-positive review;
+- false-negative review;
+- inference latency.
 
 ---
 
@@ -2979,22 +2885,18 @@ At project completion, test report should summarize:
 
 # 156. Current Execution Status
 
-As of 2026-09-05:
+As of this document:
 
 ```text
-Violence temporal baseline execution: PASS
-Violence held-out model evaluation: PASS
-Violence runtime feature compatibility: FAIL (investigation active)
-Qualitative violence FP/FN review: NOT_YET_EXECUTED
-Detector evaluation: NOT_YET_EXECUTED
-Tracker evaluation: NOT_YET_EXECUTED
-Final E2E tests: NOT_YET_EXECUTED
+Automated tests executed: NOT_YET_VERIFIED
+Final E2E tests executed: NOT_YET_EXECUTED
 Security acceptance: NOT_YET_EXECUTED
-Final integrated performance acceptance: NOT_YET_EXECUTED
+Performance acceptance: NOT_YET_EXECUTED
+Model evaluation: NOT_YET_EXECUTED
 Final demo acceptance: NOT_YET_EXECUTED
 ```
 
-The model-level PASS results do not satisfy final end-to-end acceptance while runtime feature compatibility and worker integration remain incomplete.
+These fields must be updated only from actual evidence.
 
 ---
 
@@ -3097,3 +2999,107 @@ An AI coding assistant shall never:
 > ```
 >
 > If this flow cannot be reproduced in a clean documented environment, the project shall not claim the integrated MVP is complete.
+
+
+---
+
+# 73. Executed Violence Qualification Suite — 2026-09-12
+
+The following experiment/test sequence has execution evidence and shall not be
+described as merely planned.
+
+| Evidence ID | Purpose | Result |
+|---|---|---|
+| Phase 2D / `EXP-VIO-RUNTIME-COMPAT-001` | exact raw-video I3D feature reproduction | `PASS` |
+| Phase 2E-A | frozen baseline classifier parity | `PASS` |
+| Phase 2F | one-command raw MP4 → exact I3D → baseline | `PASS` |
+| Phase 2G-A | cold-process runtime benchmark | `PASS` |
+| Phase 2G-B | persistent-extractor runtime benchmark | `PASS` |
+| Phase 2H-A | validation-only Logistic baseline live-window study | `COMPLETE` |
+| Phase 2H-B | validation-only temporal-model live-window study | `PASS` |
+| Phase 2H-C | validation-only live threshold calibration | `PASS` |
+| Phase 2I / `EXP-VIO-LIVE-WINDOW-004` | one-time official live-policy TEST | `PASS` |
+| Phase 2J / `EXP-VIO-LIVE-RUNTIME-001` | raw-video final temporal-policy parity | `PASS` |
+
+## 73.1 Key pass criteria achieved
+
+### Exact feature compatibility
+
+Required:
+
+```text
+reference shape == generated shape
+feature cosine approximately 1
+small numeric error
+```
+
+Observed on both compatibility fixtures:
+
+```text
+cosine > 0.9999999
+raw feature shapes identical
+```
+
+### Frozen temporal validation reproduction
+
+Required confusion:
+
+```text
+TN=405 FP=5 FN=15 TP=60
+```
+
+Observed: exact match.
+
+### Final live-policy TEST
+
+Frozen before TEST:
+
+```text
+W1
+stride 1
+3-of-5
+threshold 0.906
+```
+
+Observed official TEST:
+
+```text
+TN=285 FP=15 FN=21 TP=86
+F1=0.826923
+precision=0.851485
+positive-video coverage=0.803738
+specificity=0.950000
+```
+
+### Raw-video final-policy parity
+
+Required:
+
+- threshold flags identical;
+- 3-of-5 flags identical;
+- final event condition identical.
+
+Observed:
+
+```text
+Normal fixture   = PASS
+Fighting fixture = PASS
+```
+
+## 73.2 What is still not verified
+
+These executed AI tests do **not** prove:
+
+- backend event persistence;
+- duplicate/cooldown behavior;
+- evidence-media generation;
+- WebSocket delivery;
+- operator acknowledgement;
+- full event-to-client latency;
+- detector/tracker quality;
+- multi-camera production load.
+
+Those remain in the broader system test plan.
+
+Detailed artifacts and hashes are listed in
+`19-violence-model-and-runtime-qualification.md`.

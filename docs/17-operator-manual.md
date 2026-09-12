@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Operator and Administrator Manual"
 document_id: "SEN-OPS"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -2323,3 +2323,73 @@ Before final submission:
 > ```
 >
 > The application is a monitoring and decision-support system with human review at the center of the workflow.
+
+
+---
+
+# 31. Violence Model Operational Notes — 2026-09-12
+
+The violence subsystem now has a frozen model and model-policy configuration.
+
+Operators should understand the following behavior.
+
+## 31.1 What a score means
+
+The temporal AI model produces a Fighting positive-class score.
+
+A single high score is **not** itself a persisted incident.
+
+The backend criterion requires:
+
+```text
+score >= 0.906
+for at least 3 of the most recent 5 model observations
+```
+
+before the application may treat the stream as satisfying the configured
+violence condition.
+
+## 31.2 Threshold is not an operator tuning control
+
+For the evaluated MVP, `0.906` is a frozen validation-selected threshold.
+
+Do not lower or raise it during a demo merely to force a desired result.
+
+Changing the threshold would create a different evaluated policy and would
+invalidate direct comparison with the recorded final TEST metrics.
+
+## 31.3 Model failure is not "no violence"
+
+If the worker/extractor/model is unavailable:
+
+```text
+AI analysis unavailable/degraded
+```
+
+is the correct operational interpretation.
+
+Do not present the condition as:
+
+```text
+no violence detected
+```
+
+because no valid inference occurred.
+
+## 31.4 Final evaluated behavior
+
+On the one-time official held-out TEST split:
+
+```text
+precision                = 85.15%
+positive-video coverage  = 80.37%
+specificity              = 95.00%
+F1                       = 82.69%
+Normal-video false-event = 5.00%
+```
+
+These values are evaluation evidence, not guarantees for every real CCTV
+environment.
+
+The dataset uses weak video-level labels, so the system shall not claim exact
+fight-onset localization accuracy from these results.

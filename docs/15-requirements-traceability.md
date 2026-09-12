@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Requirements Traceability Matrix"
 document_id: "SEN-RTM"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -29,7 +29,13 @@ authoritative_for:
 >
 > It is intentionally evidence-conservative: **no requirement is marked verified merely because a design document or planned test exists.**
 >
-> Implementation/test evidence is now present for the violence-model baseline. `MLR-VIO-003` has sufficient model-level evidence to be marked `VERIFIED`; other requirements remain `NOT_YET_VERIFIED` unless their full acceptance criteria are satisfied. In particular, the temporal model is not yet verified as a final worker capability because raw-video feature compatibility and AI-worker integration remain incomplete.
+> As of 2026-09-12, violence model/runtime qualification evidence has been
+executed and attached conceptually through the experiment artifacts described in
+`19-violence-model-and-runtime-qualification.md`.
+
+Application-level verification remains conservative: model/runtime evidence does
+not by itself prove backend event persistence, duplicate suppression, evidence
+generation, notifications, or operator workflows.
 
 ---
 
@@ -77,9 +83,9 @@ No link may be silently inferred during final reporting.
 Requirement definitions: PRESENT
 Design traceability: PRESENT
 Planned test traceability: PRESENT
-Implementation evidence: PARTIAL — violence temporal baseline present
-Test execution evidence: PARTIAL — violence model evaluation and runtime-compatibility diagnostics present
-Final requirement verification: PARTIAL — MLR-VIO-003 VERIFIED; remaining requirements not yet verified unless separately evidenced
+Implementation evidence: PARTIAL — violence model/runtime evidence exists
+Test execution evidence: PARTIAL — violence qualification suite executed
+Final requirement verification: NOT_YET_VERIFIED for whole application
 ```
 
 ---
@@ -132,23 +138,7 @@ This matrix contains **155 of 155** formal SRS requirement IDs.
 | `BLOCKED_BY_DOMAIN_DECISION` | 1 |
 | **Total** | **155** |
 
-> These counts describe **planning traceability**, not passed tests.
-
-## 2.4 Current requirement execution status
-
-| Execution state | Requirements |
-|---|---:|
-| `VERIFIED` | 1 |
-| `NOT_YET_VERIFIED` | 154 |
-| **Total** | **155** |
-
-Currently verified from retained model-level evidence:
-
-```text
-MLR-VIO-003 — Violence model baseline
-```
-
-No other requirement is promoted merely because related experimental evidence exists.
+> These counts describe **planning traceability**, not passed tests. All rows remain `NOT_YET_VERIFIED` until evidence is attached.
 
 ---
 
@@ -163,7 +153,7 @@ Each requirement row records:
 5. **Verification / planned test** — SRS verification method plus existing test/review identifiers.
 6. **Expected evidence** — artifact class to retain when executed.
 7. **Coverage state** — whether the verification link is already defined or still has a planning gap.
-8. **Execution state** — actual verification state for each requirement; currently `MLR-VIO-003` is `VERIFIED` and the remaining requirements are `NOT_YET_VERIFIED` unless separately evidenced.
+8. **Execution state** — currently `NOT_YET_VERIFIED` for every requirement.
 
 ---
 
@@ -425,17 +415,17 @@ The tables below preserve the SRS order and all 155 IDs.
 |---|---|---|---|---|---|---|---|
 | `MLR-VIO-001` | Temporal violence/fighting model | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Model evaluation → EVAL-VIO-* model-card task-definition review | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
 | `MLR-VIO-002` | Violence dataset fitness assessment | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Document review → EVAL-VIO-* preprocessing/window contract tests | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_REVIEW_LINKED` / `NOT_YET_VERIFIED` |
-| `MLR-VIO-003` | Violence model baseline | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; IMPLEMENTED MODEL-LEVEL: `sentinel_temporal/train_temporal_gru.py`, `EXP-VIO-TEMPORAL-001`; AI-worker runtime integration still separate | Model evaluation → `TC-ML-VIO-001`, `TC-ML-VIO-003`; frozen train/val/test counts; measured validation/test metrics | `sentinel_temporal/report/figures`; experiment output/config; `11-model-card-and-evaluation.md` §51 | `PLANNED_TEST_LINKED` / `VERIFIED` |
-| `MLR-VIO-004` | Violence model evaluation metrics | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PRELIMINARY MODEL-LEVEL METRICS PRESENT from `EXP-VIO-TEMPORAL-001`; final integrated classifier not yet qualified | Model evaluation → `TC-ML-VIO-003`; preliminary confusion matrix + precision/recall/F1/ROC-AUC/PR-AUC measured | `11-model-card-and-evaluation.md` §51; `sentinel_temporal/report/figures` | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
-| `MLR-VIO-005` | Violence threshold provenance | `TBD_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; experiment classifier threshold 0.8346 recorded; deployed event threshold remains unbaselined | Model evaluation → `TC-ML-VIO-002`; validation-selected threshold evidence; final event-criterion consistency still required | `11-model-card-and-evaluation.md` §51; experiment output | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
-| `MLR-VIO-006` | Violence false-positive review | `CONFIRMED_SCOPE` / `SHOULD` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 11-model-card-and-evaluation.md; quantitative test errors known (FP=4, FN=18), qualitative case review pending | Model evaluation → qualitative FP/FN review still required after `TC-ML-VIO-003` | error-analysis artifacts `TBD`; model card limitations | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
+| `MLR-VIO-003` | Violence model baseline | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Model evaluation → EVAL-VIO-* reproducible baseline execution | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
+| `MLR-VIO-004` | Violence model evaluation metrics | `CONFIRMED_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Model evaluation → EVAL-VIO-* confusion matrix + precision/recall/F1 | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
+| `MLR-VIO-005` | Violence threshold provenance | `TBD_SCOPE` / `MUST` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Model evaluation → EVAL-VIO-* threshold calibration on validation split | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
+| `MLR-VIO-006` | Violence false-positive review | `CONFIRMED_SCOPE` / `SHOULD` | UC-AI-002; UC-EVT-004 | 08-ai-ml-design.md; 09-dataset-acquisition.md; 10-dataset-registry.md; 11-model-card-and-evaluation.md; PLANNED: violence training/evaluation pipeline + ai_worker model | Model evaluation → EVAL-VIO-* false-positive/false-negative analysis | artifacts/evaluation/EVAL-VIO-*/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
 
 ## 5.28 `MLR-INF`
 
 | Requirement | Title | Scope / Priority | Use case(s) | Design + planned implementation | Verification + planned test | Expected evidence | Coverage / execution |
 |---|---|---|---|---|---|---|---|
 | `MLR-INF-001` | Inference failure reporting | `CONFIRMED_SCOPE` / `MUST` | UC-AI-001–002; UC-SYS-001 | 07-api-specification.md; 08-ai-ml-design.md; 11-model-card-and-evaluation.md; PLANNED: ai_worker inference runtime + backend contract adapter | Fault-injection test → TC-WRK-DET-001–003; TC-WRK-VIO-001–004 | artifacts/tests/worker/ + artifacts/performance/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
-| `MLR-INF-002` | Inference input preprocessing traceability | `CONFIRMED_SCOPE` / `MUST` | UC-AI-001–002; UC-SYS-001 | 07-api-specification.md; 08-ai-ml-design.md; 11-model-card-and-evaluation.md; runtime I3D reproduction under `EXP-VIO-RUNTIME-COMPAT-001`; final ai_worker adapter pending | Inspection/compatibility → `TC-WRK-VIO-COMPAT-001` currently FAIL; detector preprocessing tests remain planned | `sentinel_runtime_validation/reports`; artifacts/tests/worker/ | `PLANNED_REVIEW_LINKED` / `NOT_YET_VERIFIED` |
+| `MLR-INF-002` | Inference input preprocessing traceability | `CONFIRMED_SCOPE` / `MUST` | UC-AI-001–002; UC-SYS-001 | 07-api-specification.md; 08-ai-ml-design.md; 11-model-card-and-evaluation.md; PLANNED: ai_worker inference runtime + backend contract adapter | Inspection → TC-WRK-VIO-002–003; TC-WRK-DET-003; TC-WRK-FAIL-001 | artifacts/tests/worker/ + artifacts/performance/ | `PLANNED_REVIEW_LINKED` / `NOT_YET_VERIFIED` |
 | `MLR-INF-003` | Inference latency measurement | `CONFIRMED_SCOPE` / `MUST` | UC-AI-001–002; UC-SYS-001 | 07-api-specification.md; 08-ai-ml-design.md; 11-model-card-and-evaluation.md; PLANNED: ai_worker inference runtime + backend contract adapter | Performance test → TC-PERF-DET-001; TC-PERF-VIO-001; TC-PERF-WRK-001 | artifacts/tests/worker/ + artifacts/performance/ | `PLANNED_TEST_LINKED` / `NOT_YET_VERIFIED` |
 | `MLR-INF-004` | Model loading strategy | `PROPOSED_SCOPE` / `MUST` | UC-AI-001–002; UC-SYS-001 | 07-api-specification.md; 08-ai-ml-design.md; 11-model-card-and-evaluation.md; PLANNED: ai_worker inference runtime + backend contract adapter | Inspection + performance test → Worker startup/model-load test `TBD`; TC-WRK-VIO-003 partial | artifacts/tests/worker/ + artifacts/performance/ | `PLANNED_COVERAGE_GAP` / `NOT_YET_VERIFIED` |
 
@@ -833,3 +823,32 @@ An AI coding assistant shall never:
 > ```
 >
 > If any link is missing, the project may still have working code, but the requirement is not yet fully traceable or academically verified.
+
+
+---
+
+# 19. Violence Requirement Evidence Update — 2026-09-12
+
+The following evidence is now available for the `FR-VIO-*` family.
+
+| Requirement | Model/runtime evidence | Application-level status |
+|---|---|---|
+| `FR-VIO-001` violence inference request | exact raw-video inference path qualified on controlled fixtures | worker transport/application job dispatch pending |
+| `FR-VIO-002` violence result contract | structured model score semantics and model-version identity frozen | backend contract validator pending |
+| `FR-VIO-003` violence event criterion | `W1 / stride 1 / 3-of-5 / threshold 0.906` selected on validation and tested once on official TEST | backend rolling-state integration pending |
+| `FR-VIO-004` event provenance | exact model/checkpoint/version/dataset lineage established | persistent event provenance assertion pending |
+| `FR-VIO-005` failure distinction | API/design requires explicit worker failure; runtime integration package preserves this rule | fault-injection E2E pending |
+
+Therefore:
+
+```text
+model/policy qualification != complete FR-VIO application verification
+```
+
+The model/runtime evidence may be cited for the AI portions of these
+requirements, but the matrix should not mark the entire requirement `VERIFIED`
+until the backend/worker/event integration tests also pass.
+
+Evidence source:
+
+`19-violence-model-and-runtime-qualification.md`

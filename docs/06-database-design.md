@@ -1,13 +1,13 @@
 ---
 title: "Sentinel AI — Database Design Specification"
 document_id: "SEN-DB"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 database_engine: "PROPOSED: PostgreSQL"
 modeling_style: "Relational, event-centric, normalized application data"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -896,9 +896,12 @@ Map a camera or global application policy to a selected violence model/version a
 | `camera_id` | UUID | Yes | FK → cameras; null may mean global if accepted |
 | `model_version_id` | UUID | No | FK → model_versions |
 | `enabled` | Boolean | No | Policy active |
-| `event_threshold_value` | Double/Decimal | No after baseline | Event criterion |
-| `score_semantics` | String | Yes | Meaning of model score |
-| `cooldown_ms` | BigInt | Yes | Event duplicate policy |
+| `event_threshold_value` | Double/Decimal | No after baseline | Positive-score threshold; frozen MVP value `0.906` |
+| `score_semantics` | String | Yes | Meaning of model score; for selected model this is an uncalibrated sigmoid Fighting positive-class score |
+| `n_required` | Integer | No for selected violence policy | Frozen MVP value `3` |
+| `history_window_size` | Integer | No for selected violence policy | Frozen MVP value `5` |
+| `stride_feature_steps` | Integer | No for selected violence policy | Frozen MVP value `1` |
+| `cooldown_ms` | BigInt | Yes | Event duplicate policy; still TBD |
 | `created_at` | Timestamp | No | Created |
 | `updated_at` | Timestamp | No | Updated |
 
@@ -3009,3 +3012,45 @@ Once this document is baselined:
 > - Can history and analytics be queried efficiently?
 >
 > If a proposed schema change cannot explain which project requirement it serves, it should not be added merely because it appears conventional.
+
+
+---
+
+# 49. Violence Policy Persistence Update — 2026-09-12
+
+The selected violence policy now requires persistence/configuration fields beyond
+a single threshold.
+
+Frozen MVP model policy:
+
+```text
+model_version_id =
+6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+
+event_threshold_value = 0.906
+n_required            = 3
+history_window_size    = 5
+stride_feature_steps   = 1
+```
+
+The selected model score shall not be called a calibrated probability unless a
+separate calibration experiment establishes that claim.
+
+Recommended `score_semantics`:
+
+```text
+uncalibrated sigmoid score for the Fighting positive class from
+EXP-VIO-TEMPORAL-001; higher means more fighting-like
+```
+
+When a violence event is persisted, `violence_event_context` should preserve:
+
+- selected `model_version_id`;
+- raw/model score relevant to the event;
+- threshold snapshot `0.906`;
+- score semantics;
+- contributing temporal window timestamps where retained;
+- enough policy context to reconstruct that a `3-of-5` criterion was applied.
+
+Do not encode cooldown/retrigger semantics merely because the model policy is
+now frozen. That domain decision remains separate.

@@ -1,12 +1,12 @@
 ---
 title: "Sentinel AI — Use Case Specification"
 document_id: "SEN-UCS"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 team_size: 3
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -1100,8 +1100,11 @@ Behavior follows retrigger policy.
 5. Result includes model/version provenance.
 6. Backend receives structured result.
 7. Backend validates contract.
-8. Event criterion is evaluated.
-9. Qualifying result creates violence/fighting event.
+8. Backend evaluates the frozen criterion: score `>= 0.906`, with at
+   least 3 qualifying observations among the most recent 5 ordered violence
+   windows for the same camera/model stream.
+9. Qualifying criterion state allows creation of a violence/fighting event,
+   subject to the separately baselined duplicate/cooldown/retrigger policy.
 10. Event stores model provenance.
 11. Evidence is associated.
 12. Alert is surfaced to operator.
@@ -2046,3 +2049,37 @@ Before this document becomes `BASELINED`:
 > - how the action relates to the formal SRS.
 >
 > Any such unresolved behavior shall remain explicitly marked `TBD` or `PROPOSED` until the team makes a decision.
+
+
+---
+
+# 23. Violence Use-Case Decision Update — 2026-09-12
+
+`UC-AI-002` and `UC-EVT-004` now have a frozen model-policy input for
+implementation.
+
+AI worker behavior:
+
+```text
+raw/controlled video input
+→ exact I3D feature extraction
+→ frozen temporal model
+→ structured Fighting score per W1 observation
+```
+
+Backend behavior:
+
+```text
+validate worker result
+→ maintain ordered recent score history per camera/model
+→ score >= 0.906 is positive
+→ at least 3 positives in latest 5 = qualifying violence condition
+→ apply event-domain duplicate/cooldown rules
+→ create/persist event if permitted
+```
+
+A worker failure remains an exception path and shall not be converted into a
+successful negative classification.
+
+The final cooldown/retrigger event lifecycle is still unresolved and is not
+invented here.

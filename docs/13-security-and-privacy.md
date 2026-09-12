@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Security and Privacy Specification"
 document_id: "SEN-SEC-PRIV"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -3461,3 +3461,96 @@ Once this document is baselined, an AI coding assistant shall never:
 > `TBD`
 >
 > until the team makes and records the decision.
+
+
+---
+
+# 48. Violence Runtime Security Update — 2026-09-12
+
+The qualified violence runtime introduces two implementation-specific security
+requirements without changing the project's overall trust model.
+
+## 48.1 Worker messages remain untrusted input
+
+The backend shall continue to validate:
+
+- schema version;
+- `job_id`;
+- `correlation_id`;
+- `camera_id`;
+- model task;
+- model-version ID;
+- score type/range;
+- window timestamps;
+- success versus explicit failure.
+
+The selected violence model/version is:
+
+```text
+MODEL-VIO-BIGRU-ATTN-XD-V1
+model_version_id = 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+```
+
+A worker result is evidence of model computation, not authorization to mutate
+persistent event state directly.
+
+## 48.2 Controlled source references
+
+Worker requests shall use an opaque/configured:
+
+```text
+source_locator_ref
+```
+
+rather than accepting an arbitrary filesystem path supplied by an untrusted
+client.
+
+Any local-file development adapter must resolve that reference through trusted
+operator-controlled configuration.
+
+The backend/API shall not expose unrestricted local path traversal into the AI
+worker.
+
+## 48.3 Artifact integrity
+
+The selected temporal checkpoint and training implementation are pinned by
+SHA-256:
+
+```text
+checkpoint:
+1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
+
+training script:
+630c913060c7800c96214438e8e36064b946679aa83aad4b8fd4943b6717690c
+```
+
+Runtime startup should fail closed if the expected artifact identity does not
+match.
+
+## 48.4 Failure semantics
+
+A model/extractor/decode failure shall be represented as an explicit worker
+failure.
+
+It shall never be transformed into:
+
+```text
+successful low score
+successful non-violence result
+no event
+```
+
+because doing so would hide an unavailable safety-analysis capability.
+
+## 48.5 Dataset/model artifacts and Git
+
+Do not commit:
+
+- external raw XD-Violence video archives;
+- raw compatibility MP4s unless redistribution is explicitly permitted;
+- large `.npy` feature corpora;
+- `.pt`, `.pth`, `.pkl`, or comparable model binaries unless the repository
+  policy explicitly permits them.
+
+Documentation may record hashes, version IDs, and local path conventions without
+publishing the artifacts themselves.

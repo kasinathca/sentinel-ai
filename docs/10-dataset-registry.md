@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Dataset Registry"
 document_id: "SEN-DATA-REG"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -150,21 +150,26 @@ shall not have fabricated:
 
 # 1. Current Registry Summary
 
-The project now has actual XD-Violence feature data and a derived Fighting-vs-Normal dataset in active experimental use.
+As of 2026-09-12, the XD-Violence-derived RGB I3D feature corpus and the
+strict Fighting-vs-Normal derived split have been acquired, structurally
+verified, and used in frozen Sentinel experiments.
 
-The registry remains conservative about fields that were not retained during acquisition: archive/file checksums, exact acquisition manifest identity, and terms-review metadata remain `TBD` until verified.
+The complete original XD-Violence raw-video corpus is **not** claimed as fully
+acquired by Sentinel. Raw MP4 acquisition is limited to controlled compatibility
+fixtures used to qualify the exact feature-extraction path.
 
 | Dataset ID | Dataset | Intended role | Current status |
 |---|---|---|---|
 | `DATA-SENT-DEMO-V1` | Team-controlled Sentinel demo/test videos | integration/system testing | `NOT_YET_REGISTERED` |
-| `DATA-XD-VIOLENCE-V1` | XD-Violence source/provenance identity | parent source for violence experiment | `ACQUIRED_UNVERIFIED` |
-| `DATA-DERIVED-XD-FIGHTING-BINARY-V1` | XD-Violence pure Fighting vs Normal I3D feature subset | train/validation/test for temporal classifier | `ACTIVE` |
+| `DATA-XD-VIOLENCE-V1` | XD-Violence parent dataset | provenance + limited raw compatibility fixtures | `ACQUISITION_IN_PROGRESS` |
+| `DATA-XD-I3D-FEATURES-V1` | XD-Violence RGB I3D feature corpus | model development/evaluation | `ACTIVE` |
+| `DATA-DERIVED-XD-FIGHTING-BINARY-V1` | Strict Fighting vs Normal split | TRAIN / VALIDATION / TEST | `ACTIVE` |
 | `DATA-UCF-CRIME-V1` | UCF-Crime | secondary violence candidate | `NOT_YET_ACQUIRED` |
 | `DATA-MOT17-V1` | MOT17 | optional tracking evaluation | `NOT_YET_ACQUIRED` |
 | `DATA-COCO-2017` | COCO 2017 | pretrained detector provenance / optional fine-tuning | `PRETRAINED_PROVENANCE_ONLY` |
 | `DATA-RWF-2000-V1` | RWF-2000 | violence candidate | `REJECTED_FOR_CURRENT_PLAN` |
 
-`ACQUIRED_UNVERIFIED` is used for the XD parent identity because usable feature files were obtained and used, while the original acquisition checksum/terms record is not yet complete. `ACTIVE` on the derived dataset means it has been used by `EXP-VIO-TEMPORAL-001`; it does not imply that all provenance fields are complete.
+This table must be updated immediately when acquisition/use changes.
 
 ---
 
@@ -763,230 +768,170 @@ media:
 ## 23.1 Identity
 
 **Name:** XD-Violence  
-**Status:** `ACQUIRED_UNVERIFIED`  
-**Role:** Parent provenance identity for the active Fighting-vs-Normal feature experiment.
+**Status:** `NOT_YET_ACQUIRED`  
+**Role:** Candidate violence/fighting training/evaluation source.
 
-Official acquisition guidance remains in:
+Official acquisition guidance is in:
 
 `09-dataset-acquisition.md`
 
-## 23.2 What was actually acquired/used
+## 23.2 Registry state
 
-The current experiment used **pre-extracted XD-Violence I3D RGB feature files**, not a team-extracted full raw-video training corpus.
+No local acquired file has yet been verified in this project record.
 
-Observed local acquisition facts from the completed feature-preparation work:
-
-```text
-I3D RGB .npy feature files enumerated = 4,750
-observed feature dimension = 2,048
-example/inspected tensor layouts include a 5-crop reference axis
-```
-
-The repository/file collection also contained non-feature metadata/other files; only the `.npy` count above shall be treated as the feature-file count.
-
-The following remain unverified in the registry and shall not be invented:
+Therefore:
 
 ```text
-archive checksum = TBD
-per-file checksum manifest = TBD
-original acquisition manifest = TBD
-terms/license review status = TBD
-redistribution permission = TBD
+local file count = TBD
+local duration = TBD
+local checksum = TBD
+actual split used = TBD
 ```
 
-## 23.3 Registry record
+## 23.3 Candidate record
 
 ```yaml
 dataset_id: "DATA-XD-VIOLENCE-V1"
 name: "XD-Violence"
-status: "ACQUIRED_UNVERIFIED"
+status: "NOT_YET_ACQUIRED"
 
 purpose:
-  - "parent source/provenance for Sentinel violence/fighting experiments"
+  - "candidate violence/fighting model development"
 
 usage_roles:
-  - "SOURCE_PROVENANCE"
-  - "PARENT_OF_DERIVED_DATASET"
+  - "CANDIDATE_TRAIN"
+  - "CANDIDATE_VALIDATION"
+  - "CANDIDATE_TEST"
 
 source:
   original_project_url: "https://roc-ng.github.io/XD-Violence/"
   original_paper: "Not only Look, but also Listen: Learning Multimodal Violence Detection under Weak Supervision"
-  acquired_artifact_class: "pre-extracted I3D RGB feature files"
-  mirror_used_for_some_runtime-test-video retrieval: true
-  mirror_details: "Hugging Face jherng/xd-violence used for selected raw runtime-compatibility fixtures; original dataset provenance remains XD-Violence"
+  mirror_used: false
 
 acquisition:
-  retrieved_at: "TBD_EXACT_DATE"
+  retrieved_at: "TBD"
   acquisition_manifest: "TBD"
 
 terms:
   license_name: "TBD_AFTER_REVIEW"
-  terms_review_status: "TBD"
+  terms_review_status: "NOT_YET_REVIEWED"
   redistribution_allowed: "TBD"
 
+raw_files: []
+
+annotations:
+  format: "TBD_AFTER_ACQUISITION"
+  description: "Weak-label/test-annotation structure to be inspected."
+
+splits:
+  official_split_used: "TBD"
+  sentinel_split_manifest: "TBD"
+  leakage_check: "TBD"
+
+preprocessing:
+  status: "NOT_STARTED"
+
 statistics:
-  local_i3d_rgb_npy_count: 4750
-  local_total_duration_seconds: "NOT_APPLICABLE_TO_PREEXTRACTED_FEATURE_COUNT"
+  local_file_count: "TBD"
+  local_total_duration_seconds: "TBD"
 
-experiments:
-  - "EXP-VIO-TEMPORAL-001"
-  - "EXP-VIO-RUNTIME-COMPAT-001"
+experiments: []
 
-models:
-  - "experimental BiGRU + Temporal Attention classifier from EXP-VIO-TEMPORAL-001"
+models: []
 
 limitations:
-  - "Current training/evaluation uses supplied pre-extracted visual features rather than team-reproduced raw-video features."
-  - "Acquisition checksum and terms-review fields are not yet complete."
-  - "Raw-video runtime feature compatibility remains under validation."
+  - "Large weakly supervised violence/anomaly dataset."
+  - "Task mapping to Sentinel fighting/violence must be defined before use."
 ```
 
 ---
 
-# 24. XD-Violence Acquisition/Verification Gate — Current State
+# 24. XD-Violence Acceptance Gate
 
-Completed for current experimental use:
+Change status from:
 
-- [x] usable I3D RGB feature files physically obtained;
-- [x] feature-file count inspected;
-- [x] feature tensor structure inspected;
-- [x] Fighting/Normal derived task defined;
-- [x] frozen train/validation/test counts established;
-- [x] active temporal experiment references the derived dataset.
+```text
+NOT_YET_ACQUIRED
+```
 
-Still required before the parent source can be described as fully verified/registered:
+to:
 
-- [ ] acquisition manifest retained/committed;
-- [ ] required checksum evidence calculated/recorded;
-- [ ] terms/license status reviewed and recorded;
-- [ ] redistribution status recorded;
-- [ ] exact split-manifest files and hashes committed;
-- [ ] leakage audit recorded explicitly.
+```text
+ACQUIRED_VERIFIED
+```
 
-Do **not** change the parent record to `ACQUIRED_VERIFIED` until these remaining provenance/integrity items are complete.
+only after:
+
+- [ ] files physically obtained;
+- [ ] original filename recorded;
+- [ ] checksum calculated;
+- [ ] archive validated;
+- [ ] annotation format inspected;
+- [ ] terms reviewed;
+- [ ] acquisition manifest committed.
+
+Change to:
+
+```text
+ACTIVE
+```
+
+only after an experiment actually references it.
 
 ---
 
-# 25. Current Derived Dataset — `DATA-DERIVED-XD-FIGHTING-BINARY-V1`
+# 25. XD-Violence Derived Dataset Placeholder
 
-**Status:** `ACTIVE`
-
-This dataset is the exact Fighting-vs-Normal feature subset used by `EXP-VIO-TEMPORAL-001`.
-
-## 25.1 Task mapping
+Potential future dataset:
 
 ```text
-positive class = Fighting
-negative class = Normal
-other XD-Violence violent/anomaly categories = excluded from this derived binary task
+DATA-DERIVED-XD-FIGHTING-BINARY-V1
 ```
 
-This is a **pure Fighting-vs-Normal** model-development dataset. Results from it shall not be generalized to all XD-Violence anomaly categories.
+**Status:** `NOT_CREATED`
 
-## 25.2 Feature representation
+Do not create this registry entry as active until:
 
-```text
-source representation = XD-Violence pre-extracted I3D RGB features
-feature dimension = 2048
-reference feature tensors include a 5-crop axis
-raw-video feature reproduction = NOT_YET_QUALIFIED
-```
+1. positive-class definition is approved;
+2. negative-class definition is approved;
+3. subset script exists;
+4. split manifests exist;
+5. counts are computed.
 
-## 25.3 Frozen split counts
+---
 
-| Split | Normal | Fighting | Total |
-|---|---:|---:|---:|
-| Train | 1,636 | 302 | 1,938 |
-| Validation | 410 | 75 | 485 |
-| Test | 300 | 107 | 407 |
-| **Total** | **2,346** | **484** | **2,830** |
-
-The split used by `EXP-VIO-TEMPORAL-001` is frozen. Do not move samples between splits under this dataset/version ID.
-
-## 25.4 Registry record
+# 26. Potential XD Derived Record Template
 
 ```yaml
 dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
-status: "ACTIVE"
+status: "NOT_CREATED"
+
 parent_dataset_id: "DATA-XD-VIOLENCE-V1"
 
-purpose:
-  - "binary temporal Fighting-vs-Normal model development"
+task_definition:
+  positive_class: "TBD"
+  negative_class: "TBD"
 
-usage_roles:
-  - "TRAIN"
-  - "VALIDATION"
-  - "TEST"
-
-classes:
-  - code: 0
-    meaning: "Normal"
-  - code: 1
-    meaning: "Fighting"
-
-representation:
-  type: "pre-extracted I3D RGB feature tensors"
-  feature_dimension: 2048
-  reference_crop_axis: 5
+creation:
+  script: "TBD"
+  git_commit: "TBD"
+  created_at: "TBD"
 
 statistics:
-  total_samples: 2830
-  normal_samples: 2346
-  fighting_samples: 484
+  positive_samples: "TBD"
+  negative_samples: "TBD"
+  total_samples: "TBD"
 
 splits:
-  train_count: 1938
-  validation_count: 485
-  test_count: 407
-  train_normal: 1636
-  train_fighting: 302
-  validation_normal: 410
-  validation_fighting: 75
-  test_normal: 300
-  test_fighting: 107
-  sentinel_split_manifest: "TBD_PATH"
-  split_manifest_sha256: "TBD"
-  leakage_review: "TBD_EXPLICIT_AUDIT"
+  train_manifest: "TBD"
+  validation_manifest: "TBD"
+  test_manifest: "TBD"
 
-preprocessing:
-  source_feature_extractor: "XD-Violence-provided I3D RGB features"
-  runtime_reproduction_status: "UNDER_EXP-VIO-RUNTIME-COMPAT-001"
+leakage_review:
+  status: "TBD"
 
-experiments:
-  - "EXP-VIO-TEMPORAL-001"
-
-limitations:
-  - "Derived task excludes non-Fighting anomaly classes."
-  - "Final raw-video worker must reproduce compatible feature semantics before this model can be deployed."
+experiments: []
 ```
-
----
-
-# 26. Runtime Compatibility Media — Non-Training Fixtures
-
-`EXP-VIO-RUNTIME-COMPAT-001` uses selected raw XD-Violence videos representing at least:
-
-```text
-Normal
-Fighting
-```
-
-These videos are **diagnostic fixtures for raw-video → feature compatibility**, not a new formal evaluation split and not additional training samples.
-
-Current candidate runtime extractor work includes:
-
-- I3D/ResNet-3D extraction code from the selected candidate repositories;
-- pretrained `i3d_baseline_32x2_IN_pretrain_400k.pkl` weights;
-- conversion to `i3d_r50_kinetics.pth` for the candidate runtime implementation;
-- exact-crop/decode-mode diagnostics against reference feature tensors.
-
-Current result:
-
-```text
-FEATURE_EQUIVALENCE_NOT_YET_ESTABLISHED
-```
-
-The diagnostic has observed a reference/generated crop-layout mismatch during exact-crop comparison. Therefore these runtime-generated features shall **not** replace the reference training representation until the compatibility experiment passes a documented criterion.
 
 ---
 
@@ -1287,18 +1232,24 @@ Do not delete the entry and later make it appear as though the dataset was never
 
 # 35. Dataset Selection Decision Record
 
-When the violence dataset is chosen, add:
-
 ```yaml
 decision_id: "DATA-DEC-001"
-selected_dataset_id: "TBD"
-decision_date: "TBD"
-selected_by:
-  - "TBD"
+selected_feature_dataset_id: "DATA-XD-I3D-FEATURES-V1"
+selected_derived_dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
+decision_date: "2026-09-12"
+selection_basis:
+  - "strict Fighting-vs-Normal task fit"
+  - "available reproducible RGB I3D feature representation"
+  - "frozen train/validation/test manifests"
+  - "feasible on available student hardware"
+
+parent_raw_dataset:
+  dataset_id: "DATA-XD-VIOLENCE-V1"
+  note: "complete raw corpus not claimed as fully acquired"
 
 alternatives:
-  - dataset_id: "DATA-XD-VIOLENCE-V1"
-    outcome: "TBD"
+  - dataset_id: "DATA-UCF-CRIME-V1"
+    outcome: "not required for frozen MVP violence model"
   - dataset_id: "DATA-UCF-CRIME-V1"
     outcome: "TBD"
   - dataset_id: "DATA-RWF-2000-V1"
@@ -1537,13 +1488,22 @@ Example:
 
 ```yaml
 dataset_id: "DATA-XD-I3D-FEATURES-V1"
-status: "NOT_YET_ACQUIRED"
+status: "ACTIVE"
 parent_dataset_id: "DATA-XD-VIOLENCE-V1"
 
+local_inventory:
+  npy_files: 4750
+  observed_shape_schema: "(T, 5, 2048)"
+
 representation:
-  producer: "dataset authors"
-  feature_type: "I3D RGB/Flow"
-  extraction_by_sentinel: false
+  producer: "Jia-Herng re-extraction pipeline / published Hugging Face corpus"
+  feature_type: "RGB I3D ResNet-50 non-local"
+  extraction_by_sentinel_for_training_corpus: false
+
+sentinel_runtime_reproduction:
+  exact_pipeline_qualified: true
+  raw_video_fixtures: 2
+  purpose: "compatibility verification only; not model performance evaluation"
 ```
 
 Do not describe these as team-generated features.
@@ -2322,10 +2282,11 @@ Do not choose whichever file is more convenient.
 
 # 91. Dataset Registry Change Log
 
+Recommended section once active use begins:
+
 | Date | Dataset ID | Change | Reason | Approved by |
 |---|---|---|---|---|
-| `2026-09-05` | `DATA-XD-VIOLENCE-V1` | `NOT_YET_ACQUIRED` → `ACQUIRED_UNVERIFIED` | XD I3D RGB feature corpus is physically present and has been used, but checksum/terms records remain incomplete | `PROJECT_TEAM_REVIEW_PENDING` |
-| `2026-09-05` | `DATA-DERIVED-XD-FIGHTING-BINARY-V1` | `NOT_CREATED` → `ACTIVE` | Frozen Fighting-vs-Normal feature split used by `EXP-VIO-TEMPORAL-001` | `PROJECT_TEAM_REVIEW_PENDING` |
+| `TBD` | `TBD` | `TBD` | `TBD` | `TBD` |
 
 ---
 
@@ -2333,33 +2294,32 @@ Do not choose whichever file is more convenient.
 
 | ID | Decision | Status |
 |---|---|---|
-| DATA-OD-001 | Which violence dataset becomes primary for the current baseline? | `CONFIRMED: XD-VIOLENCE` |
-| DATA-OD-002 | Raw video vs pre-extracted features for current model development? | `CONFIRMED: PRE-EXTRACTED I3D RGB FEATURES` |
-| DATA-OD-003 | Exact current violence task label mapping? | `CONFIRMED_FOR_DERIVED_V1: FIGHTING vs NORMAL` |
-| DATA-OD-004 | Whether UCF-Crime is required at all | `DEFERRED_UNLESS_NEEDED` |
+| DATA-OD-001 | Which violence dataset becomes primary? | `RESOLVED: XD-derived I3D feature corpus` |
+| DATA-OD-002 | Raw video vs pre-extracted features? | `RESOLVED: pre-extracted RGB I3D for model development; raw fixtures for runtime qualification` |
+| DATA-OD-003 | Exact violence task label mapping? | `RESOLVED: Fighting=1, Normal=0; other classes excluded` |
+| DATA-OD-004 | Whether UCF-Crime is required at all | `TBD` |
 | DATA-OD-005 | Whether MOT17 formal benchmark is worth time | `TBD` |
 | DATA-OD-006 | Whether COCO is downloaded locally | `PROPOSED: NO` |
 | DATA-OD-007 | Which team-controlled demo videos are created | `TBD` |
-| DATA-OD-008 | Current violence validation/test split | `FROZEN_COUNTS_CONFIRMED; MANIFEST_HASH_TBD` |
-| DATA-OD-009 | Whether XD pre-extracted features are used | `CONFIRMED: YES` |
+| DATA-OD-008 | Formal violence validation/test split | `RESOLVED/FROZEN: VAL 410/75; TEST 300/107 Normal/Fighting` |
+| DATA-OD-009 | Whether XD pre-extracted/derived RGB I3D features are used | `RESOLVED: yes; active feature corpus` |
 | DATA-OD-010 | Dataset retention after project | `TBD` |
-| DATA-OD-011 | XD feature acquisition checksum/terms record | `TBD / REQUIRED` |
-| DATA-OD-012 | Raw-video runtime feature compatibility | `IN_PROGRESS: EXP-VIO-RUNTIME-COMPAT-001` |
 
 ---
 
 # 93. Immediate Registry Actions
 
-The next registry actions are limited to closing evidence gaps for data already in use:
+The AI/Data Lead should next:
 
-1. preserve/commit the frozen split manifests for `DATA-DERIVED-XD-FIGHTING-BINARY-V1`;
-2. record the split-manifest hash;
-3. record the acquisition/checksum evidence available for the XD feature corpus;
-4. complete the terms/redistribution review fields;
-5. record an explicit leakage-audit result for the frozen split;
-6. retain runtime-compatibility raw videos as diagnostic fixtures, not as silent training additions;
-7. do not acquire UCF-Crime or another violence dataset unless a defined need appears;
-8. update this registry only if `EXP-VIO-RUNTIME-COMPAT-001` changes the required preprocessing/data representation.
+1. create `data/manifests/`;
+2. create `DATA-SENT-DEMO-V1` fixture manifest;
+3. acquire/inspect XD-Violence annotations or smallest feasibility package;
+4. calculate checksum;
+5. change XD status only after verification;
+6. inspect task labels;
+7. decide whether raw video or features are feasible;
+8. create derived dataset only after label mapping is accepted;
+9. link first violence experiment to exact dataset ID.
 
 ---
 
@@ -2500,3 +2460,89 @@ Every placeholder above must be replaced by actual verified IDs before final rep
 > ```
 >
 > If that chain cannot be reconstructed, the result is not sufficiently reproducible for Sentinel AI's final academic documentation.
+
+
+---
+
+# 74. Active XD-Violence-Derived Records — 2026-09-12
+
+## 74.1 `DATA-XD-I3D-FEATURES-V1`
+
+**Status:** `ACTIVE`
+
+Local inventory used for Sentinel model development:
+
+```text
+4750 .npy feature files
+schema: (T, 5, 2048)
+modality: RGB
+```
+
+The five spatial crops are preserved in the stored feature tensor.
+
+Exact feature provenance was resolved to the Jia-Herng feature extractor using
+the MMAction2 I3D ResNet-50 non-local Kinetics-400 checkpoint.
+
+Sentinel later reproduced this feature pipeline from raw MP4 with near-exact
+numeric equivalence. That reproduction does not change the provenance of the
+training corpus: Sentinel did not claim that the original 4,750 feature files
+were generated locally.
+
+## 74.2 `DATA-DERIVED-XD-FIGHTING-BINARY-V1`
+
+**Status:** `ACTIVE`
+
+Task mapping:
+
+```text
+Fighting → positive class 1
+Normal   → negative class 0
+all other XD-Violence categories → excluded from this strict experiment
+```
+
+Frozen splits:
+
+| Split | Normal | Fighting | Total |
+|---|---:|---:|---:|
+| TRAIN | 1636 | 302 | 1938 |
+| VALIDATION | 410 | 75 | 485 |
+| TEST | 300 | 107 | 407 |
+| **Total** | **2346** | **484** | **2830** |
+
+The TEST split was held out from live-window and threshold selection.
+
+## 74.3 Raw-video compatibility fixtures
+
+Two raw MP4 files were obtained only to verify feature/runtime compatibility:
+
+```text
+Normal:
+A.Beautiful.Mind.2001__#00-40-52_00-42-01_label_A.mp4
+
+Fighting:
+Braveheart.1995__#00-56-30_00-57-20_label_B1-0-0.mp4
+```
+
+Roles:
+
+```text
+SYSTEM_INTEGRATION_TEST
+RUNTIME_COMPATIBILITY
+```
+
+They are **not** treated as a performance benchmark or as substitutes for the
+frozen TEST split.
+
+## 74.4 Weak-label limitation
+
+The strict Fighting-vs-Normal derived labels remain video-level labels.
+
+Therefore:
+
+- video-level precision/coverage/F1 are reportable;
+- Normal-window false-trigger analysis is meaningful;
+- exact fighting-onset latency is not reportable from these weak labels;
+- positive-window localization recall must not be claimed.
+
+Detailed experiment usage is recorded in
+`19-violence-model-and-runtime-qualification.md`.

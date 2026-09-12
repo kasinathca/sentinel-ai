@@ -1,14 +1,14 @@
 ---
 title: "Sentinel AI — UML and System Models"
 document_id: "SEN-UML"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 notation:
   - "Mermaid"
   - "UML-inspired system modeling"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -1482,7 +1482,7 @@ None of these expansion branches are MVP commitments.
 | MD-007 | Person point used for polygon test | intrusion |
 | MD-008 | Loitering track-loss semantics | loitering state |
 | MD-009 | Crowd counting method | crowd models |
-| MD-010 | Violence threshold | violence |
+| MD-010 | Violence threshold / temporal criterion | `RESOLVED: W1, 3-of-5, threshold 0.906` |
 | MD-011 | Camera offline criterion | offline state |
 | MD-012 | Evidence buffer duration | evidence |
 | MD-013 | Media storage | evidence/deployment |
@@ -1547,3 +1547,30 @@ The full file should remain in the repository, while the report/presentation may
 > - remain synchronized with the SRS and architecture.
 >
 > If an implementation decision changes the meaning of a diagram, update the diagram in the same change set.
+
+
+---
+
+# 50. Violence Sequence/State Update — 2026-09-12
+
+The violence sequence model should now be interpreted with the following frozen
+decision:
+
+```text
+AI worker
+→ one structured Fighting score per W1 exact-I3D observation
+→ backend validates score/model/window
+→ backend updates 5-observation rolling history
+→ positive = score >= 0.906
+→ qualified = at least 3 positives in latest 5
+→ event-domain duplicate/cooldown state evaluated
+→ persistent violence event if allowed
+```
+
+The `3-of-5` rolling history is scoped per camera and deployed violence model
+version.
+
+A model result is not itself a persisted domain event.
+
+The event-state diagram shall keep duplicate/cooldown/retrigger behavior
+separate because that lifecycle remains unresolved.

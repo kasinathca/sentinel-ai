@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Dataset Acquisition and Provenance Guide"
 document_id: "SEN-DATA-ACQ"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -816,7 +816,14 @@ data/manifests/acquisition_xd_violence.yaml
 
 # 17. XD-Violence Feature-First Option
 
-If compute/storage is limited, prefer evaluating the official pre-extracted visual features before processing all raw video.
+**Decision status:** `IMPLEMENTED`.
+
+Sentinel's completed violence experiments use the acquired XD-Violence-derived
+RGB I3D feature corpus as the primary training/validation/test representation.
+
+The full original raw-video corpus is not required for the frozen model-training
+workflow. Raw MP4 acquisition is limited to controlled runtime-compatibility
+fixtures unless future work explicitly requires broader raw-video access.
 
 Official project page currently lists:
 
@@ -829,7 +836,10 @@ V1.0 Features
 
 Correct:
 
-> Sentinel's baseline violence experiment uses the XD-Violence authors' pre-extracted I3D visual features.
+> Sentinel's violence experiments use an acquired XD-Violence RGB I3D feature
+> corpus whose exact producing pipeline was traced to the Jia-Herng/MMAction2
+> I3D ResNet-50 non-local extractor. Sentinel later reproduced that pipeline
+> locally from controlled raw-video fixtures for runtime compatibility.
 
 Incorrect:
 
@@ -2437,3 +2447,68 @@ Do not wait until final report week.
 > - change the model plan;
 >
 > rather than silently substitute an unverifiable mirror.
+
+
+---
+
+# 94. Acquisition Status Update — 2026-09-12
+
+The violence data path has moved from candidate acquisition to active
+experimental use.
+
+## 94.1 Acquired/active representation
+
+```text
+DATA-XD-I3D-FEATURES-V1
+4750 .npy files
+shape schema: (T, 5, 2048)
+RGB
+```
+
+Derived strict task:
+
+```text
+DATA-DERIVED-XD-FIGHTING-BINARY-V1
+Fighting vs Normal
+```
+
+Frozen split counts:
+
+```text
+TRAIN = 1938
+VAL   = 485
+TEST  = 407
+```
+
+See `10-dataset-registry.md` for authoritative role/count details.
+
+## 94.2 Raw-video acquisition scope
+
+Sentinel does **not** claim that the complete 4,754-video original XD-Violence
+raw corpus has been locally acquired.
+
+Two raw MP4 compatibility fixtures were obtained to verify:
+
+```text
+raw MP4
+→ exact I3D extraction
+→ reference-feature parity
+→ final temporal-policy parity
+```
+
+Those fixtures are system/runtime test evidence, not the formal performance
+dataset.
+
+## 94.3 Repository rule
+
+Do not commit the large external feature corpus, raw external videos, or model
+binaries to the documentation repository unless redistribution and repository
+policy explicitly permit it.
+
+Commit instead:
+
+- documentation;
+- manifests where legally appropriate;
+- hashes;
+- scripts;
+- small machine-readable evaluation reports where appropriate.

@@ -1,12 +1,12 @@
 ---
 title: "Sentinel AI — System Architecture Specification"
 document_id: "SEN-ARCH"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 architecture_style: "FastAPI modular monolith + separate AI worker"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -808,9 +808,65 @@ Exact tracker: `TBD`.
 
 Responsibilities:
 
-- temporal violence/fighting classification.
+- temporal violence/fighting scoring over exact I3D feature steps;
+- model provenance reporting;
+- deterministic, reproducible model loading;
+- failure reporting distinct from a successful low/non-violence score.
 
-Exact architecture/data representation: `TBD`.
+**Selected model:** `EXP-VIO-TEMPORAL-001` / `MODEL-VIO-BIGRU-ATTN-XD-V1`.
+
+**Frozen architecture:**
+
+```text
+exact I3D RGB feature step (1, 5, 2048)
+→ mean across 5 crops
+→ deterministic resampling to 64 temporal positions
+→ Linear(2048 → 256)
+→ LayerNorm
+→ GELU
+→ Dropout(0.25)
+→ bidirectional GRU, hidden size 128 per direction
+→ learned temporal attention
+→ LayerNorm
+→ Dropout(0.25)
+→ Linear(256 → 1)
+→ sigmoid fighting score
+```
+
+The frozen checkpoint contains **822,530 parameters**.
+
+The exact raw-video feature extractor is the Jia-Herng/MMAction2 I3D
+ResNet-50 non-local model:
+
+```text
+i3d_imagenet-pretrained-r50-nl-dot-product_8xb8-32x2x1-100e_kinetics400-rgb
+```
+
+Raw-video extractor compatibility and final live-policy parity are qualified in
+`19-violence-model-and-runtime-qualification.md`.
+
+### 8.5.1 Violence worker/backend boundary
+
+The AI worker produces one structured fighting score per exact I3D temporal
+feature step.
+
+The backend applies the frozen event criterion:
+
+```text
+score >= 0.906
+AND
+at least 3 of the most recent 5 violence scores qualify
+```
+
+This criterion determines a candidate violence condition. Application-domain
+event persistence, duplicate suppression, episode lifecycle, cooldown/retrigger
+semantics, evidence creation, and operator notification remain backend/domain
+responsibilities.
+
+The worker shall **not** directly create persistent violence events.
+
+Backend ↔ worker transport remains `TBD`; this selection does not change the
+separate-worker architecture boundary.
 
 ---
 
@@ -2250,3 +2306,47 @@ Before changing status to `BASELINED`:
 > - data provenance remains traceable;
 > - the full vertical slice can be demonstrated reproducibly;
 > - unresolved decisions remain visibly unresolved rather than silently guessed.
+
+
+---
+
+# 40. Violence Runtime Qualification Update — 2026-09-12
+
+The violence subsystem has progressed beyond the earlier design-only state.
+
+| Item | Current state |
+|---|---|
+| Strict Fighting vs Normal dataset split | `FROZEN` |
+| Feature-based Logistic Regression baseline | `FROZEN_REFERENCE_BASELINE` |
+| BiGRU + temporal-attention model | `FROZEN_DEPLOYMENT_MODEL` |
+| Raw MP4 → exact I3D feature compatibility | `QUALIFIED` |
+| Persistent exact-extractor process | `QUALIFIED` |
+| Live temporal criterion | `FROZEN` |
+| Validation-selected threshold | `0.906` |
+| One-time official TEST evaluation | `COMPLETE` |
+| Raw-video final-policy parity | `QUALIFIED` |
+| Final backend ↔ worker transport | `TBD` |
+| Event cooldown/retrigger semantics | `TBD` |
+| Full application E2E integration | `PENDING` |
+
+The qualified violence path is:
+
+```text
+controlled video source
+→ exact Jia-Herng/MMAction2 I3D extractor
+→ (T, 5, 2048) RGB features
+→ frozen BiGRU + temporal attention
+→ one fighting score per feature step
+→ backend rolling 3-of-5 criterion at threshold 0.906
+→ candidate violence event condition
+```
+
+For recorded-file qualification the exact extractor is kept in its isolated
+Python/PyTorch/MMAction2 environment and is loaded once in a persistent process.
+The temporal classifier runs in the main model environment.
+
+This does **not** settle the project-wide worker transport decision. It is an
+implementation constraint for the qualified violence runtime only.
+
+Detailed evidence, hashes, metrics, and experiment lineage are authoritative in
+`19-violence-model-and-runtime-qualification.md`.

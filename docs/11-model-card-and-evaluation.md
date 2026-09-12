@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Model Cards and Evaluation Specification"
 document_id: "SEN-MODEL-EVAL"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -32,18 +32,21 @@ authoritative_for:
 >
 > It is intentionally conservative.
 >
-> At the time of this update:
+> Current implementation state as of 2026-09-12:
 >
-> - no person detector has been formally selected;
-> - no tracker has been formally selected;
-> - an **experimental violence/fighting temporal baseline** has been trained and evaluated;
-> - `DATA-DERIVED-XD-FIGHTING-BINARY-V1` is active for that experiment;
-> - a validation-selected classifier threshold has been measured for the experiment;
-> - model-level validation/test metrics have been measured;
-> - raw-video runtime feature compatibility is **not yet qualified**;
-> - final integrated inference latency/FPS and end-to-end system metrics remain unmeasured.
+> - no person detector has yet been formally selected;
+> - no tracker has yet been formally selected;
+> - the violence/fighting model **has been selected and frozen**;
+> - the strict XD-Violence Fighting-vs-Normal feature split is active;
+> - whole-video model evaluation is complete;
+> - the live `W1 / 3-of-5 / 0.906` policy is frozen;
+> - the policy received one final held-out TEST evaluation;
+> - raw-video exact-feature compatibility and final-policy parity are qualified;
+> - final full-application event-to-client latency remains unmeasured.
 >
-> Therefore this document now contains measured values only for the completed violence-model experiment. Detector, tracker, runtime-compatibility, and final integrated-system fields remain `NOT_YET_MEASURED` or `NOT_YET_VERIFIED` as applicable.
+> Quantitative violence results in this document are measured evidence.
+> Detector/tracker and unfinished application-level metrics remain
+> `NOT_YET_MEASURED` where applicable.
 >
 > This document does **not** contain placeholder accuracy values.
 >
@@ -1188,138 +1191,103 @@ Again, actual model card must record observed cases.
 
 ---
 
-# 51. Violence Model Card — Current Experimental Baseline
-
-The current model-level baseline is identified primarily by its experiment ID until a final deployable model-registry ID is frozen.
+# 51. Violence Model Card — Frozen Selected Model
 
 ```yaml
-experiment_id: "EXP-VIO-TEMPORAL-001"
-model_id: "TBD_FINAL_REGISTRY_ID"
-model_version_id: "TBD_FINAL_REGISTRY_VERSION"
-status: "EXPERIMENTAL"
-
-approval:
-  approved_for_demo: false
-  approved_for_final_integrated_reporting: false
-  approved_for_preliminary_model_level_reporting: true
-  blocking_reason: "raw-video I3D feature compatibility not yet qualified"
+model_id: "MODEL-VIO-BIGRU-ATTN-XD"
+model_version_id: "6d22f83d-17f8-5ecf-9f0f-246fa326ec72"
+version_label: "MODEL-VIO-BIGRU-ATTN-XD-V1"
+status: "APPROVED_FOR_REPORTING"
 
 task:
-  formulation: "binary temporal classification"
+  formulation: "binary Fighting vs Normal temporal video classification"
   positive_class: "Fighting"
   negative_class: "Normal"
-  excluded_from_claim: "other XD-Violence anomaly/violence categories"
+  label_granularity: "video-level weak label"
 
 architecture:
-  name: "BiGRU + Temporal Attention"
-  trainable_parameters: 822530
-  source: "Sentinel experimental training implementation"
-
-pretraining:
-  classifier_pretrained: false
-  visual_features_precomputed: true
-  feature_source: "XD-Violence pre-extracted I3D RGB features"
-
-training:
-  sentinel_trained: true
   experiment_id: "EXP-VIO-TEMPORAL-001"
-  training_script: "sentinel_temporal/train_temporal_gru.py"
-  configured_epochs: 8
+  name: "BiGRU + Temporal Attention"
+  input_reference_shape: "(T, 5, 2048)"
+  crop_reduction: "mean across 5 crops"
+  temporal_resampling: "deterministic uniform resampling to 64 steps"
+  projection_dim: 256
+  gru_hidden_per_direction: 128
+  bidirectional: true
+  attention: "learned Linear(256 -> 1) temporal softmax"
+  dropout: 0.25
+  parameters: 822530
+
+checkpoint:
+  path: "sentinel_temporal/artifacts/best_model.pt"
+  sha256: "1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772"
   best_epoch: 3
-  positive_class_weight: 5.417
-  hardware: "NVIDIA GeForce RTX 3050 6GB Laptop GPU"
-  git_commit: "TBD"
 
 data:
-  train_dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
-  validation_dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
-  test_dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
-  train_count: 1938
-  validation_count: 485
-  test_count: 407
-  train_normal: 1636
-  train_fighting: 302
-  validation_normal: 410
-  validation_fighting: 75
-  test_normal: 300
-  test_fighting: 107
-  split_manifest: "TBD_PATH"
-  split_manifest_sha256: "TBD"
+  feature_dataset_id: "DATA-XD-I3D-FEATURES-V1"
+  derived_dataset_id: "DATA-DERIVED-XD-FIGHTING-BINARY-V1"
+  train:
+    normal: 1636
+    fighting: 302
+    total: 1938
+  validation:
+    normal: 410
+    fighting: 75
+    total: 485
+  test:
+    normal: 300
+    fighting: 107
+    total: 407
 
-input:
-  modality: "pre-extracted I3D RGB temporal feature tensor"
-  feature_dimension: 2048
-  reference_crop_axis: 5
-  raw_video_sampling_fps: "TBD_RUNTIME_COMPATIBILITY"
-  raw_video_window_seconds: "TBD_RUNTIME_COMPATIBILITY"
+whole_video_validation:
+  threshold: 0.8345891237258911
+  precision: 0.9230769231
+  recall: 0.8000000000
+  f1: 0.8571428571
+  accuracy: 0.9587628866
+  roc_auc: 0.9558373984
+  pr_auc: 0.8909613305
+  confusion: {tn: 405, fp: 5, fn: 15, tp: 60}
 
-threshold:
-  classifier_value: 0.8346
-  calibration_dataset: "validation split"
-  calibration_method: "selected by experiment evaluation procedure; exact objective shall remain tied to the script/experiment record"
-  deployed_event_threshold: "NOT_YET_BASELINED"
+whole_video_test:
+  precision: 0.9569892473
+  recall: 0.8317757009
+  specificity: 0.9866666667
+  f1: 0.8900000000
+  accuracy: 0.9459459459
+  roc_auc: 0.9815576324
+  pr_auc: 0.944877884
+  confusion: {tn: 296, fp: 4, fn: 18, tp: 89}
 
-validation_metrics:
-  accuracy: 0.9588
-  precision: 0.9231
-  recall: 0.8000
-  f1: 0.8571
-  roc_auc: 0.95584
-  pr_auc: 0.89096
+live_policy:
+  experiment_id: "EXP-VIO-LIVE-WINDOW-004"
+  worker_window: "W1 exact I3D feature step"
+  stride_feature_steps: 1
+  score_threshold: 0.906
+  smoothing: "3 positive scores among the most recent 5"
+  selected_on: "validation only"
+  official_test_evaluated_once: true
 
-test_metrics:
-  accuracy: 0.94595
-  balanced_accuracy: 0.90922
-  precision: 0.95699
-  recall: 0.83178
-  specificity: 0.98667
-  f1: 0.8900
-  roc_auc: 0.98156
-  pr_auc: 0.94488
-  confusion_matrix:
-    label_order: ["Normal", "Fighting"]
-    tn: 296
-    fp: 4
-    fn: 18
-    tp: 89
-
-performance:
-  raw_video_inference_latency_ms: "NOT_YET_MEASURED"
-  processed_fps: "NOT_YET_MEASURED"
-
-artifacts:
-  report_figures: "sentinel_temporal/report/figures"
-  baseline_artifacts: "sentinel_baseline/artifacts"
+live_policy_test:
+  accuracy: 0.911548
+  balanced_accuracy: 0.876869
+  precision: 0.851485
+  positive_video_coverage: 0.803738
+  specificity: 0.950000
+  f1: 0.826923
+  normal_video_false_event_rate: 0.050000
+  confusion: {tn: 285, fp: 15, fn: 21, tp: 86}
 
 runtime_qualification:
-  experiment_id: "EXP-VIO-RUNTIME-COMPAT-001"
-  status: "IN_PROGRESS / NOT_COMPATIBLE_YET"
-  candidate_weights: "i3d_baseline_32x2_IN_pretrain_400k.pkl converted to i3d_r50_kinetics.pth"
-  finding: "reference/generated feature equivalence has not yet been established; crop/decode compatibility remains unresolved"
-```
+  raw_video_feature_parity: "PASS"
+  persistent_exact_extractor: "PASS"
+  final_raw_video_policy_parity: "PASS"
+  final_verdict: "PHASE_2J_RAW_VIDEO_TEMPORAL_LIVE_PARITY_CONFIRMED"
 
-## 51.1 Interpretation of the measured result
-
-The measured test result is a valid **model-level result on the frozen reference-feature split**. It does not yet demonstrate that Sentinel can ingest arbitrary raw CCTV video and reproduce the same feature distribution at runtime.
-
-Therefore it is academically permissible to report:
-
-> On the frozen XD-Violence Fighting-vs-Normal reference-feature test split, `EXP-VIO-TEMPORAL-001` achieved the measured metrics recorded above.
-
-It is not yet permissible to report:
-
-> Sentinel's deployed violence detector achieves these metrics on live/raw CCTV input.
-
-## 51.2 Runtime compatibility gate
-
-`EXP-VIO-RUNTIME-COMPAT-001` is a deployment qualification gate.
-
-The candidate extractor currently produces a feature layout that has not yet been shown equivalent to the supplied reference representation. Exact crop/decode diagnostics are still being resolved. Until this gate passes:
-
-```text
-model-level evaluation = valid
-raw-video runtime integration = not qualified
-approved for final demo = no
+approval:
+  model_status: "APPROVED_FOR_REPORTING"
+  live_policy_status: "FROZEN"
+  test_driven_retuning_permitted: false
 ```
 
 ---
@@ -2647,30 +2615,21 @@ Evaluation script should verify or at least record the actual artifact identity.
 
 # 134. Environment Snapshot
 
-The current violence-model experimental environment includes:
+Recommended:
 
 ```text
-OS context: Windows development workstation
-Python: 3.10
-PyTorch: 2.13.0+cu130
-CUDA available: true
-GPU: NVIDIA GeForce RTX 3050 6GB Laptop GPU
-GPU VRAM: 6.0 GiB
-NVIDIA driver: 610.88
-CUDA UMD observed: 13.3
-ffprobe: 9.0.1
+pip freeze
 ```
 
-These values describe the observed experiment/runtime-validation environment, not yet the final clean deployment specification.
+or dependency lock file.
 
-For the final evaluation also retain:
+Also record:
 
 ```text
-pip freeze or dependency lock file
 git commit
-model artifact checksum
-split-manifest checksum
 ```
+
+for final evaluation.
 
 ---
 
@@ -2785,19 +2744,19 @@ Template:
 
 # 141. Current Model Card Summary
 
-As of 2026-09-05:
+As of this draft:
 
 | Component | Model/Algorithm | Status | Metrics |
 |---|---|---|---|
 | Person detector | `TBD` | `NOT_SELECTED` | `NOT_YET_MEASURED` |
 | Tracker | `TBD` | `NOT_SELECTED` | `NOT_YET_MEASURED` |
-| Violence/fighting model | BiGRU + Temporal Attention on XD I3D RGB reference features (`EXP-VIO-TEMPORAL-001`) | `EXPERIMENTAL; MODEL_LEVEL_EVALUATED; RUNTIME_NOT_QUALIFIED` | Test: Acc 0.94595, P 0.95699, R 0.83178, F1 0.8900, ROC-AUC 0.98156, PR-AUC 0.94488 |
+| Violence/fighting model | `MODEL-VIO-BIGRU-ATTN-XD-V1` | `APPROVED_FOR_REPORTING` | whole-video + frozen live-policy metrics measured |
 | Intrusion rule | deterministic | design accepted, semantics partly TBD | `NOT_YET_TESTED` |
 | Loitering rule | deterministic | semantics TBD | `NOT_YET_TESTED` |
 | Crowd rule | deterministic | counting method TBD | `NOT_YET_TESTED` |
 | Camera offline | deterministic health logic | criteria TBD | `NOT_YET_TESTED` |
 
-The violence metrics above are tied to the frozen reference-feature test split and shall not be represented as final raw-video system metrics.
+This table shall be updated as implementation progresses.
 
 ---
 
@@ -3399,18 +3358,18 @@ Sentinel used
 
 ---
 
-# 187. Final Metric Table Template — Violence
+# 187. Final Metric Table — Violence
 
 | Metric | Value | Status |
 |---|---:|---|
-| Accuracy | `NOT_YET_MEASURED` | Draft |
-| Precision | `NOT_YET_MEASURED` | Draft |
-| Recall | `NOT_YET_MEASURED` | Draft |
-| F1 | `NOT_YET_MEASURED` | Draft |
-| Specificity | `NOT_YET_MEASURED` | Draft |
-| ROC-AUC | `NOT_YET_MEASURED` | Draft |
-| PR-AUC | `NOT_YET_MEASURED` | Draft |
-| Median inference latency | `NOT_YET_MEASURED` | Draft |
+| Accuracy | `0.911548` | Final live-policy TEST |
+| Precision | `0.851485` | Final live-policy TEST |
+| Recall / positive-video coverage | `0.803738` | Final live-policy TEST; weak video-level labels |
+| F1 | `0.826923` | Final live-policy TEST |
+| Specificity | `0.950000` | Final live-policy TEST |
+| ROC-AUC | `0.981557632` | Frozen whole-video temporal TEST |
+| PR-AUC | `0.944877884` | Frozen whole-video temporal TEST |
+| Runtime | persistent exact extractor ≈ `7.15–7.43x` realtime on two qualification fixtures | Fixture benchmark, not full system latency |
 
 ---
 
@@ -3759,3 +3718,91 @@ An AI assistant shall never:
 > The academic quality of Sentinel AI depends on being able to distinguish:
 >
 > **what was designed, what was implemented, what was tested, and what was actually measured.**
+
+
+---
+
+# 106. Violence Evaluation Evidence Update — 2026-09-12
+
+## 106.1 Live-policy selection discipline
+
+Selection sequence:
+
+```text
+freeze model
+→ reproduce validation baseline
+→ compare live window/smoothing structures on VALIDATION
+→ freeze W1 / stride 1 / 3-of-5
+→ calibrate live threshold on VALIDATION
+→ freeze threshold 0.906
+→ evaluate official TEST exactly once
+→ prohibit further TEST-driven tuning
+```
+
+This process satisfies the requirement that the final threshold shall not be
+selected on final TEST data.
+
+## 106.2 Validation-selected live operating point
+
+At threshold `0.906`:
+
+```text
+validation confusion:
+TN=381 FP=29 FN=16 TP=59
+
+precision                = 0.670455
+positive-video coverage  = 0.786667
+F1                       = 0.723926
+Normal-video false-event = 0.070732
+```
+
+Threshold `0.940` had a slightly higher validation F1 but reduced coverage to
+`0.72`; it was deliberately not selected because the system is a safety-alert
+application and the 0.906 operating point retained substantially more positive
+coverage.
+
+## 106.3 Final held-out live result
+
+One-time official TEST:
+
+```text
+TN=285 FP=15 FN=21 TP=86
+
+precision                = 0.851485
+positive-video coverage  = 0.803738
+F1                       = 0.826923
+accuracy                 = 0.911548
+balanced accuracy        = 0.876869
+specificity              = 0.950000
+Normal-video false-event = 0.050000
+```
+
+No further threshold/window tuning is permitted from these TEST results.
+
+## 106.4 Runtime qualification evidence
+
+Feature-level exact-pipeline reproduction:
+
+```text
+Normal cosine    = 0.999999960759
+Normal MAE       = 4.958858e-05
+Fighting cosine  = 0.999999910273
+Fighting MAE     = 6.852958e-05
+```
+
+Final temporal live-policy parity over regenerated raw-video features:
+
+```text
+raw threshold flags match = true
+3-of-5 flags match        = true
+final event decision      = true
+fixtures confirmed        = 2 / 2
+```
+
+The qualified runtime therefore reproduces the selected model behavior from raw
+MP4 through final live-policy scoring on the controlled compatibility fixtures.
+
+Full application event persistence/alert-delivery performance remains a separate
+system-level evaluation item.
+
+See `19-violence-model-and-runtime-qualification.md`.

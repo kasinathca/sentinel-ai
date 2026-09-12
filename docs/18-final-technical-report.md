@@ -1,7 +1,7 @@
 ---
 title: "Sentinel AI — Final Technical Report"
 document_id: "SEN-FTR"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
@@ -9,7 +9,7 @@ course_code: "TBD"
 department: "TBD"
 institution: "TBD"
 academic_year: "2026–2027"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 team_members:
   - "TBD"
   - "TBD"
@@ -59,16 +59,20 @@ NOT_YET_MEASURED
 
 The following shall **not** be replaced by plausible values before evidence exists:
 
-- final integrated-system accuracy/performance claims not backed by retained evidence;
-- detector/tracker metrics not yet measured;
-- final raw-video violence latency/FPS;
+- model accuracy;
+- precision;
+- recall;
+- F1-score;
+- mAP;
+- tracking metrics;
+- latency;
+- processed FPS;
 - event-to-client latency;
-- final hardware/deployment configuration;
+- dataset subset sizes;
+- final hardware configuration;
 - screenshots of unimplemented features;
-- number of passing tests not actually executed;
-- deployment success not actually demonstrated.
-
-A preliminary model-level violence result now exists and may be reported only with its exact task, frozen dataset split, reference-feature input, and runtime-qualification limitation.
+- number of passing tests;
+- deployment success.
 
 The final submitted version must be updated using the authoritative engineering documents and actual implementation/test artifacts.
 
@@ -80,7 +84,11 @@ Conventional CCTV systems primarily support passive video observation and post-e
 
 The system is deliberately designed so that artificial intelligence is a perception subsystem rather than the sole decision-making mechanism. A pretrained person detector provides person observations, a multi-object tracker associates observations over time, and deterministic domain rules evaluate restricted-area intrusion, loitering, and crowd-threshold conditions. Violence/fighting is handled through a separate temporal video-analysis model. Camera-offline detection is treated as system-health monitoring rather than a machine-learning task. The backend architecture uses a FastAPI modular monolith with a separate AI worker, while the frontend provides live/replayed source monitoring, polygonal zone configuration, rule management, event review, evidence inspection, acknowledgement, history, and analytics.
 
-The engineering process emphasizes formal requirements, traceability, reproducibility, security, privacy, and responsible AI use. Facial recognition, persistent identity tracking, autonomous punitive decisions, and online self-training are explicitly excluded from the MVP. Evaluation is designed to separately measure model quality, tracking behavior, deterministic rule correctness, operational false alerts, inference performance, and end-to-end event delivery. A preliminary model-level evaluation has now been completed for a BiGRU + Temporal Attention Fighting-vs-Normal classifier trained on frozen XD-Violence pre-extracted I3D RGB feature splits. The held-out reference-feature test result is reported in Section 20. These results do not yet represent final raw-video system performance because runtime feature-extractor compatibility and end-to-end worker integration remain incomplete.
+The engineering process emphasizes formal requirements, traceability, reproducibility, security, privacy, and responsible AI use. Facial recognition, persistent identity tracking, autonomous punitive decisions, and online self-training are explicitly excluded from the MVP. Evaluation is designed to separately measure model quality, tracking behavior, deterministic rule correctness, operational false alerts, inference performance, and end-to-end event delivery. Controlled quantitative results are now available for the violence/fighting
+subsystem, including whole-video model evaluation, validation-selected live
+policy evaluation, raw-video feature compatibility, and runtime parity.
+Detector, tracker, full application E2E, and event-to-client measurements remain
+pending where explicitly marked.
 
 **Keywords:** CCTV monitoring, FastAPI, computer vision, object detection, multi-object tracking, violence detection, event detection, WebSocket, surveillance analytics, responsible AI.
 
@@ -897,9 +905,9 @@ Exact time criterion remains `TBD`.
 
 # 12. Violence/Fighting Model Methodology
 
-## 12.1 Current experimental task
+## 12.1 Task
 
-The completed model-level baseline uses:
+Frozen task formulation:
 
 ```text
 binary temporal classification:
@@ -908,83 +916,89 @@ vs
 Normal
 ```
 
-This is a deliberately narrow derived task from XD-Violence. Other violent/anomaly categories are excluded from this baseline and are not covered by its reported metrics.
+The experimental mapping intentionally excludes other XD-Violence anomaly
+categories from this strict classifier.
 
-## 12.2 Temporal input and feature representation
+## 12.2 Temporal Input
 
-`EXP-VIO-TEMPORAL-001` is feature-based.
-
-```text
-XD-Violence pre-extracted I3D RGB temporal feature tensor
-→ temporal sequence model
-```
-
-Observed reference features use a 2,048-dimensional I3D representation and include a reference crop axis. The model does not decode raw frames during training/evaluation.
-
-The exact raw-video sampling, decode mode, crop policy, and temporal chunk construction required to recreate compatible reference features are being validated separately under `EXP-VIO-RUNTIME-COMPAT-001`.
-
-## 12.3 Implemented architecture
-
-The current experimental temporal classifier is:
+Reference feature representation:
 
 ```text
-I3D RGB feature sequence
-→ Bidirectional GRU
-→ Temporal Attention
-→ binary classifier
+(T, 5, 2048) RGB I3D features
 ```
 
-Recorded properties:
+Final live worker observation:
 
 ```text
-trainable parameters = 822,530
-configured epochs = 8
-best epoch = 3
-positive-class weight = 5.417
+W1 = one exact I3D feature step
+stride = 1 feature step
+nominal source-frame block = 64 frames
 ```
 
-The architecture is accepted as an **experimental model baseline**, not yet as the final deployable violence worker.
-
-## 12.4 Dataset decision
-
-Current primary source:
+Exact I3D extraction:
 
 ```text
-XD-Violence pre-extracted I3D RGB features
+clip_len = 32 sampled frames
+sampling rate = 2
+5-crop 224 after resize 256
 ```
 
-Current derived dataset:
+Wall-clock duration depends on source FPS; at 24 FPS one 64-source-frame block
+is approximately 2.67 seconds.
+
+The backend then applies the frozen 3-of-5 criterion across ordered model
+observations.
+
+## 12.3 Architecture Candidates
+
+Candidate design spaces:
+
+1. pretrained visual features + shallow temporal classifier;
+2. 3D CNN/video backbone;
+3. CNN + recurrent/temporal layer;
+4. video transformer.
+
+Given the short project schedule, feasibility and reproducibility take priority over architectural novelty.
+
+## 12.4 Dataset Candidates
+
+Primary candidate:
 
 ```text
-DATA-DERIVED-XD-FIGHTING-BINARY-V1
+XD-Violence
 ```
 
-UCF-Crime remains a secondary option and is deferred unless needed. RWF-2000 remains rejected for the current plan unless legitimate official access changes.
-
-## 12.5 Training and evaluation policy
-
-The model is trained by Sentinel on **pre-extracted pretrained visual features**. It shall therefore be described as a feature-based temporal classifier, not as an end-to-end I3D model trained from scratch.
-
-The classifier threshold used for the experiment was selected on the validation split. The held-out test split is reserved for reporting the frozen experiment result.
-
-## 12.6 Runtime qualification
-
-A deployable raw-video path additionally requires:
+Secondary:
 
 ```text
-raw video
-→ runtime I3D extractor
-→ feature representation compatible with training reference
-→ BiGRU + temporal attention classifier
+UCF-Crime
 ```
 
-Current runtime compatibility status:
+RWF-2000:
 
 ```text
-NOT_YET_QUALIFIED
+REJECTED_FOR_CURRENT_PLAN
 ```
 
-Exact crop/decode diagnostics have not yet established feature equivalence. Therefore the measured model-level result must not be presented as final live-CCTV performance.
+unless legitimate official access becomes available.
+
+## 12.5 Training Policy
+
+If pretrained features/weights are used, the report shall describe the approach honestly:
+
+```text
+pretrained
+fine-tuned
+feature-based
+```
+
+The report shall not claim:
+
+```text
+trained from scratch
+```
+
+unless that is factually true.
 
 ---
 
@@ -1007,25 +1021,20 @@ Original Source
 
 ## 13.2 Current Dataset Registry Status
 
+At the design-stage registry:
+
 | Dataset | Current Status |
 |---|---|
 | Sentinel controlled demo/test videos | `NOT_YET_REGISTERED` |
-| XD-Violence parent/source identity | `ACQUIRED_UNVERIFIED` — I3D RGB feature files obtained/used; checksum/terms record still incomplete |
-| `DATA-DERIVED-XD-FIGHTING-BINARY-V1` | `ACTIVE` — frozen Fighting-vs-Normal feature split used by `EXP-VIO-TEMPORAL-001` |
-| UCF-Crime | `NOT_YET_ACQUIRED / DEFERRED_UNLESS_NEEDED` |
+| XD-Violence parent raw corpus | partial compatibility-fixture acquisition only |
+| XD RGB I3D feature corpus | `ACTIVE` |
+| Strict Fighting-vs-Normal derived split | `ACTIVE` |
+| UCF-Crime | `NOT_YET_ACQUIRED` |
 | MOT17 | `NOT_YET_ACQUIRED` |
 | COCO 2017 | `PRETRAINED_PROVENANCE_ONLY` |
 | RWF-2000 | `REJECTED_FOR_CURRENT_PLAN` |
 
-Current derived split:
-
-| Split | Normal | Fighting | Total |
-|---|---:|---:|---:|
-| Train | 1,636 | 302 | 1,938 |
-| Validation | 410 | 75 | 485 |
-| Test | 300 | 107 | 407 |
-
-The split-manifest path/hash and acquisition checksum/terms fields remain to be finalized in `10-dataset-registry.md`.
+These statuses must be updated from actual evidence before final submission.
 
 ## 13.3 Dataset Split Discipline
 
@@ -1498,21 +1507,21 @@ event-to-client latency
 
 ## 20.1 Current Results Status
 
-At the time of this report update:
+At the time of this report draft:
 
 ```text
 Detector selected: NO
 Tracker selected: NO
-Violence model-level baseline trained: YES — EXP-VIO-TEMPORAL-001
-Violence model-level held-out evaluation completed: YES
-Violence raw-video runtime qualification completed: NO
-Violence model approved for final integrated demo: NO
-Golden E2E test completed: NOT_YET_VERIFIED
+Violence model selected: YES — MODEL-VIO-BIGRU-ATTN-XD-V1
+Formal violence-model training completed: VERIFIED
+Formal violence-model evaluation completed: YES
+Raw-video violence runtime parity completed: YES
+Full application golden E2E test completed: NOT_YET_VERIFIED
 Final security review completed: NO
-Final integrated performance benchmark completed: NO
+Final performance benchmark completed: NO
 ```
 
-The violence result below is a Sentinel-measured result, not an external benchmark value. It is tied specifically to the frozen XD-Violence Fighting-vs-Normal **reference-feature** split.
+No result in this section shall be populated from external benchmark numbers.
 
 ## 20.2 Detector Results
 
@@ -1536,43 +1545,18 @@ The violence result below is a Sentinel-measured result, not an external benchma
 | Track losses | `NOT_YET_MEASURED` |
 | Median tracker overhead | `NOT_YET_MEASURED` |
 
-## 20.4 Violence Model Results — `EXP-VIO-TEMPORAL-001`
-
-### Validation result
+## 20.4 Violence Model Results
 
 | Metric | Result |
 |---|---:|
-| Accuracy | 0.9588 |
-| Precision | 0.9231 |
-| Recall | 0.8000 |
-| F1-score | 0.8571 |
-| ROC-AUC | 0.95584 |
-| PR-AUC | 0.89096 |
-| Validation-selected threshold | 0.8346 |
-
-### Held-out test result
-
-| Metric | Result |
-|---|---:|
-| Accuracy | 0.94595 |
-| Balanced accuracy | 0.90922 |
-| Precision | 0.95699 |
-| Recall | 0.83178 |
-| Specificity | 0.98667 |
-| F1-score | 0.8900 |
-| ROC-AUC | 0.98156 |
-| PR-AUC | 0.94488 |
-| TN | 296 |
-| FP | 4 |
-| FN | 18 |
-| TP | 89 |
-| Raw-video inference latency | `NOT_YET_MEASURED` |
-
-Interpretation:
-
-The classifier produced high held-out discrimination on the frozen Fighting-vs-Normal reference-feature split, with only four false positives but eighteen false negatives. The recall of 0.83178 therefore remains an important limitation even before runtime-domain effects are considered.
-
-These values are **not final integrated-system metrics**. `EXP-VIO-RUNTIME-COMPAT-001` has not yet established that raw-video runtime extraction reproduces the reference feature representation used to obtain these results.
+| Accuracy | `0.911548` — final live policy TEST |
+| Precision | `0.851485` — final live policy TEST |
+| Recall / positive-video coverage | `0.803738` — weak video-level labels |
+| F1-score | `0.826923` — final live policy TEST |
+| Specificity | `0.950000` — final live policy TEST |
+| ROC-AUC | `0.981557632` — frozen whole-video temporal TEST |
+| PR-AUC | `0.944877884` — frozen whole-video temporal TEST |
+| Runtime | persistent exact extractor ≈ `7.15–7.43x` realtime on two qualification fixtures; full application latency pending |
 
 ## 20.5 End-to-End Results
 
@@ -1974,3 +1958,165 @@ https://www.ultralytics.com/license
 > ```
 >
 > If a result cannot be traced back to evidence, it shall not appear as a completed claim in the final submission.
+
+
+---
+
+# 23. Violence/Fighting Implementation and Evaluation Results — 2026-09-12
+
+## 23.1 Dataset and task
+
+Sentinel uses a strict binary subset derived from XD-Violence RGB I3D features:
+
+```text
+positive = Fighting
+negative = Normal
+```
+
+Frozen splits:
+
+| Split | Normal | Fighting | Total |
+|---|---:|---:|---:|
+| Train | 1636 | 302 | 1938 |
+| Validation | 410 | 75 | 485 |
+| Test | 300 | 107 | 407 |
+
+The labels are video-level weak labels.
+
+## 23.2 Selected temporal model
+
+Selected experiment:
+
+```text
+EXP-VIO-TEMPORAL-001
+MODEL-VIO-BIGRU-ATTN-XD-V1
+```
+
+Architecture:
+
+```text
+(T, 5, 2048) I3D RGB features
+→ 5-crop mean
+→ 64-step deterministic temporal resampling
+→ 2048→256 projection
+→ BiGRU (128 hidden per direction)
+→ learned temporal attention
+→ binary Fighting logit
+```
+
+The model contains **822,530 parameters**.
+
+Whole-video held-out TEST:
+
+```text
+TN=296 FP=4 FN=18 TP=89
+accuracy     = 94.59%
+precision    = 95.70%
+recall       = 83.18%
+specificity  = 98.67%
+F1           = 89.00%
+ROC-AUC      = 98.16%
+PR-AUC       = 94.49%
+```
+
+## 23.3 Live-window policy
+
+The model was not deployed by simply applying its whole-video prediction rule
+to arbitrary CCTV streams.
+
+A separate validation-only live-policy study was conducted.
+
+Frozen live policy:
+
+```text
+one exact I3D feature step per worker observation
+stride = 1
+score threshold = 0.906
+candidate condition = at least 3 positive observations in the latest 5
+```
+
+The policy was frozen **before** official TEST evaluation.
+
+Final one-time TEST:
+
+```text
+TN=285 FP=15 FN=21 TP=86
+
+accuracy                = 91.15%
+balanced accuracy       = 87.69%
+precision               = 85.15%
+positive-video coverage = 80.37%
+specificity             = 95.00%
+F1                      = 82.69%
+Normal-video FP rate    = 5.00%
+```
+
+No further TEST-driven tuning is permitted.
+
+## 23.4 Raw-video runtime compatibility
+
+The training/evaluation corpus uses pre-extracted I3D RGB features.
+
+To ensure the actual application can start from raw video, the exact feature
+pipeline was recovered and reproduced with the Jia-Herng/MMAction2 I3D
+ResNet-50 non-local model.
+
+Feature compatibility exceeded cosine `0.9999999` on both controlled fixtures.
+
+The final frozen temporal policy was then executed on regenerated raw-video
+features.
+
+For both fixtures:
+
+```text
+raw score-threshold flags matched reference
+3-of-5 temporal qualification matched reference
+final event condition matched reference
+```
+
+Final qualification verdict:
+
+```text
+PHASE_2J_RAW_VIDEO_TEMPORAL_LIVE_PARITY_CONFIRMED
+```
+
+## 23.5 Runtime performance
+
+Keeping the exact I3D model resident in a persistent worker reduced median
+controlled-fixture processing time compared with a cold subprocess.
+
+Observed persistent-worker results:
+
+```text
+Normal 69.04 s source:
+9.306 s median processing
+7.43x realtime
+
+Fighting 50.0 s source:
+6.859 s median processing
+7.29x realtime
+```
+
+The classifier itself is negligible relative to I3D extraction.
+
+These fixture measurements do not constitute final multi-camera system capacity
+or event-to-client latency measurements.
+
+## 23.6 Architectural interpretation
+
+The AI worker produces model observations.
+
+The backend owns:
+
+- the frozen 3-of-5 criterion state;
+- persistent event creation;
+- duplicate/cooldown semantics;
+- evidence;
+- notification;
+- acknowledgement workflow.
+
+This separation preserves the project architecture in which AI is a perception
+subsystem rather than an autonomous incident authority.
+
+Full evidence lineage is recorded in
+`19-violence-model-and-runtime-qualification.md`.

@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Deployment, Installation, and Demo Runbook"
 document_id: "SEN-DEPLOY"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -1809,3 +1809,126 @@ An AI coding assistant shall never:
 > Until unresolved deployment choices are accepted and executed, this document remains:
 >
 > `DRAFT_FOR_TEAM_REVIEW`.
+
+
+---
+
+# 48. Qualified Violence Runtime Environment — 2026-09-12
+
+The violence subsystem currently requires **two compatible Python runtime
+contexts** because the exact feature extractor and the final temporal classifier
+were qualified under different dependency stacks.
+
+This is an implementation reality, not a final statement about project-wide
+worker transport.
+
+## 48.1 Main temporal-model environment
+
+Observed qualified environment:
+
+```text
+Python          = project/main environment
+PyTorch         = 2.13.0+cu130
+CUDA available  = true
+GPU             = NVIDIA GeForce RTX 3050 6GB Laptop GPU
+```
+
+Frozen temporal model:
+
+```text
+sentinel_temporal/artifacts/best_model.pt
+SHA256:
+1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
+```
+
+## 48.2 Exact I3D extractor environment
+
+Qualified isolated environment:
+
+```text
+sentinel_runtime_validation/
+└── extractor_exact_jherng/
+    └── .venv/
+```
+
+Key observed versions:
+
+```text
+Python          = 3.10.x
+torch           = 2.1.2+cu118
+torchvision     = 0.16.2+cu118
+numpy           = 1.26.4
+decord          = 0.6.0
+mmcv            = 2.1.0
+mmengine        = 0.10.7
+mmaction2       = 1.2.0 source override
+```
+
+Do not casually reinstall/upgrade this stack after qualification.
+
+The MMAction2 source override is required because the packaged wheel omitted the
+DRN localizer package in this environment.
+
+## 48.3 Persistent process rule
+
+Do not reload the exact I3D model for every video.
+
+Qualified runtime form:
+
+```text
+start exact extractor subprocess
+→ load exact I3D model once
+→ process many source jobs
+→ shutdown on application/service stop
+```
+
+Measured persistent-worker fixture performance:
+
+```text
+Normal fixture:
+median total ≈ 9.306 s for 69.04 s source
+≈ 7.43x realtime
+
+Fighting fixture:
+median total ≈ 6.859 s for 50.0 s source
+≈ 7.29x realtime
+
+peak torch allocated ≈ 337 MB
+peak torch reserved  ≈ 472 MB
+```
+
+These are controlled fixture measurements, not a full multi-camera capacity
+claim.
+
+## 48.4 Runtime artifact integrity checks
+
+At startup verify at minimum:
+
+```text
+temporal checkpoint SHA256
+training implementation SHA256
+model parameter count
+model version ID
+extractor model/config identity
+CUDA availability where required
+```
+
+Startup shall fail visibly on an identity mismatch rather than silently loading
+a different model.
+
+## 48.5 Application integration status
+
+The exact model/runtime path is qualified.
+
+The following remain application deployment work:
+
+- final backend ↔ worker transport;
+- service supervision/restart policy;
+- production source adapter;
+- backend rolling 3-of-5 state;
+- event persistence/cooldown integration;
+- evidence generation;
+- WebSocket delivery;
+- full multi-camera load/capacity measurement.
+
+See `19-violence-model-and-runtime-qualification.md`.

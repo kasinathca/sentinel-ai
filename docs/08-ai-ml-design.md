@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — AI/ML Design Specification"
 document_id: "SEN-AIML"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-05"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -982,7 +982,9 @@ rather than a single image heuristic.
 
 # 25. Violence Task Definition
 
-The current implemented model-level experiment uses the following **experimental baseline task**:
+Final task formulation: `FROZEN`.
+
+Frozen formulation:
 
 ```text
 binary temporal classification:
@@ -991,21 +993,19 @@ vs
 Normal
 ```
 
-Status:
+The strict experimental dataset mapping uses only XD-Violence `Fighting` and
+`Normal` samples. Broader anomaly/violence categories are not silently treated
+as equivalent to Fighting.
+
+Potential alternative:
 
 ```text
-EXPERIMENTAL_BASELINE_FORMULATION
+weakly supervised anomaly scoring over long videos
 ```
 
-This formulation is intentionally narrower than the broader XD-Violence anomaly/violence taxonomy. It is suitable for the current Sentinel fighting capability experiment because the selected derived subset contains only pure Fighting and Normal samples.
+For the 2–3 week schedule, a simple binary or segment-level output is easier to integrate.
 
-The final integrated product wording remains:
-
-```text
-violence/fighting
-```
-
-until the runtime model and event criterion are baselined. The current experiment shall therefore not be generalized to other violent categories such as shooting, riot, explosion, or abuse.
+However, dataset annotation type may constrain the approach.
 
 ---
 
@@ -1032,7 +1032,7 @@ Every candidate dataset shall be scored against:
 
 # 27. Candidate Dataset — XD-Violence
 
-**Status:** `EXPERIMENTAL` — current primary data source for the temporal fighting baseline.
+**Status:** `PRIMARY_FEASIBILITY_CANDIDATE`
 
 Official project:
 
@@ -1078,20 +1078,12 @@ The official page currently exposes test data/annotations and multiple training-
 
 ## 27.3 Feasibility strategy
 
-The feasibility decision has now been executed for the current violence baseline.
+Before downloading the entire raw dataset, investigate:
 
-The project selected the XD-Violence pre-extracted **I3D RGB feature representation** for the first temporal model experiment rather than downloading and reprocessing the complete raw-video corpus.
-
-Current project evidence:
-
-- a local XD-Violence I3D RGB feature corpus is present;
-- 4,750 `.npy` feature files were enumerated in the acquired feature collection;
-- inspected tensors use a 2,048-dimensional I3D feature representation with a crop axis supplied by the reference features;
-- a pure Fighting-vs-Normal derived subset has been created and used;
-- the actual train/validation/test counts are recorded in `10-dataset-registry.md`;
-- a temporal baseline has been trained and evaluated on the frozen derived split.
-
-The full raw-video dataset is **not required for the already-completed feature-based model experiment**. Raw video is required only for runtime feature-extractor compatibility and final integrated inference.
+1. test annotations;
+2. official pre-extracted visual features;
+3. whether fighting-specific subset can be defined legitimately;
+4. whether baseline method can run using available features.
 
 ---
 
@@ -1218,45 +1210,83 @@ Do not claim Sentinel trained that detector.
 
 # 32. Dataset Feasibility Spike
 
-## `EXP-DATA-VIO-001` — XD-Violence
+Before model implementation is frozen, conduct:
 
-**Status:** `EXPERIMENTAL`  
-**Execution state:** `COMPLETED`
+## `EXP-DATA-VIO-001`
 
-Outcome:
+For XD-Violence:
 
-- XD-Violence is the primary dataset for the current fighting-model experiment;
-- pre-extracted I3D RGB features were selected for model development;
-- a Fighting-vs-Normal derived subset was created;
-- frozen train/validation/test splits are in use;
-- temporal model training and held-out evaluation completed successfully.
+- confirm links work;
+- inspect annotation format;
+- download smallest useful subset/features first;
+- estimate storage;
+- estimate training/evaluation time;
+- identify fight/non-fight mapping.
 
-Remaining dataset-governance work is not model-selection work: checksums, committed split-manifest identity, and terms/provenance fields must still be completed where they remain `TBD` in the dataset registry.
+## `EXP-DATA-VIO-002`
 
-## `EXP-DATA-VIO-002` — UCF-Crime
+For UCF-Crime:
 
-**Status:** `DEFERRED` — only reopen if the current XD-Violence path becomes insufficient.
-
-UCF-Crime is not required while the XD-Violence baseline remains suitable for the current task. Do not spend project time acquiring a second large violence dataset unless it is needed for external validation, error analysis, or the XD approach fails integration.
+- confirm access;
+- inspect Fighting examples/annotations;
+- estimate preprocessing effort.
 
 ## Decision rule
 
-Current decision:
+Choose the dataset that best balances:
 
 ```text
-Primary violence experiment source = XD-Violence
-Model-development representation = pre-extracted I3D RGB features
-Current task = Fighting vs Normal
-Secondary dataset acquisition = defer unless justified
+task fit
++ access
++ academic defensibility
++ compute feasibility
++ integration time
 ```
+
+not simply the largest dataset.
 
 ---
 
 # 33. Violence Architecture Design Space
 
-The final deployable runtime architecture is not yet baselined. However, an implemented and evaluated **experimental model baseline** now exists.
+The architecture decision is now `FROZEN` for the selected deployment model.
 
-The following categories remain relevant design context.
+## 33.0 Selected architecture — `EXP-VIO-TEMPORAL-001`
+
+```text
+input reference feature array: (T, 5, 2048)
+→ mean across 5 spatial crops
+→ (T, 2048)
+→ deterministic uniform resampling to 64 steps
+→ Linear(2048 → 256)
+→ LayerNorm(256)
+→ GELU
+→ Dropout(0.25)
+→ one-layer bidirectional GRU
+   input size 256
+   hidden size 128 per direction
+→ learned temporal attention over 256-D BiGRU output
+→ LayerNorm(256)
+→ Dropout(0.25)
+→ Linear(256 → 1)
+→ sigmoid fighting score
+```
+
+Frozen parameter count: **822,530**.
+
+Checkpoint:
+
+```text
+sentinel_temporal/artifacts/best_model.pt
+SHA256 = 1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
+```
+
+The original feature-based Logistic Regression experiment remains a useful
+reference baseline, but the BiGRU + temporal-attention model is the frozen live
+violence model.
+
+The following subsections record the earlier design space for historical
+context.
 
 ## 33.1 Feature-based temporal classifier
 
@@ -1313,45 +1343,6 @@ Powerful but may be unnecessarily expensive for MVP.
 Status: `LOW_PRIORITY_CANDIDATE`.
 
 ---
-
-## 33.5 Implemented experimental baseline — BiGRU + Temporal Attention
-
-**Experiment:** `EXP-VIO-TEMPORAL-001`  
-**Status:** `EXPERIMENTAL`  
-**Qualification state:** `MODEL_LEVEL_EVALUATED / NOT_RUNTIME_QUALIFIED`
-
-Implemented pipeline:
-
-```text
-XD-Violence pre-extracted I3D RGB feature sequence
-→ bidirectional GRU
-→ temporal attention
-→ binary Fighting-vs-Normal classifier
-```
-
-Observed experiment facts:
-
-| Item | Value |
-|---|---:|
-| Train samples | 1,938 |
-| Validation samples | 485 |
-| Test samples | 407 |
-| Train Normal / Fighting | 1,636 / 302 |
-| Validation Normal / Fighting | 410 / 75 |
-| Test Normal / Fighting | 300 / 107 |
-| Train positive-class weight | 5.417 |
-| Trainable parameters | 822,530 |
-| Configured epochs | 8 |
-| Best epoch | 3 |
-| Validation-selected threshold | 0.8346 |
-
-The measured validation/test metrics are authoritative in `11-model-card-and-evaluation.md`.
-
-### Runtime qualification constraint
-
-This model was trained on **reference pre-extracted XD-Violence I3D features**. It is not sufficient to reproduce the neural classifier alone; final raw-video inference must generate a feature representation compatible with the reference training features.
-
-`EXP-VIO-RUNTIME-COMPAT-001` is therefore a blocking integration experiment. Current diagnostics have not yet established feature equivalence, and the runtime extractor is **not approved** for the final AI worker.
 
 # 34. Violence Model Selection Rule
 
@@ -1425,24 +1416,45 @@ Every transformation must be documented.
 
 # 37. Temporal Windowing
 
-For `EXP-VIO-TEMPORAL-001`, the classifier consumes the temporal sequence already represented by the acquired XD-Violence I3D feature tensors rather than decoding raw frames itself.
+The selected live policy is frozen.
 
-Observed reference tensors use:
+## 37.1 Exact feature step
 
-```text
-temporal segments × crop axis × 2048-dimensional I3D feature
-```
-
-The exact raw-video sampling FPS, frame/chunk decoding policy, crop generation, temporal duration, and stride required to reproduce those reference features remain part of `EXP-VIO-RUNTIME-COMPAT-001` and are **not yet baselined**.
-
-Therefore:
+The qualified raw-video feature extractor emits one I3D feature step for each
+sequential **64-source-frame sampling block** using:
 
 ```text
-training/evaluation feature-window semantics = implemented
-raw-video runtime window semantics = NOT_YET_QUALIFIED
+clip_len      = 32 sampled frames
+sampling_rate = 2
+5 spatial crops
+RGB I3D ResNet-50 non-local backbone
+feature dim   = 2048
 ```
 
-Do not infer runtime frame sampling from tensor shape alone.
+One worker model observation uses:
+
+```text
+W1 = one exact I3D feature step
+stride = one feature step
+```
+
+The temporal model internally resamples that one `(1, 2048)` crop-averaged
+feature step to 64 positions, exactly matching its frozen training
+preprocessing. For W1 this repeats the single input step across the model
+sequence dimension; this behavior was explicitly validated before policy
+selection.
+
+Wall-clock seconds per feature step depend on the source frame rate and must
+not be hard-coded globally. At 24 FPS, a nominal 64-source-frame block spans
+approximately 2.67 seconds.
+
+## 37.2 Worker versus backend temporal context
+
+The worker emits one fighting score per W1 observation.
+
+The backend maintains the last five scores and applies the frozen `3-of-5`
+criterion. This keeps model inference separate from application-domain event
+state.
 
 ---
 
@@ -1468,19 +1480,6 @@ grouping rule
 ## 38.3 Leakage rule
 
 Segments from the same source video should not be split across train and test if doing so would create highly correlated leakage.
-
-## 38.4 Current frozen Fighting-vs-Normal split
-
-`EXP-VIO-TEMPORAL-001` uses the following frozen sample counts:
-
-| Split | Normal | Fighting | Total |
-|---|---:|---:|---:|
-| Train | 1,636 | 302 | 1,938 |
-| Validation | 410 | 75 | 485 |
-| Test | 300 | 107 | 407 |
-| **Total** | **2,346** | **484** | **2,830** |
-
-The split shall remain frozen for this experiment lineage. The committed split-manifest path/hash and explicit leakage-audit record remain to be completed in `10-dataset-registry.md`; no new tuning shall be performed on the held-out test split.
 
 ---
 
@@ -1544,31 +1543,31 @@ Do not claim "balanced dataset" without measuring.
 
 # 42. Training Baseline
 
-The first completed temporal baseline is:
+First violence experiment should be deliberately simple.
 
-## `EXP-VIO-TEMPORAL-001`
+## `EXP-VIO-BASE-001`
 
-**Architecture:** BiGRU + Temporal Attention  
-**Feature source:** XD-Violence pre-extracted I3D RGB features  
-**Task:** Fighting vs Normal  
-**Status:** `EXPERIMENTAL`  
-**Execution state:** `COMPLETED_MODEL_LEVEL`
-
-Key recorded facts:
+Record:
 
 ```text
-train / validation / test = 1938 / 485 / 407
-parameters = 822,530
-positive-class weight = 5.417
-configured epochs = 8
-best epoch = 3
-validation-selected threshold = 0.8346
-hardware = NVIDIA GeForce RTX 3050 6GB Laptop GPU
+dataset version
+split
+feature representation
+model architecture
+pretrained source
+loss
+optimizer
+learning rate
+batch size
+epochs
+seed
+hardware
+training duration
+validation metric
+test metric
 ```
 
-Measured results are recorded in `11-model-card-and-evaluation.md` and must not be replaced with later numbers unless a new experiment/version is created.
-
-The baseline is **not yet the deployed runtime model** because raw-video feature compatibility remains unresolved.
+The first goal is a reproducible baseline, not maximum accuracy.
 
 ---
 
@@ -1907,16 +1906,6 @@ Balances:
 - false violence alerts;
 - missed violence.
 
-For `EXP-VIO-TEMPORAL-001`, the evaluation script selected:
-
-```text
-classifier threshold = 0.8346
-```
-
-on the validation split.
-
-This value is valid as **experiment provenance**. It is **not yet a baselined deployed event threshold**, because the runtime feature extractor and final event smoothing/retrigger policy are not yet qualified.
-
 ## 58.3 Important
 
 Published threshold from another project is not automatically valid.
@@ -1925,24 +1914,26 @@ Published threshold from another project is not automatically valid.
 
 # 59. Violence Event Criterion
 
-Proposed conceptual rule:
+Status: `FROZEN_MODEL_POLICY`.
+
+The selected criterion is:
 
 ```text
-if model_score >= configured_threshold
-and duplicate_policy_allows:
-    candidate violence event
+positive_window = fighting_score >= 0.906
+
+candidate_violence_condition =
+    at least 3 positive_window values
+    among the most recent 5 ordered windows
 ```
 
-However, the actual criterion may require:
+Selection was performed on validation data only.
 
-- temporal smoothing;
-- consecutive qualifying windows;
-- moving average;
-- hysteresis.
+The threshold and N-of-M policy were frozen before the one-time official TEST
+evaluation.
 
-Status: `TBD`.
-
-The current classifier-level threshold provenance is known, but final event smoothing/duplicate behavior remains unresolved.
+`candidate_violence_condition` is not the same thing as persistent event
+creation. Duplicate suppression, cooldown, retrigger, evidence, and incident
+lifecycle remain backend/domain concerns.
 
 ---
 
@@ -1964,7 +1955,7 @@ Example concept:
 at least N of last M windows qualify
 ```
 
-No N/M values are approved.
+Approved live policy: `N = 3`, `M = 5`.
 
 ## Option C — Moving-average score
 
@@ -3343,15 +3334,15 @@ It shall not autonomously:
 | AI-OD-008 | Intrusion representative point | `PROPOSED: bottom-center` |
 | AI-OD-009 | Video processed FPS | `TBD` |
 | AI-OD-010 | Backpressure strategy | `TBD` |
-| AI-OD-011 | Violence dataset | `TBD` |
-| AI-OD-012 | Violence task formulation | `TBD` |
-| AI-OD-013 | Violence model | `TBD` |
-| AI-OD-014 | Temporal window | `TBD` |
-| AI-OD-015 | Violence threshold | `TBD` |
-| AI-OD-016 | Violence temporal smoothing | `TBD` |
-| AI-OD-017 | Audio usage | `TBD` |
-| AI-OD-018 | Model runtime/device | `TBD` |
-| AI-OD-019 | Model artifact format | `TBD` |
+| AI-OD-011 | Violence dataset | `RESOLVED: DATA-XD-I3D-FEATURES-V1 + strict Fighting/Normal derived split` |
+| AI-OD-012 | Violence task formulation | `RESOLVED: binary Fighting vs Normal` |
+| AI-OD-013 | Violence model | `RESOLVED: EXP-VIO-TEMPORAL-001 / BiGRU + temporal attention` |
+| AI-OD-014 | Temporal window | `RESOLVED: W1 exact I3D feature step, stride 1` |
+| AI-OD-015 | Violence threshold | `RESOLVED: 0.906` |
+| AI-OD-016 | Violence temporal smoothing | `RESOLVED: 3-of-5` |
+| AI-OD-017 | Audio usage | `RESOLVED_FOR_MVP: not used` |
+| AI-OD-018 | Model runtime/device | `RESOLVED_FOR_QUALIFIED_PATH: CUDA; isolated exact-I3D extractor + main temporal-model environment` |
+| AI-OD-019 | Model artifact format | `RESOLVED: PyTorch checkpoint best_model.pt` |
 | AI-OD-020 | Ultralytics adoption/license | `TBD` |
 
 ---
@@ -3533,26 +3524,25 @@ Use:
 
 ---
 
-# 137. Current AI Work Order
+# 137. Immediate AI Work Order
 
-The violence-model dataset selection, baseline training, and model-level evaluation phases have now been completed for `EXP-VIO-TEMPORAL-001`.
-
-The next AI priorities are deliberately bounded:
+Once this document is reviewed, the AI/Data contributor should perform work in this order:
 
 ```text
-1. finish EXP-VIO-RUNTIME-COMPAT-001 and reproduce reference I3D feature semantics
-2. do not integrate the BiGRU classifier into the final worker until compatibility passes
-3. select/evaluate person detector
-4. select/evaluate tracker
-5. freeze AI-worker result schema
-6. integrate the restricted-zone vertical slice
-7. integrate the qualified violence result
-8. measure worker/model latency on the final runtime path
-9. perform qualitative FP/FN review for the final violence model
-10. freeze final model card and artifacts
+1. verify dataset access
+2. compare detector candidates
+3. compare tracker candidates
+4. run recorded-video detector/tracker baseline
+5. freeze AI worker result schema
+6. integrate restricted-zone vertical slice
+7. build violence baseline
+8. evaluate violence model
+9. integrate violence result
+10. measure latency
+11. complete model card
 ```
 
-Do not add another violence dataset or a more complex temporal architecture unless the current approach fails a stated requirement or integration constraint.
+Do not begin with full violence-model training before the detector/tracker vertical slice is integrated.
 
 ---
 
@@ -3572,3 +3562,120 @@ Do not add another violence dataset or a more complex temporal architecture unle
 > - every reported metric is reproducible.
 >
 > If a model cannot be reproduced, evaluated, licensed appropriately, and integrated within the available project time, it is not a good Sentinel AI model choice regardless of benchmark popularity.
+
+
+---
+
+# 75. Implemented Violence Model and Runtime Status — 2026-09-12
+
+## 75.1 Dataset and frozen splits
+
+Derived strict Fighting-vs-Normal feature split:
+
+```text
+TRAIN: 1938 = 1636 Normal + 302 Fighting
+VAL:    485 =  410 Normal +  75 Fighting
+TEST:   407 =  300 Normal + 107 Fighting
+```
+
+Official TEST was not used for threshold/window selection.
+
+## 75.2 Frozen temporal model
+
+```text
+experiment_id = EXP-VIO-TEMPORAL-001
+model         = MODEL-VIO-BIGRU-ATTN-XD-V1
+checkpoint    = sentinel_temporal/artifacts/best_model.pt
+parameters    = 822,530
+best epoch    = 3
+```
+
+Whole-video held-out TEST:
+
+```text
+TN = 296
+FP =   4
+FN =  18
+TP =  89
+
+accuracy     = 0.9459459459
+precision    = 0.9569892473
+recall       = 0.8317757009
+specificity  = 0.9866666667
+F1           = 0.8900000000
+ROC-AUC      = 0.9815576324
+PR-AUC       = 0.944877884
+```
+
+## 75.3 Frozen live policy
+
+```text
+window    = W1
+stride    = 1 feature step
+threshold = 0.906
+smoothing = 3-of-5
+```
+
+One-time official TEST:
+
+```text
+TN = 285
+FP =  15
+FN =  21
+TP =  86
+
+accuracy                  = 0.911548
+balanced accuracy         = 0.876869
+precision                 = 0.851485
+positive-video coverage   = 0.803738
+specificity               = 0.950000
+F1                        = 0.826923
+Normal-video false-event  = 0.050000
+```
+
+Because XD-Violence labels here are video-level weak labels, positive-video
+coverage must not be described as precise temporal localization recall.
+
+## 75.4 Exact raw-video extractor
+
+Final compatible feature extractor:
+
+```text
+MMAction2 I3D ResNet-50 non-local
+i3d_imagenet-pretrained-r50-nl-dot-product_8xb8-32x2x1-100e_kinetics400-rgb
+```
+
+Qualified preprocessing:
+
+```text
+Decord decode
+32 sampled frames
+sampling rate 2
+resize 256
+5-crop 224
+float [0,1]
+ImageNet normalization
+CTHW
+AdaptiveAvgPool3d → 2048-D feature
+```
+
+Raw-video feature reproduction reached approximately:
+
+```text
+Normal fixture:
+cosine  = 0.999999961
+MAE     = 4.96e-05
+
+Fighting fixture:
+cosine  = 0.999999910
+MAE     = 6.85e-05
+```
+
+Final raw-video temporal-policy parity matched:
+
+- per-window threshold flags;
+- 3-of-5 qualification flags;
+- final Normal/Fighting event condition.
+
+See `19-violence-model-and-runtime-qualification.md` for complete experiment
+lineage and evidence.

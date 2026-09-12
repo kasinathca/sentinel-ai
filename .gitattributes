@@ -1,12 +1,39 @@
-@'
+# Sentinel AI - Git attributes
+
+# Default text handling
 * text=auto
 
-*.md text eol=lf
-*.py text eol=lf
-*.yaml text eol=lf
-*.yml text eol=lf
-*.json text eol=lf
-*.toml text eol=lf
-*.sh text eol=lf
-*.ps1 text eol=crlf
-'@ | Set-Content .gitattributes
+# Source and documentation
+*.md    text eol=lf
+*.txt   text eol=lf
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.py    text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.sh    text eol=lf
+*.ps1   text eol=crlf
+
+# Binary documents / images
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.pdf   binary
+*.zip   binary
+
+# ML / dataset artifacts
+*.npy   binary
+*.npz   binary
+*.pt    binary
+*.pth   binary
+*.pkl   binary
+
+# Video
+*.mp4   binary
+*.mkv   binary
+*.avi   binary

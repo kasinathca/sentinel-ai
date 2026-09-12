@@ -1,13 +1,13 @@
 ---
 title: "Sentinel AI — Software Requirements Specification"
 document_id: "SEN-SRS"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 team_size: 3
 architecture_baseline: "FastAPI modular monolith + separate AI worker"
-last_updated: "2026-08-19"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -1138,7 +1138,7 @@ The AI worker shall produce a structured violence/fighting result containing the
 ### FR-VIO-003 — Violence/fighting event criterion
 
 **Requirement lifecycle:** `DRAFT`  
-**Scope status:** `TBD_SCOPE`  
+**Scope status:** `CONFIRMED_SCOPE`  
 **Priority:** `MUST`  
 **Source:** SEN-VS  
 **Verification:** System test  
@@ -1147,6 +1147,18 @@ The AI worker shall produce a structured violence/fighting result containing the
 **Normative requirement**
 
 The system shall define and apply one baselined criterion that determines when a violence/fighting model result becomes a domain event.
+
+For the frozen MVP violence model policy, the baselined criterion is:
+
+```text
+one exact I3D feature-step score per worker observation
+positive observation: score >= 0.906
+candidate violence condition: at least 3 positive observations among the most recent 5
+```
+
+This criterion is backend/domain logic over valid worker observations. Event
+duplicate/cooldown/retrigger semantics remain a separate unresolved event-domain
+decision.
 
 **Acceptance criteria**
 
@@ -2486,7 +2498,7 @@ The project shall report at least precision, recall, F1-score, and confusion-mat
 ### MLR-VIO-005 — Violence threshold provenance
 
 **Requirement lifecycle:** `DRAFT`  
-**Scope status:** `TBD_SCOPE`  
+**Scope status:** `CONFIRMED_SCOPE`  
 **Priority:** `MUST`  
 **Source:** SEN-VS §16  
 **Verification:** Model evaluation  
@@ -3876,3 +3888,36 @@ The project does not claim formal certification.
 > - honest about unresolved values.
 >
 > If a developer or AI assistant must invent a threshold, field, status, role permission, transport, dataset, or model behavior to implement a requirement, then that requirement or its supporting design decision is not yet sufficiently specified.
+
+
+---
+
+# 37. Violence Requirement Baseline Update — 2026-09-12
+
+The violence model/policy decisions required to make `FR-VIO-003` and
+`MLR-VIO-005` testable are now resolved.
+
+Frozen policy:
+
+```text
+model      = EXP-VIO-TEMPORAL-001 / MODEL-VIO-BIGRU-ATTN-XD-V1
+window     = W1 exact I3D feature step
+stride     = 1 feature step
+threshold  = 0.906
+smoothing  = 3-of-5
+```
+
+The threshold/window policy was selected using VALIDATION only and frozen before
+the one-time official TEST evaluation.
+
+This SRS update does **not** resolve:
+
+- violence event cooldown/retrigger duration;
+- event/incident grouping;
+- evidence retention;
+- backend ↔ worker transport.
+
+Those remain governed by their own requirements/open decisions.
+
+Qualification evidence is recorded in
+`19-violence-model-and-runtime-qualification.md`.

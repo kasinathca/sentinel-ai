@@ -1,14 +1,14 @@
 ---
 title: "Sentinel AI — API and Integration Contract Specification"
 document_id: "SEN-API"
-version: "0.1.0"
+version: "0.2.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 backend: "FastAPI"
 api_style: "PROPOSED: REST-style HTTP + WebSocket event channel"
 worker_transport: "TBD"
-last_updated: "2026-08-20"
+last_updated: "2026-09-12"
 owners:
   - "TBD"
 reviewers:
@@ -1469,6 +1469,8 @@ This is a valid negative/empty result and is distinct from inference failure.
 
 # 64. Worker Violence Result
 
+The qualified violence worker result remains transport-neutral.
+
 ```json
 {
   "schema_version": "1",
@@ -1476,21 +1478,95 @@ This is a valid negative/empty result and is distinct from inference failure.
   "correlation_id": "correlation-uuid",
   "camera_id": "camera-uuid",
   "window": {
-    "started_at": "2026-08-20T06:20:00.000Z",
-    "ended_at": "2026-08-20T06:20:05.000Z"
+    "started_at": "2026-09-12T07:00:00.000Z",
+    "ended_at": "2026-09-12T07:00:02.667Z"
   },
   "status": "success",
   "model": {
-    "model_version_id": "model-version-uuid",
+    "model_version_id": "6d22f83d-17f8-5ecf-9f0f-246fa326ec72",
     "task": "violence_fighting"
   },
   "result": {
-    "label": "violence",
-    "score": 0.87,
-    "score_semantics": "model-specific score"
+    "label": "fighting",
+    "score": 0.94,
+    "score_semantics": "uncalibrated sigmoid score for the fighting positive class from EXP-VIO-TEMPORAL-001; higher means more fighting-like"
   }
 }
 ```
+
+Normative interpretation:
+
+- `label = "fighting"` identifies the positive class whose score is reported;
+- a successful result is a **model observation**, not a persistent event;
+- the worker shall not convert a low score into an application-domain
+  `no_event` record;
+- the backend applies the frozen live criterion described below;
+- the backend shall validate `model_version_id`, task, time window, score range,
+  and schema version before using the result.
+
+The stable model-version UUID above is derived from the immutable frozen
+checkpoint identity and is reserved for the selected violence model version.
+
+
+# 64A. Frozen Violence Event Criterion
+
+The live violence criterion was selected using validation data only and frozen
+before the one-time official TEST evaluation.
+
+```text
+window representation = one exact I3D feature step
+stride                = one feature step
+positive threshold    = score >= 0.906
+temporal smoothing    = at least 3 positive scores among the most recent 5
+```
+
+The criterion is a backend/domain rule over valid worker observations.
+
+It shall **not** be implemented by changing the model output schema into an
+`event=true` field.
+
+A backend implementation should maintain rolling state per camera/model stream:
+
+```text
+camera_id
+model_version_id
+ordered recent violence scores
+ordered window timestamps
+```
+
+A qualifying 3-of-5 state means:
+
+```text
+candidate violence condition = true
+```
+
+It does not by itself define:
+
+- duplicate-event suppression;
+- event reopening;
+- alert cooldown;
+- incident grouping;
+- acknowledgement behavior.
+
+Those application semantics remain separate and must be finalized in the event
+domain specification.
+
+## 64A.1 Frozen threshold provenance
+
+Threshold `0.906` was selected on the frozen validation split after:
+
+1. freezing the temporal model;
+2. freezing `W1 / stride 1 / 3-of-5`;
+3. performing validation-only threshold calibration;
+4. choosing the validation Pareto-knee operating point;
+5. freezing the policy;
+6. executing the official TEST exactly once.
+
+No threshold search is permitted on official TEST data after this freeze.
+
+Detailed evidence is recorded in
+`19-violence-model-and-runtime-qualification.md`.
+
 
 ---
 

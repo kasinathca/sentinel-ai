@@ -876,3 +876,24 @@ main {
   color: #166534;
   font-weight: 600;
 }
+.state-card {
+  padding: 24px;
+  margin-top: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.state-card h2,
+.state-card h3 {
+  margin-top: 0;
+}
+
+.state-card p {
+  margin-bottom: 0;
+  color: #6b7280;
+}
+
+.error-state {
+  border-color: #fca5a5;
+}

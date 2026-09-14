@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { mockEvents } from "../mocks/mockEvents";
 
 const EVENT_LABELS = {
   restricted_area_intrusion: "Restricted Area Intrusion",
@@ -9,12 +8,16 @@ const EVENT_LABELS = {
   camera_offline: "Camera Offline",
 };
 
-function EventHistory({ onBack, onSelectEvent }) {
+function EventHistory({
+  events = [],
+  onBack,
+  onSelectEvent,
+}) {
   const [eventType, setEventType] = useState("all");
   const [status, setStatus] = useState("all");
   const [acknowledged, setAcknowledged] = useState("all");
 
-  const filteredEvents = mockEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const matchesType =
       eventType === "all" ||
       event.event_type === eventType;

@@ -1,10 +1,24 @@
 import { useState } from "react";
-import { mockCameras } from "../mocks/mockCameras";
 
-function CameraMonitoring({ onBack }) {
+function CameraMonitoring({
+  cameras = [],
+  onBack,
+}) {
   const [selectedCamera, setSelectedCamera] = useState(
-    mockCameras[0]
+    cameras[0] || null
   );
+
+  if (!selectedCamera) {
+    return (
+      <div className="camera-monitoring">
+        <button className="back-button" onClick={onBack}>
+          ← Back to Dashboard
+        </button>
+
+        <h2>No cameras available</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="camera-monitoring">
@@ -19,7 +33,7 @@ function CameraMonitoring({ onBack }) {
         </div>
 
         <span className="camera-count">
-          {mockCameras.length} cameras
+          {cameras.length} cameras
         </span>
       </header>
 
@@ -57,7 +71,9 @@ function CameraMonitoring({ onBack }) {
         <div className="camera-viewer-info">
           <div>
             <span>Source</span>
-            <strong>{selectedCamera.source_kind}</strong>
+            <strong>
+              {selectedCamera.source_kind}
+            </strong>
           </div>
 
           <div>
@@ -83,11 +99,11 @@ function CameraMonitoring({ onBack }) {
       <section className="camera-selector-section">
         <div className="section-heading">
           <h2>Available Cameras</h2>
-          <span>{mockCameras.length} cameras</span>
+          <span>{cameras.length} cameras</span>
         </div>
 
         <div className="camera-selector-grid">
-          {mockCameras.map((camera) => (
+          {cameras.map((camera) => (
             <button
               key={camera.id}
               type="button"

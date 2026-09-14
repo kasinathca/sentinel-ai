@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const EVENT_LABELS = {
   restricted_area_intrusion: "Restricted Area Intrusion",
   loitering: "Loitering",
@@ -60,11 +58,11 @@ function formatContextValue(key, value) {
   return String(value);
 }
 
-function EventDetails({ event, onBack }) {
-  const [acknowledged, setAcknowledged] = useState(
-    event?.acknowledgement?.acknowledged ?? false
-  );
-
+function EventDetails({
+  event,
+  onBack,
+  onAcknowledge,
+}) {
   if (!event) {
     return (
       <div className="event-details">
@@ -82,9 +80,8 @@ function EventDetails({ event, onBack }) {
 
   const contextEntries = Object.entries(event.context || {});
 
-  const handleAcknowledge = () => {
-    setAcknowledged(true);
-  };
+  const acknowledged =
+    event.acknowledgement?.acknowledged ?? false;
 
   return (
     <div className="event-details">
@@ -154,7 +151,7 @@ function EventDetails({ event, onBack }) {
           <div className="acknowledgement-section">
             <button
               className="acknowledge-button"
-              onClick={handleAcknowledge}
+              onClick={() => onAcknowledge(event.id)}
               type="button"
             >
               Acknowledge Event

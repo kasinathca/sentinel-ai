@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const EVENT_LABELS = {
   restricted_area_intrusion: "Restricted Area Intrusion",
   loitering: "Loitering",
@@ -44,7 +46,9 @@ function formatContextValue(key, value) {
 
   if (
     typeof value === "string" &&
-    (key.endsWith("_at") || key.includes("started") || key.includes("ended"))
+    (key.endsWith("_at") ||
+      key.includes("started") ||
+      key.includes("ended"))
   ) {
     return new Date(value).toLocaleString();
   }
@@ -57,6 +61,10 @@ function formatContextValue(key, value) {
 }
 
 function EventDetails({ event, onBack }) {
+  const [acknowledged, setAcknowledged] = useState(
+    event?.acknowledgement?.acknowledged ?? false
+  );
+
   if (!event) {
     return (
       <div className="event-details">
@@ -74,6 +82,10 @@ function EventDetails({ event, onBack }) {
 
   const contextEntries = Object.entries(event.context || {});
 
+  const handleAcknowledge = () => {
+    setAcknowledged(true);
+  };
+
   return (
     <div className="event-details">
       <button className="back-button" onClick={onBack}>
@@ -86,8 +98,12 @@ function EventDetails({ event, onBack }) {
           <h1>{eventLabel}</h1>
         </div>
 
-        <span className={`event-status ${event.status}`}>
-          {event.status}
+        <span
+          className={`event-status ${
+            acknowledged ? "acknowledged" : event.status
+          }`}
+        >
+          {acknowledged ? "acknowledged" : event.status}
         </span>
       </header>
 
@@ -129,12 +145,34 @@ function EventDetails({ event, onBack }) {
           <div>
             <span>Acknowledged</span>
             <strong>
-              {event.acknowledgement.acknowledged
-                ? "Yes"
-                : "No"}
+              {acknowledged ? "Yes" : "No"}
             </strong>
           </div>
         </div>
+
+        {!acknowledged && (
+          <div className="acknowledgement-section">
+            <button
+              className="acknowledge-button"
+              onClick={handleAcknowledge}
+              type="button"
+            >
+              Acknowledge Event
+            </button>
+
+            <p>
+              This is a frontend mock action. Backend
+              acknowledgement integration will be connected
+              after the API contract is baselined.
+            </p>
+          </div>
+        )}
+
+        {acknowledged && (
+          <div className="acknowledgement-success">
+            Event acknowledged.
+          </div>
+        )}
       </section>
 
       <section className="details-card">

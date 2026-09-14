@@ -4,9 +4,13 @@ import { mockCameras } from "../mocks/mockCameras";
 import EventCard from "../components/EventCard";
 import CameraCard from "../components/CameraCard";
 import EventDetails from "./EventDetails";
+import EventHistory from "./EventHistory";
+import CameraMonitoring from "./CameraMonitoring";
 
 function Dashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showCameras, setShowCameras] = useState(false);
 
   const attentionEvents = mockEvents.filter(
     (event) => event.requires_attention
@@ -15,6 +19,26 @@ function Dashboard() {
   const acknowledgedEvents = mockEvents.filter(
     (event) => event.acknowledgement.acknowledged
   );
+
+  if (showHistory) {
+    return (
+      <EventHistory
+        onBack={() => setShowHistory(false)}
+        onSelectEvent={(event) => {
+          setSelectedEvent(event);
+          setShowHistory(false);
+        }}
+      />
+    );
+  }
+
+  if (showCameras) {
+    return (
+      <CameraMonitoring
+        onBack={() => setShowCameras(false)}
+      />
+    );
+  }
 
   if (selectedEvent) {
     return (
@@ -33,8 +57,24 @@ function Dashboard() {
           <p>Operator Dashboard</p>
         </div>
 
-        <div className="system-status">
-          System Status: Operational
+        <div className="dashboard-actions">
+          <button
+            className="history-button"
+            onClick={() => setShowCameras(true)}
+          >
+            Camera Monitoring
+          </button>
+
+          <button
+            className="history-button"
+            onClick={() => setShowHistory(true)}
+          >
+            Event History
+          </button>
+
+          <div className="system-status">
+            System Status: Operational
+          </div>
         </div>
       </header>
 
@@ -64,7 +104,10 @@ function Dashboard() {
 
           <div className="camera-grid">
             {mockCameras.map((camera) => (
-              <CameraCard key={camera.id} camera={camera} />
+              <CameraCard
+                key={camera.id}
+                camera={camera}
+              />
             ))}
           </div>
         </section>

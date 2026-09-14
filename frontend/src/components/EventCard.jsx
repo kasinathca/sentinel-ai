@@ -6,12 +6,16 @@ const EVENT_LABELS = {
   camera_offline: "Camera Offline",
 };
 
-function EventCard({ event }) {
+function EventCard({ event, onSelect }) {
   const eventLabel =
     EVENT_LABELS[event.event_type] || event.event_type;
 
   return (
-    <div className="event-card">
+    <button
+      className="event-card"
+      onClick={() => onSelect(event)}
+      type="button"
+    >
       <div className="event-card-header">
         <h3>{eventLabel}</h3>
 
@@ -38,7 +42,7 @@ function EventCard({ event }) {
         <strong>Acknowledged:</strong>{" "}
         {event.acknowledgement.acknowledged ? "Yes" : "No"}
       </p>
-    </div>
+    </button>
   );
 }
 

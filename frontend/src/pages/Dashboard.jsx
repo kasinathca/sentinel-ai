@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { mockEvents } from "../mocks/mockEvents";
 import { mockCameras } from "../mocks/mockCameras";
 import EventCard from "../components/EventCard";
 import CameraCard from "../components/CameraCard";
+import EventDetails from "./EventDetails";
 
 function Dashboard() {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
   const attentionEvents = mockEvents.filter(
     (event) => event.requires_attention
   );
@@ -11,6 +15,15 @@ function Dashboard() {
   const acknowledgedEvents = mockEvents.filter(
     (event) => event.acknowledgement.acknowledged
   );
+
+  if (selectedEvent) {
+    return (
+      <EventDetails
+        event={selectedEvent}
+        onBack={() => setSelectedEvent(null)}
+      />
+    );
+  }
 
   return (
     <div className="dashboard">
@@ -64,7 +77,11 @@ function Dashboard() {
 
           <div className="event-list">
             {attentionEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onSelect={setSelectedEvent}
+              />
             ))}
           </div>
         </section>
@@ -77,7 +94,11 @@ function Dashboard() {
 
           <div className="event-list">
             {mockEvents.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onSelect={setSelectedEvent}
+              />
             ))}
           </div>
         </section>

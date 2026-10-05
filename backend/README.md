@@ -208,3 +208,11 @@ On the qualified runtime machine, Kasi should start the exact persistent extract
 This handoff describes `gouri/backend-domain`. Implementation and tests were verified at commit `59af81c` (API, migration, and tests); the documentation-only handoff update follows it.
 
 Verification completed for this implementation: backend suite **29 passed**; AI-worker contract/unit suite **15 passed**; disposable SQLite Alembic bootstrap reached `20261005_0002` and a second initialization remained safe, with one model version and one policy seeded.
+
+### Verification update — 2026-10-05
+
+- Verified branch: `gouri/backend-domain`; API failure-detail fix: commit `2c6fae4a8676a872e6683b2f00ed87b7d2be7669`.
+- Backend unit/API suite: **29 passed**. AI-worker suite: **15 passed**.
+- Fresh disposable SQLite initialization applied migrations through `20261005_0002` and seeded the frozen model/policy. Live HTTP smoke checks returned success for health, camera create/detail, and event list.
+- The worker-reported failure path now returns HTTP 422 with its safe code/message; a regression assertion covers this branch.
+- Live HTTP smoke used a disposable database and a synthetic camera. No raw video, real extractor/model inference, authentication, event acknowledgement, or evidence flow was exercised.

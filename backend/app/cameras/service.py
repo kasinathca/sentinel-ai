@@ -12,11 +12,13 @@ def create_camera(
     session: Session,
     name: str,
     source_kind: str,
+    description: str | None = None,
     enabled: bool = True,
 ) -> Camera:
     camera = Camera(
         name=name,
         source_kind=source_kind,
+        description=description,
         enabled=enabled,
     )
 
@@ -51,6 +53,7 @@ def update_camera(
     *,
     name: str | None = None,
     source_kind: str | None = None,
+    description: str | None = None,
     enabled: bool | None = None,
 ) -> Camera | None:
     camera = session.get(Camera, camera_id)
@@ -63,6 +66,9 @@ def update_camera(
 
     if source_kind is not None:
         camera.source_kind = source_kind
+
+    if description is not None:
+        camera.description = description
 
     if enabled is not None:
         camera.enabled = enabled

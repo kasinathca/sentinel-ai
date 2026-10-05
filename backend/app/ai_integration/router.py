@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
+from fastapi import Depends
+from sqlalchemy.orm import Session
 
 from app.ai_integration.database_model_registry import DatabaseModelRegistry
 from app.ai_integration.errors import (
@@ -12,14 +14,12 @@ from app.ai_integration.errors import (
 )
 from app.ai_integration.service import ViolenceWorkerResultService
 from app.db.session import get_session_factory
-from app.events.persistence import (
-    ViolenceEventPersistenceError,
-    ViolenceEventPersistenceService,
-)
+from app.db.models import Camera
 from app.events.violence_conditions import (
     ViolenceConditionEvaluation,
     ViolenceConditionConsumer,
 )
+from app.ai_integration.schemas import WorkerViolenceResult
 
 
 router = APIRouter(
@@ -28,26 +28,22 @@ router = APIRouter(
 )
 
 
+def get_db():
+    session_factory = get_session_factory()
+    with session_factory() as session:
+        yield session
+
+
 class DatabaseViolenceConditionConsumer(ViolenceConditionConsumer):
     """
     Receives a violence condition evaluation.
 
-    Only a qualifying 3-of-5 condition is persisted.
+    The frozen criterion produces candidates. Event episode/deduplication
+    semantics are unresolved, so this adapter intentionally does not persist.
     """
 
-    def __init__(self) -> None:
-        self.persistence = ViolenceEventPersistenceService(
-            get_session_factory()
-        )
-
     def consume(self, evaluation: ViolenceConditionEvaluation) -> None:
-        if not evaluation.candidate_condition:
-            return
-
-        self.persistence.create_from_qualified_condition(
-            evaluation=evaluation,
-            requires_attention=True,
-        )
+        return None
 
 
 _condition_consumer = DatabaseViolenceConditionConsumer()
@@ -65,7 +61,12 @@ _worker_service = ViolenceWorkerResultService(
 
 
 @router.post("/violence/results")
-def consume_violence_result(payload: dict):
+def consume_violence_result(
+    payload: WorkerViolenceResult,
+    session: Session = Depends(get_db),
+):
+    if session.get(Camera, payload.camera_id) is None:
+        raise HTTPException(status_code=404, detail="Camera was not found.")
     try:
         evaluation = _worker_service.consume_payload(payload)
 
@@ -102,12 +103,6 @@ def consume_violence_result(payload: dict):
             },
         ) from exc
 
-    except ViolenceEventPersistenceError as exc:
-        raise HTTPException(
-            status_code=422,
-            detail=str(exc),
-        ) from exc
-
     return {
         "data": {
             "camera_id": str(evaluation.camera_id),
@@ -124,5 +119,11 @@ def consume_violence_result(payload: dict):
             "n_required_snapshot": evaluation.n_required_snapshot,
             "m_history_snapshot": evaluation.m_history_snapshot,
             "score_semantics": evaluation.score_semantics,
+            "event_persisted": False,
+            "event_lifecycle": (
+                "awaiting_domain_policy"
+                if evaluation.candidate_condition
+                else "not_qualified"
+            ),
         }
     }

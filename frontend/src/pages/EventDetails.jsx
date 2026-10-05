@@ -58,11 +58,19 @@ function formatContextValue(key, value) {
   return String(value);
 }
 
-function EventDetails({
-  event,
-  onBack,
-  onAcknowledge,
-}) {
+function getStatusLabel(status, acknowledged) {
+  if (acknowledged) {
+    return "Acknowledged";
+  }
+
+  if (!status) {
+    return "No lifecycle status";
+  }
+
+  return status;
+}
+
+function EventDetails({ event, onBack }) {
   if (!event) {
     return (
       <div className="event-details">
@@ -81,7 +89,17 @@ function EventDetails({
   const contextEntries = Object.entries(event.context || {});
 
   const acknowledged =
-    event.acknowledgement?.acknowledged ?? false;
+    event.acknowledgement?.acknowledged === true;
+
+  const statusLabel = getStatusLabel(
+    event.status,
+    acknowledged
+  );
+
+  const evidence = event.evidence || {};
+
+  const cameraName =
+    event.camera?.name || "Unavailable";
 
   return (
     <div className="event-details">
@@ -97,10 +115,12 @@ function EventDetails({
 
         <span
           className={`event-status ${
-            acknowledged ? "acknowledged" : event.status
+            acknowledged
+              ? "acknowledged"
+              : event.status || ""
           }`}
         >
-          {acknowledged ? "acknowledged" : event.status}
+          {statusLabel}
         </span>
       </header>
 
@@ -115,20 +135,28 @@ function EventDetails({
 
           <div>
             <span>Camera</span>
-            <strong>{event.camera.name}</strong>
+            <strong>{cameraName}</strong>
           </div>
 
           <div>
             <span>Occurred At</span>
             <strong>
-              {new Date(event.occurred_at).toLocaleString()}
+              {event.occurred_at
+                ? new Date(
+                    event.occurred_at
+                  ).toLocaleString()
+                : "Unavailable"}
             </strong>
           </div>
 
           <div>
             <span>Created At</span>
             <strong>
-              {new Date(event.created_at).toLocaleString()}
+              {event.created_at
+                ? new Date(
+                    event.created_at
+                  ).toLocaleString()
+                : "Unavailable"}
             </strong>
           </div>
 
@@ -145,31 +173,47 @@ function EventDetails({
               {acknowledged ? "Yes" : "No"}
             </strong>
           </div>
+
+          <div>
+            <span>Severity</span>
+            <strong>
+              {event.severity || "Not set"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Lifecycle Status</span>
+            <strong>
+              {event.status || "No lifecycle status"}
+            </strong>
+          </div>
         </div>
 
-        {!acknowledged && (
-          <div className="acknowledgement-section">
-            <button
-              className="acknowledge-button"
-              onClick={() => onAcknowledge(event.id)}
-              type="button"
-            >
-              Acknowledge Event
-            </button>
+        <div className="acknowledgement-section">
+          {acknowledged ? (
+            <>
+              <div className="acknowledgement-success">
+                Event acknowledged by the backend.
+              </div>
 
+              {event.acknowledgement
+                ?.first_acknowledged_at && (
+                <p>
+                  Acknowledged at{" "}
+                  {new Date(
+                    event.acknowledgement
+                      .first_acknowledged_at
+                  ).toLocaleString()}
+                </p>
+              )}
+            </>
+          ) : (
             <p>
-              This is a frontend mock action. Backend
-              acknowledgement integration will be connected
-              after the API contract is baselined.
+              Event acknowledgement is not available in the
+              current backend integration.
             </p>
-          </div>
-        )}
-
-        {acknowledged && (
-          <div className="acknowledgement-success">
-            Event acknowledged.
-          </div>
-        )}
+          )}
+        </div>
       </section>
 
       <section className="details-card">
@@ -178,17 +222,23 @@ function EventDetails({
         <div className="evidence-summary">
           <div>
             <span>Available</span>
-            <strong>{event.evidence.available_count}</strong>
+            <strong>
+              {evidence.available_count ?? 0}
+            </strong>
           </div>
 
           <div>
             <span>Pending</span>
-            <strong>{event.evidence.pending_count}</strong>
+            <strong>
+              {evidence.pending_count ?? 0}
+            </strong>
           </div>
 
           <div>
             <span>Failed</span>
-            <strong>{event.evidence.failed_count}</strong>
+            <strong>
+              {evidence.failed_count ?? 0}
+            </strong>
           </div>
         </div>
       </section>
@@ -196,19 +246,23 @@ function EventDetails({
       <section className="details-card">
         <h2>Event Context</h2>
 
-        <div className="context-grid">
-          {contextEntries.map(([key, value]) => (
-            <div className="context-item" key={key}>
-              <span>
-                {CONTEXT_LABELS[key] || key}
-              </span>
+        {contextEntries.length === 0 ? (
+          <p>No additional event context is available.</p>
+        ) : (
+          <div className="context-grid">
+            {contextEntries.map(([key, value]) => (
+              <div className="context-item" key={key}>
+                <span>
+                  {CONTEXT_LABELS[key] || key}
+                </span>
 
-              <strong>
-                {formatContextValue(key, value)}
-              </strong>
-            </div>
-          ))}
-        </div>
+                <strong>
+                  {formatContextValue(key, value)}
+                </strong>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

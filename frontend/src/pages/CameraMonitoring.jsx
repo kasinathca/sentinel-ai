@@ -15,10 +15,18 @@ function CameraMonitoring({
           ← Back to Dashboard
         </button>
 
-        <h2>No cameras available</h2>
+        <section className="state-card">
+          <h2>No cameras available</h2>
+          <p>
+            No camera information is currently available
+            from the backend.
+          </p>
+        </section>
       </div>
     );
   }
+
+  const health = selectedCamera.health || {};
 
   return (
     <div className="camera-monitoring">
@@ -26,108 +34,130 @@ function CameraMonitoring({
         ← Back to Dashboard
       </button>
 
-      <header className="monitoring-header">
+      <header className="camera-monitoring-header">
         <div>
-          <p className="details-label">Live Surveillance</p>
-          <h1>Camera Monitoring</h1>
+          <p className="details-label">Camera Monitoring</p>
+          <h1>{selectedCamera.name}</h1>
+          <p>
+            {selectedCamera.description ||
+              "No camera description available."}
+          </p>
         </div>
 
-        <span className="camera-count">
-          {cameras.length} cameras
-        </span>
+        <div className="camera-health-badge">
+          {health.state || "unknown"}
+        </div>
       </header>
 
-      <section className="camera-viewer">
-        <div className="camera-viewer-header">
-          <div>
-            <h2>{selectedCamera.name}</h2>
-            <p>{selectedCamera.description}</p>
-          </div>
+      <section className="camera-monitoring-layout">
+        <aside className="camera-list-panel">
+          <h2>Cameras</h2>
 
-          <span
-            className={`camera-health ${selectedCamera.health.state}`}
-          >
-            {selectedCamera.health.state}
-          </span>
-        </div>
-
-        <div className="video-placeholder">
-          <div className="video-placeholder-content">
-            <div className="camera-icon">CAM</div>
-
-            <h3>Camera Feed</h3>
-
-            <p>
-              Live video integration will be connected
-              through the backend camera/stream contract.
-            </p>
-
-            <span>
-              Camera ID: {selectedCamera.id}
-            </span>
-          </div>
-        </div>
-
-        <div className="camera-viewer-info">
-          <div>
-            <span>Source</span>
-            <strong>
-              {selectedCamera.source_kind}
-            </strong>
-          </div>
-
-          <div>
-            <span>Enabled</span>
-            <strong>
-              {selectedCamera.enabled ? "Yes" : "No"}
-            </strong>
-          </div>
-
-          <div>
-            <span>Last Frame</span>
-            <strong>
-              {selectedCamera.health.last_frame_at
-                ? new Date(
-                    selectedCamera.health.last_frame_at
-                  ).toLocaleString()
-                : "Unavailable"}
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="camera-selector-section">
-        <div className="section-heading">
-          <h2>Available Cameras</h2>
-          <span>{cameras.length} cameras</span>
-        </div>
-
-        <div className="camera-selector-grid">
-          {cameras.map((camera) => (
-            <button
-              key={camera.id}
-              type="button"
-              className={`camera-selector ${
-                selectedCamera.id === camera.id
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() => setSelectedCamera(camera)}
-            >
-              <div className="camera-selector-header">
-                <strong>{camera.name}</strong>
-
-                <span
-                  className={`camera-health ${camera.health.state}`}
+          {cameras.length === 0 ? (
+            <p>No cameras available.</p>
+          ) : (
+            <div className="camera-monitoring-list">
+              {cameras.map((camera) => (
+                <button
+                  key={camera.id}
+                  type="button"
+                  className={`camera-list-item ${
+                    selectedCamera.id === camera.id
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() => setSelectedCamera(camera)}
                 >
-                  {camera.health.state}
-                </span>
+                  <strong>{camera.name}</strong>
+
+                  <span>
+                    {camera.health?.state || "unknown"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </aside>
+
+        <main className="camera-view-panel">
+          <section className="camera-stream-placeholder">
+            <div>
+              <h2>Video stream unavailable</h2>
+
+              <p>
+                Video stream not connected in current
+                integration.
+              </p>
+
+              <p>
+                The current backend provides camera metadata
+                and health information, but no live video
+                stream or snapshot endpoint is available to
+                this frontend.
+              </p>
+            </div>
+          </section>
+
+          <section className="details-card">
+            <h2>Camera Information</h2>
+
+            <div className="details-grid">
+              <div>
+                <span>Camera ID</span>
+                <strong>{selectedCamera.id}</strong>
               </div>
 
-              <span>{camera.id}</span>
-            </button>
-          ))}
-        </div>
+              <div>
+                <span>Name</span>
+                <strong>{selectedCamera.name}</strong>
+              </div>
+
+              <div>
+                <span>Source Kind</span>
+                <strong>
+                  {selectedCamera.source_kind ||
+                    "Not set"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Enabled</span>
+                <strong>
+                  {selectedCamera.enabled ? "Yes" : "No"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Health</span>
+                <strong>
+                  {health.state || "unknown"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Last Frame</span>
+                <strong>
+                  {health.last_frame_at
+                    ? new Date(
+                        health.last_frame_at
+                      ).toLocaleString()
+                    : "Unavailable"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Last Health Check</span>
+                <strong>
+                  {health.last_health_check_at
+                    ? new Date(
+                        health.last_health_check_at
+                      ).toLocaleString()
+                    : "Unavailable"}
+                </strong>
+              </div>
+            </div>
+          </section>
+        </main>
       </section>
     </div>
   );

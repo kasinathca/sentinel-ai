@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getEvents } from "../services/eventService";
 import { getCameras } from "../services/cameraService";
+import { getHealth } from "../services/healthService";
 import EventCard from "../components/EventCard";
 import CameraCard from "../components/CameraCard";
 import EventDetails from "./EventDetails";
@@ -12,6 +13,9 @@ function Dashboard() {
   const [cameras, setCameras] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  const [health, setHealth] = useState(null);
+  const [healthError, setHealthError] = useState(null);
+
   const [showHistory, setShowHistory] = useState(false);
   const [showCameras, setShowCameras] = useState(false);
 
@@ -20,23 +24,54 @@ function Dashboard() {
 
   useEffect(() => {
     async function loadDashboardData() {
-      try {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
+      setError(null);
+      setHealthError(null);
 
-        const [eventData, cameraData] = await Promise.all([
+      const [eventResult, cameraResult, healthResult] =
+        await Promise.allSettled([
           getEvents(),
           getCameras(),
+          getHealth(),
         ]);
 
-        setEvents(eventData);
-        setCameras(cameraData);
-      } catch (loadError) {
-        console.error(loadError);
-        setError("Unable to load dashboard data.");
-      } finally {
-        setLoading(false);
+      if (eventResult.status === "fulfilled") {
+        setEvents(eventResult.value);
+      } else {
+        console.error("Failed to load events:", eventResult.reason);
+        setEvents([]);
+        setError("Unable to load event information.");
       }
+
+      if (cameraResult.status === "fulfilled") {
+        setCameras(cameraResult.value);
+      } else {
+        console.error(
+          "Failed to load cameras:",
+          cameraResult.reason
+        );
+        setCameras([]);
+        setError((currentError) =>
+          currentError ||
+          "Unable to load camera information."
+        );
+      }
+
+      if (healthResult.status === "fulfilled") {
+        setHealth(healthResult.value);
+        setHealthError(null);
+      } else {
+        console.error(
+          "Failed to load backend health:",
+          healthResult.reason
+        );
+        setHealth(null);
+        setHealthError(
+          "Backend health information is unavailable."
+        );
+      }
+
+      setLoading(false);
     }
 
     loadDashboardData();
@@ -47,51 +82,19 @@ function Dashboard() {
   );
 
   const acknowledgedEvents = events.filter(
-    (event) => event.acknowledgement.acknowledged
+    (event) => event.acknowledgement?.acknowledged === true
   );
 
-  function handleAcknowledge(eventId) {
-    setEvents((currentEvents) =>
-      currentEvents.map((event) => {
-        if (event.id !== eventId) {
-          return event;
-        }
+  function getSystemStatus() {
+    if (healthError) {
+      return "Unavailable";
+    }
 
-        return {
-          ...event,
-          status: "acknowledged",
-          acknowledgement: {
-            ...event.acknowledgement,
-            acknowledged: true,
-            acknowledged_by: "operator-001",
-            first_acknowledged_at:
-              event.acknowledgement
-                .first_acknowledged_at ||
-              new Date().toISOString(),
-          },
-        };
-      })
-    );
+    if (health?.status === "ok") {
+      return "Backend Connected";
+    }
 
-    setSelectedEvent((currentEvent) => {
-      if (!currentEvent || currentEvent.id !== eventId) {
-        return currentEvent;
-      }
-
-      return {
-        ...currentEvent,
-        status: "acknowledged",
-        acknowledgement: {
-          ...currentEvent.acknowledgement,
-          acknowledged: true,
-          acknowledged_by: "operator-001",
-          first_acknowledged_at:
-            currentEvent.acknowledgement
-              .first_acknowledged_at ||
-            new Date().toISOString(),
-        },
-      };
-    });
+    return "Unknown";
   }
 
   if (showHistory) {
@@ -121,7 +124,6 @@ function Dashboard() {
       <EventDetails
         event={selectedEvent}
         onBack={() => setSelectedEvent(null)}
-        onAcknowledge={handleAcknowledge}
       />
     );
   }
@@ -144,7 +146,8 @@ function Dashboard() {
           <section className="state-card">
             <h2>Loading dashboard</h2>
             <p>
-              Camera and event information is being loaded.
+              Camera, event, and backend health information
+              is being loaded.
             </p>
           </section>
         </main>
@@ -162,16 +165,22 @@ function Dashboard() {
           </div>
 
           <div className="system-status">
-            System Status: Degraded
+            System Status: {getSystemStatus()}
           </div>
         </header>
 
         <main>
           <section className="state-card error-state">
-            <h2>Unable to load dashboard</h2>
+            <h2>Unable to load dashboard data</h2>
             <p>{error}</p>
+
+            {healthError && (
+              <p>{healthError}</p>
+            )}
+
             <p>
-              Please check the connection and try again.
+              Please check the backend connection and try
+              again.
             </p>
           </section>
         </main>
@@ -203,12 +212,19 @@ function Dashboard() {
           </button>
 
           <div className="system-status">
-            System Status: Operational
+            System Status: {getSystemStatus()}
           </div>
         </div>
       </header>
 
       <main>
+        {healthError && (
+          <section className="state-card error-state">
+            <h3>Backend health unavailable</h3>
+            <p>{healthError}</p>
+          </section>
+        )}
+
         <section className="dashboard-summary">
           <div className="summary-card">
             <span>Total Events</span>
@@ -236,7 +252,8 @@ function Dashboard() {
             <div className="state-card">
               <h3>No cameras available</h3>
               <p>
-                No camera information is currently available.
+                No camera information is currently available
+                from the backend.
               </p>
             </div>
           ) : (
@@ -288,7 +305,8 @@ function Dashboard() {
             <div className="state-card">
               <h3>No events recorded</h3>
               <p>
-                No security events are currently available.
+                No security events are currently available
+                from the backend.
               </p>
             </div>
           ) : (

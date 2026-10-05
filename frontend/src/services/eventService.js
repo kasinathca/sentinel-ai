@@ -1,30 +1,21 @@
-import { mockEvents } from "../mocks/mockEvents";
+import { apiGet } from "./apiClient";
 
 export async function getEvents() {
-  return Promise.resolve(mockEvents);
+  const body = await apiGet("/events");
+
+  if (!Array.isArray(body?.data)) {
+    throw new Error("Invalid events response from backend");
+  }
+
+  return body.data;
 }
 
 export async function getEventById(eventId) {
-  const event = mockEvents.find(
-    (item) => item.id === eventId
-  );
+  const body = await apiGet(`/events/${eventId}`);
 
-  return Promise.resolve(event || null);
-}
-
-export async function acknowledgeEvent(eventId) {
-  const event = mockEvents.find(
-    (item) => item.id === eventId
-  );
-
-  if (!event) {
-    throw new Error("Event not found");
+  if (!body?.data) {
+    throw new Error("Invalid event response from backend");
   }
 
-  return Promise.resolve({
-    event_id: event.id,
-    acknowledged: true,
-    acknowledged_by: "operator-001",
-    acknowledged_at: new Date().toISOString(),
-  });
+  return body.data;
 }

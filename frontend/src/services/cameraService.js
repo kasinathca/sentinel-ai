@@ -1,13 +1,21 @@
-import { mockCameras } from "../mocks/mockCameras";
+import { apiGet } from "./apiClient";
 
 export async function getCameras() {
-  return Promise.resolve(mockCameras);
+  const body = await apiGet("/cameras");
+
+  if (!Array.isArray(body?.data)) {
+    throw new Error("Invalid cameras response from backend");
+  }
+
+  return body.data;
 }
 
 export async function getCameraById(cameraId) {
-  const camera = mockCameras.find(
-    (item) => item.id === cameraId
-  );
+  const body = await apiGet(`/cameras/${cameraId}`);
 
-  return Promise.resolve(camera || null);
+  if (!body?.data) {
+    throw new Error("Invalid camera response from backend");
+  }
+
+  return body.data;
 }

@@ -10,6 +10,18 @@ function EventCard({ event, onSelect }) {
   const eventLabel =
     EVENT_LABELS[event.event_type] || event.event_type;
 
+  const acknowledged =
+    event.acknowledgement?.acknowledged === true;
+
+  const statusLabel = event.status || "No lifecycle status";
+
+  const cameraName =
+    event.camera?.name || "Unavailable";
+
+  const occurredAt = event.occurred_at
+    ? new Date(event.occurred_at).toLocaleString()
+    : "Unavailable";
+
   return (
     <button
       className="event-card"
@@ -19,28 +31,37 @@ function EventCard({ event, onSelect }) {
       <div className="event-card-header">
         <h3>{eventLabel}</h3>
 
-        <span className={`event-status ${event.status}`}>
-          {event.status}
+        <span
+          className={`event-status ${
+            acknowledged
+              ? "acknowledged"
+              : event.status || ""
+          }`}
+        >
+          {acknowledged
+            ? "Acknowledged"
+            : statusLabel}
         </span>
       </div>
 
       <p>
-        <strong>Camera:</strong> {event.camera.name}
+        <strong>Camera:</strong> {cameraName}
       </p>
 
       <p>
-        <strong>Time:</strong>{" "}
-        {new Date(event.occurred_at).toLocaleString()}
+        <strong>Time:</strong> {occurredAt}
       </p>
 
       <p>
         <strong>Attention:</strong>{" "}
-        {event.requires_attention ? "Required" : "Not required"}
+        {event.requires_attention
+          ? "Required"
+          : "Not required"}
       </p>
 
       <p>
         <strong>Acknowledged:</strong>{" "}
-        {event.acknowledgement.acknowledged ? "Yes" : "No"}
+        {acknowledged ? "Yes" : "No"}
       </p>
     </button>
   );

@@ -99,7 +99,7 @@ def consume_violence_result(
             status_code=422,
             detail={
                 "code": exc.worker_code,
-                "message": exc.message,
+                "message": exc.safe_message,
             },
         ) from exc
 

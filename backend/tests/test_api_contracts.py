@@ -135,10 +135,13 @@ class APIContractTests(unittest.TestCase):
         self.assertFalse(normal.json()["data"]["candidate_condition"])
         failed = copy.deepcopy(BASE_PAYLOAD)
         failed["status"] = "failed"
+        failed.pop("window")
         failed.pop("model")
         failed.pop("result")
         failed["error"] = {"code": "INFERENCE_FAILED", "message": "Inference failed."}
-        self.assertEqual(self.client.post("/api/v1/ai/violence/results", json=failed).status_code, 422)
+        failed_response = self.client.post("/api/v1/ai/violence/results", json=failed)
+        self.assertEqual(failed_response.status_code, 422)
+        self.assertEqual(failed_response.json()["detail"], {"code": "INFERENCE_FAILED", "message": "Inference failed."})
         with self.sessions() as session:
             self.assertEqual(len(list(session.scalars(select(Event)))), 0)
 

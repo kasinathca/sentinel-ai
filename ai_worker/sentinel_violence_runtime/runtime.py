@@ -5,15 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
-import tempfile
 from typing import Any
 
 import numpy as np
 
 from .constants import (
-    CHECKPOINT_RELATIVE,
-    EXACT_EXTRACTOR_PYTHON_RELATIVE,
-    EXACT_EXTRACTOR_WORKER_RELATIVE,
     MODEL_VERSION_ID,
     MODEL_VERSION_LABEL,
     SCHEMA_VERSION,
@@ -21,7 +17,6 @@ from .constants import (
     SCORE_SEMANTICS,
     SOURCE_FRAMES_PER_FEATURE_STEP,
     TASK_VIOLENCE,
-    TRAIN_SCRIPT_RELATIVE,
 )
 from .contracts import (
     WorkerProcessingRequest,
@@ -35,6 +30,7 @@ from .errors import (
 )
 from .extractor_client import PersistentExactExtractor
 from .media_probe import probe_media
+from .paths import resolve_runtime_paths
 from .temporal_model import FrozenTemporalScorer
 from .time_utils import (
     feature_window_timestamps,
@@ -73,21 +69,15 @@ class ViolenceRuntime:
         ffprobe: str = "ffprobe",
         temporal_batch_size: int = 64,
     ) -> None:
-        self.project_root = project_root.resolve()
-        self.work_dir = (
-            work_dir.resolve()
-            if work_dir is not None
-            else (
-                self.project_root
-                / "sentinel_runtime_validation"
-                / "runtime_work"
-            )
-        )
+        paths = resolve_runtime_paths(project_root, work_dir=work_dir)
+
+        self.project_root = paths.project_root
+        self.work_dir = paths.work_dir
         self.ffprobe = ffprobe
 
         self._extractor = PersistentExactExtractor(
-            python_exe=self.project_root / EXACT_EXTRACTOR_PYTHON_RELATIVE,
-            worker_script=self.project_root / EXACT_EXTRACTOR_WORKER_RELATIVE,
+            python_exe=paths.extractor_python,
+            worker_script=paths.extractor_worker,
             project_root=self.project_root,
             stderr_log=(
                 self.work_dir
@@ -97,8 +87,8 @@ class ViolenceRuntime:
         )
 
         self._scorer = FrozenTemporalScorer(
-            training_script=self.project_root / TRAIN_SCRIPT_RELATIVE,
-            checkpoint=self.project_root / CHECKPOINT_RELATIVE,
+            training_script=paths.training_script,
+            checkpoint=paths.checkpoint,
             batch_size=temporal_batch_size,
         )
 
@@ -122,8 +112,8 @@ class ViolenceRuntime:
         self._started = True
         self._last_error = None
 
-    def close(self) -> None:
-        self._extractor.close()
+    def close(self, *, force: bool = False) -> None:
+        self._extractor.close(force=force)
         self._started = False
 
     def health(self) -> RuntimeHealth:
@@ -174,13 +164,7 @@ class ViolenceRuntime:
         source_path: Path,
         source_started_at: str,
     ) -> list[ViolenceWindowResult] | WorkerFailureResult:
-        """
-        Process a controlled file source.
-
-        source_started_at is supplied by the source adapter/application because
-        the transport-neutral request schema does not define the media-origin
-        absolute timestamp. The file adapter uses it only to anchor window times.
-        """
+        """Process one controlled file source with the frozen runtime."""
         try:
             self.start()
 
@@ -197,18 +181,10 @@ class ViolenceRuntime:
             media = probe_media(source_path, ffprobe=self.ffprobe)
 
             source_key = hashlib.sha256(
-                (
-                    request.job_id
-                    + "|"
-                    + str(source_path)
-                ).encode("utf-8")
+                (request.job_id + "|" + str(source_path)).encode("utf-8")
             ).hexdigest()[:24]
 
-            feature_path = (
-                self.work_dir
-                / "features"
-                / f"{source_key}.npy"
-            )
+            feature_path = self.work_dir / "features" / f"{source_key}.npy"
 
             self._extractor.extract(
                 video_path=source_path,
@@ -279,5 +255,5 @@ class ViolenceRuntime:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
-        self.close()
+        self.close(force=exc_type is not None)
         return False

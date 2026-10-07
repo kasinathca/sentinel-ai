@@ -1,16 +1,62 @@
-# React + Vite
+# Sentinel AI Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React/Vite operator frontend integrated with the current Sentinel backend REST routes.
 
-Currently, two official plugins are available:
+## Current backend integration
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The frontend service layer currently consumes:
 
-## React Compiler
+```text
+GET /api/v1/health
+GET /api/v1/cameras
+GET /api/v1/cameras/{id}
+GET /api/v1/events
+GET /api/v1/events/{id}
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The application truthfully displays unavailable states for backend capabilities that do not yet exist, including persisted acknowledgement and live stream/snapshot delivery.
 
-## Expanding the Oxlint configuration
+## Install and run
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```powershell
+cd .\frontend
+npm ci
+npm run dev
+```
+
+## Development API proxy
+
+The Vite proxy no longer requires source-code editing when the backend address changes.
+
+Default:
+
+```text
+http://127.0.0.1:8000
+```
+
+Optional machine-local override:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then edit only the ignored `.env` file:
+
+```dotenv
+VITE_API_PROXY_TARGET=http://127.0.0.1:8000
+```
+
+Do not commit machine-specific `.env` values.
+
+## Quality checks
+
+```powershell
+npm run lint
+npm run build
+```
+
+The repository-level verification script also runs these checks:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ..\scripts\verify_integration.ps1
+```

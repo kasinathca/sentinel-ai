@@ -1,26 +1,99 @@
 # Sentinel AI Backend
 
-Backend work is on `gouri/backend-domain`. The application is a FastAPI modular monolith; violence inference remains in the separate AI worker. This README describes the implemented REST and structured-result boundary. It does not claim full raw-video, evidence, acknowledgement, authentication, or real-time integration.
+The backend is a FastAPI modular monolith. Violence inference remains in the separate AI worker. This README documents the **implemented integrated backend boundary**; it does not claim completion of unresolved MVP subsystems.
 
 ## Implemented HTTP endpoints
 
-| Method | Path | Behavior |
+| Method | Path | Current behavior |
 |---|---|---|
-| GET | `/api/v1/health` | Service liveness |
-| POST | `/api/v1/cameras` | Create camera with optional description |
-| GET | `/api/v1/cameras` | List cameras; currently supports `enabled` filter |
+| GET | `/api/v1/health` | FastAPI process liveness only |
+| GET | `/api/v1/health/readiness` | DB connectivity/schema/Alembic readiness |
+| POST | `/api/v1/cameras` | Create camera metadata |
+| GET | `/api/v1/cameras` | List cameras; `enabled` filter implemented |
 | GET | `/api/v1/cameras/{camera_id}` | Read one camera |
-| PATCH | `/api/v1/cameras/{camera_id}` | Update name, description, source kind, or enabled |
-| GET | `/api/v1/cameras/{camera_id}/health` | Read current health; `unknown` until health measurements exist |
-| POST | `/api/v1/ai/violence/results` | Development HTTP adapter for structured worker results |
+| PATCH | `/api/v1/cameras/{camera_id}` | Update camera metadata |
+| GET | `/api/v1/cameras/{camera_id}/health` | Current placeholder health state (`unknown`) |
+| POST | `/api/v1/ai/violence/results` | Development adapter for structured worker results |
 | GET | `/api/v1/events` | List persisted events, newest first |
-| GET | `/api/v1/events/{event_id}` | Read event details |
+| GET | `/api/v1/events/{event_id}` | Read event detail |
 
-The API paths are current implementation endpoints, not a decision that HTTP is the permanent AI-worker transport. Pagination/filtering beyond `enabled` for cameras and default event listing remain incomplete.
+Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and stream/snapshot endpoints remain incomplete unless later commits explicitly add them.
 
-## Public response contracts
+## Why `/health` can be 200 while a DB route fails
 
-Camera create/detail shape:
+`/api/v1/health` is intentionally a **liveness** route. It does not touch the database. Therefore it can return `200` when the FastAPI process is alive even if a new local SQLite file has not been migrated yet.
+
+Use:
+
+```text
+GET /api/v1/health/readiness
+```
+
+for database readiness.
+
+An uninitialized schema returns HTTP `503` with safe guidance to run the documented initializer. The readiness route does not run migrations and does not expose DB URLs or raw SQL exceptions.
+
+## Database initialization
+
+SQLAlchemy and Alembic are used. SQLite is supported for local development/tests; PostgreSQL remains governed by project design/ADR status.
+
+The database URL is selected by:
+
+```text
+SENTINEL_DATABASE_URL
+```
+
+If unset, the default is derived from the repository checkout:
+
+```text
+backend/runtime/sentinel.db
+```
+
+No user home directory is hard-coded.
+
+From the repository root:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+```
+
+The initializer:
+
+1. resolves the configured DB URL;
+2. creates the parent directory for file-backed SQLite when needed;
+3. runs `alembic upgrade head`;
+4. seeds the frozen violence model/version/global policy idempotently;
+5. executes a read-only readiness verification;
+6. fails non-zero if the post-initialization readiness check does not pass.
+
+Read-only check:
+
+```powershell
+python .\backend\scripts\check_database.py
+```
+
+## Start backend
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python -m uvicorn app.main:app --app-dir .\backend --reload
+```
+
+Then verify:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/readiness
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/cameras
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/events
+```
+
+A fresh correctly initialized database should return successful camera/event responses with empty `data` arrays until records are created.
+
+## Public camera contract
+
+Camera create/detail currently exposes:
 
 ```json
 {
@@ -39,180 +112,58 @@ Camera create/detail shape:
 }
 ```
 
-Camera list omits create/update timestamps, as described in the API specification. There is no camera source-health tracker yet; enabled cameras remain `unknown`, and disabled does not mean offline.
+`unknown` is truthful: there is no integrated source-health measurement subsystem yet. `enabled` must not be interpreted as `online`.
 
-Event shape:
+## Public event contract
+
+Implemented event responses map persistence names to public API names and include camera relation, acknowledgement summary shape, evidence count shape, and violence context when present.
+
+Acknowledgement/evidence currently report truthful empty/unavailable state; the backend does not fabricate persistence that does not exist.
+
+## Violence worker-result boundary
+
+`POST /api/v1/ai/violence/results` accepts the frozen structured result contract.
+
+The backend validates:
+
+- schema shape;
+- UUID identities;
+- camera existence;
+- frozen model version;
+- score semantics/criterion contract;
+- temporal ordering;
+- explicit worker failures.
+
+The frozen integrated criterion remains:
+
+```text
+threshold = 0.906
+history = latest 5 observations
+qualification = at least 3 positive observations
+stride = 1
+```
+
+A qualified candidate still returns:
 
 ```json
 {
-  "id": "event-uuid",
-  "event_type": "violence_fighting",
-  "camera": {"id": "camera-uuid", "name": "North Entrance"},
-  "occurred_at": "UTC timestamp",
-  "created_at": "UTC timestamp",
-  "requires_attention": true,
-  "severity": null,
-  "status": null,
-  "acknowledgement": {
-    "acknowledged": false,
-    "acknowledged_by": [],
-    "first_acknowledged_at": null
-  },
-  "evidence": {"available_count": 0, "pending_count": 0, "failed_count": 0},
-  "context": {
-    "model_version": {"id": "model-version-uuid", "name": "violence-model", "version": "MODEL-VIO-BIGRU-ATTN-XD-V1"},
-    "output_label": "fighting",
-    "score": 0.95,
-    "event_threshold": 0.906,
-    "score_semantics": "model-specific score",
-    "window_started_at": "UTC timestamp",
-    "window_ended_at": "UTC timestamp"
-  }
+  "candidate_condition": true,
+  "event_persisted": false,
+  "event_lifecycle": "awaiting_domain_policy"
 }
 ```
 
-The response mapper translates database names (`event_type_code`, `severity_code`, `lifecycle_status_code`, `score_value`, `event_threshold_snapshot`) to public API names. Acknowledgement and evidence values are truthful empty state because those subsystems do not exist in persistence yet.
+because cooldown/deduplication/episode semantics remain unresolved. This portability/readiness package intentionally does not invent that policy.
 
-## Worker-result integration boundary
-
-`POST /api/v1/ai/violence/results` accepts `application/json`. It is a development integration adapter over the transport-neutral validation/criterion service.
-
-Required successful observation:
-
-```json
-{
-  "schema_version": "1",
-  "job_id": "11111111-1111-4111-8111-111111111111",
-  "correlation_id": "22222222-2222-4222-8222-222222222222",
-  "camera_id": "33333333-3333-4333-8333-333333333333",
-  "window": {
-    "started_at": "2026-09-12T07:00:00Z",
-    "ended_at": "2026-09-12T07:00:01Z"
-  },
-  "status": "success",
-  "model": {
-    "model_version_id": "6d22f83d-17f8-5ecf-9f0f-246fa326ec72",
-    "task": "violence_fighting"
-  },
-  "result": {
-    "label": "fighting",
-    "score": 0.95,
-    "score_semantics": "uncalibrated sigmoid score for the fighting positive class from EXP-VIO-TEMPORAL-001; higher means more fighting-like"
-  }
-}
-```
-
-All IDs are UUIDs. Timestamps must include a timezone; window end must follow window start. Camera ID must already exist. Extra or malformed fields are rejected. `job_id` correlates one worker job; `correlation_id` is carried through to event context when a domain event is later created.
-
-Explicit worker failure is represented with `status: "failed"` and `error: {"code":"INFERENCE_FAILED","message":"..."}` (code must be in the worker contract). A failure is an error, never a negative Fighting score.
-
-Expected outcomes:
-
-- A Normal sequence below `0.906` never reports `candidate_condition=true`; history still advances for valid observations.
-- A Fighting/qualifying sequence can report a candidate once 3 of the latest 5 worker scores meet `>= 0.906`; W1 observations and stride 1 are expected.
-- The exact frozen model version is `6d22f83d-17f8-5ecf-9f0f-246fa326ec72` (`MODEL-VIO-BIGRU-ATTN-XD-V1`).
-- Every candidate response currently returns `event_persisted: false` and `event_lifecycle: "awaiting_domain_policy"`. Consecutive candidates cannot flood the event table because automatic persistence is intentionally held at the candidate/event boundary.
-- Unknown model/version or contract mismatch is rejected; out-of-order windows return conflict; unknown camera returns not found. Invalid input returns HTTP 422. Worker transport/auth policy is not finalized.
-
-The frozen threshold (`0.906`), criterion (3 of latest 5), W1, and model identity must not be altered for integration tests.
-
-## Database and migration
-
-SQLAlchemy and Alembic are used. SQLite remains supported for local development and tests; PostgreSQL is still proposed in the source documents. Migration `20261005_0002` adds nullable `cameras.description`, which is present in the database design. Frozen model/version and global policy seeding is idempotent. The project DB engine is set by `SENTINEL_DATABASE_URL`; the default is `backend/runtime/sentinel.db`.
-
-Initialize/migrate and seed:
-
-```powershell
-$env:PYTHONPATH = (Resolve-Path ".\backend").Path
-python .\backend\scripts\init_database.py
-```
-
-Start the backend:
-
-```powershell
-$env:PYTHONPATH = (Resolve-Path ".\backend").Path
-python -m uvicorn app.main:app --app-dir .\backend --reload
-```
-
-Run backend tests:
+## Tests
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path ".\backend").Path
 python -m unittest discover -s .\backend\tests -p "test_*.py" -v
 ```
 
-Send a worker message by saving the example JSON above and using:
+For an integration-safe disposable database plus frontend/AI checks, use:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/v1/ai/violence/results" -ContentType "application/json" -Body (Get-Content .\worker-result.json -Raw)
+powershell -ExecutionPolicy Bypass -File .\scripts\verify_integration.ps1
 ```
-
-The first four positive observations are history warm-up; the fifth observation can produce the initial complete 3-of-5 candidate. Further qualifying observations remain candidates and do not insert additional events.
-
-## Compatibility check with Aaditi's frontend branch
-
-Read-only comparison was performed against `origin/aaditi/frontend-operator-ui` (`frontend/src/services/eventService.js`, `cameraService.js`, `Dashboard.jsx`, `EventDetails.jsx`, `EventCard.jsx`, and `CameraCard.jsx`). Event and camera resource fields consumed by the components now match the DTOs above. The operator page still contains mock-only acknowledgement behavior and must not claim persisted acknowledgement until the auth/user decision is made.
-
-Service-layer integration can replace mock results with `fetch`/Axios calls and unwrap `response.data`:
-
-| Current frontend service | Backend request | Returned value |
-|---|---|---|
-| `getEvents()` | `GET /api/v1/events` | response `data` array |
-| `getEventById(id)` | `GET /api/v1/events/{id}` | response `data` event |
-| `getCameras()` | `GET /api/v1/cameras` | response `data` array |
-| `getCameraById(id)` | `GET /api/v1/cameras/{id}` | response `data` camera |
-| `acknowledgeEvent(id)` | **Not available yet** | Requires auth identity and acknowledgement persistence |
-
-Field compatibility checked against the frontend source:
-
-| Frontend field | Backend field/state | Result |
-|---|---|---|
-| `event.event_type` | `event_type` | Matches |
-| `event.camera.id/name` | relation-backed `camera.id/name` | Matches |
-| `occurred_at`, `created_at`, `requires_attention`, `severity`, `status` | same public names | Matches; severity/status truthfully null when unset |
-| `acknowledgement.*` | empty, unacknowledged object | Shape matches; persistence/action unavailable pending auth identity |
-| `evidence.available_count/pending_count/failed_count` | all zero | Shape matches; no evidence rows/jobs exist |
-| `context` | violence context object | Matches public `score`/`event_threshold` names |
-| `camera.description/source_kind/enabled` | same public names | Matches |
-| `camera.health.state/last_frame_at/last_health_check_at` | `unknown`/null/null | Shape matches; no health measurement exists |
-
-No React component needs to know database column names. The current camera monitoring mock cannot become a real stream because stream/snapshot/source management is not implemented.
-
-## Handoff status
-
-### Implemented
-
-- Existing Phase 2L/2M AI contract, criterion, persistence, model registry, seed, and migrations.
-- Camera CRUD routes with documented DTO, optional description, and truthful unknown health response.
-- Event list/detail public DTO with nested camera relation and mapped violence context.
-- Strict typed worker-result HTTP adapter using deterministic contract fixtures.
-- API tests for health, camera CRUD/validation/health, event DTO/order/not-found, worker invalid/unknown model/failure/normal/candidate sequences.
-
-### Requires a project decision or later subsystem
-
-- **Event episode lifecycle:** cooldown, duplicate suppression, close/retrigger rules remain unresolved. Candidate evaluations are not persisted automatically. Proposed options must be approved by the team before implementation.
-- **Acknowledgement:** API specification requires authenticated user. No accepted auth mechanism/user registry exists in this persistence phase; no fake user or acknowledgement route/state has been introduced. Proposed integration: resolve authenticated principal to a persisted user ID, then add transaction-safe `event_acknowledgements` persistence and the documented POST/GET routes after the team confirms identity and idempotency semantics.
-- **Evidence:** evidence storage/job state and endpoints are absent. Event summary is zero counts; no fake pending/available states.
-- **Health:** no measurement tracker exists; state stays unknown.
-- **Worker transport/security:** this HTTP route is a current development adapter. Architecture still marks permanent worker transport and internal worker authentication as TBD.
-- **Pagination, event filters, enable/disable convenience routes, and standardized error envelope:** not implemented.
-
-### Kasi's AI worker handoff
-
-The backend does **not** need `best_model.pt`, MMAction2, the exact I3D extractor environment, or raw XD-Violence assets to accept already-produced observations. The backend boundary is `POST /api/v1/ai/violence/results`, JSON, with the schema above, exact frozen model version ID, an existing configured camera UUID, unique-per-observation job UUID, correlation UUID, timezone-aware sample window, and score semantics string. Success returns the validated score, positive flag, rolling-history counts, `candidate_condition`, frozen snapshots, `event_persisted=false`, and lifecycle status. Invalid contract/model is 422, unknown camera is 404, out-of-order is 409, worker failure is 422. These codes reflect this development adapter; final transport/auth response conventions remain open.
-
-On the qualified runtime machine, Kasi should start the exact persistent extractor worker, load the already-qualified temporal model and extractor, run the approved Normal and Fighting fixtures, send each W1 structured result to this adapter, and verify Normal yields no candidates while Fighting reaches the frozen 3-of-5 candidate. Because lifecycle policy is unresolved, verify candidate/DB state only; expect no automatic event rows. This is the later raw-video E2E slice and has not been run here.
-
-### Branch record
-
-This handoff describes `gouri/backend-domain`. Implementation and tests were verified at commit `59af81c` (API, migration, and tests); the documentation-only handoff update follows it.
-
-Verification completed for this implementation: backend suite **29 passed**; AI-worker contract/unit suite **15 passed**; disposable SQLite Alembic bootstrap reached `20261005_0002` and a second initialization remained safe, with one model version and one policy seeded.
-
-### Verification update — 2026-10-05
-
-- Verified branch: `gouri/backend-domain`; API failure-detail fix: commit `2c6fae4a8676a872e6683b2f00ed87b7d2be7669`.
-- Backend unit/API suite: **29 passed**. AI-worker suite: **15 passed**.
-- Fresh disposable SQLite initialization applied migrations through `20261005_0002` and seeded the frozen model/policy. Live HTTP smoke checks returned success for health, camera create/detail, and event list.
-- The worker-reported failure path now returns HTTP 422 with its safe code/message; a regression assertion covers this branch.
-- Live HTTP smoke used a disposable database and a synthetic camera. No raw video, real extractor/model inference, authentication, event acknowledgement, or evidence flow was exercised.

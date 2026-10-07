@@ -20,7 +20,10 @@ The present implementation includes:
 - `GET /api/v1/health/readiness` — database/schema/migration readiness;
 - camera create/list/detail/update/health routes;
 - event list/detail routes;
-- development HTTP adapter for structured violence-worker results.
+- development HTTP adapter for structured violence-worker results;
+- local-only demo clip/source-control routes backed by the approved catalog and process-local controller.
+
+The demo source-control routes do not yet have a configured replay adapter. They do not decode or loop video, connect operator video delivery, update persisted camera health, or submit the selected source to the AI worker. Source start returns an explicit unavailable response until replay integration is supplied.
 
 This does **not** mean the full MVP is complete. Authentication, durable acknowledgement, evidence, real-time/WebSocket delivery, camera streaming, analytics, detector/tracker integration, deterministic intrusion/loitering/crowd rules, and final violence-event lifecycle policy remain separate implementation work unless later commits explicitly complete them.
 

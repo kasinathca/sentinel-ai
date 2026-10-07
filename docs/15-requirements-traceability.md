@@ -974,6 +974,21 @@ The current React/Vite frontend and current camera/event read integration are im
 
 Do not mark implementation/verification complete in the RTM until the cited tests exist and pass.
 
-The current clip-catalog tests exercise only the internal registry/path-safety foundation. They are not evidence that `FR-VCAM-002` or `FR-VCAM-011` is fully verified: no demo HTTP route consumes the catalog, no playback source exists, and actual media provenance/permission is not checked by this helper.
+At the catalog-only baseline, the clip-catalog tests exercised the internal registry/path-safety foundation and did not fully verify `FR-VCAM-002` or `FR-VCAM-011`. The 2026-10-08 controller/API boundary evidence is recorded below; actual media provenance/permission remains unverified.
+
+## 2026-10-08 Backend controller/API boundary evidence
+
+The catalog is now consumed by local-only demo-control routes and a process-local singleton controller. Tests `T-VCAM-BE-001` through `T-VCAM-BE-007` exercise the API/controller boundary using a fake replay adapter. Their execution is component-level evidence only.
+
+| Requirement | Evidence from this change | Status |
+|---|---|---|
+| `FR-VCAM-002`, `FR-VCAM-011` | Catalog-backed list/select routes plus safe ID/path tests | `PARTIAL_IMPLEMENTATION` — playback/source authorization not fully verified |
+| `FR-VCAM-003` | Backend endpoints for a separate demo-control surface | `PARTIAL_IMPLEMENTATION` — no Demo Control Panel UI in this branch |
+| `FR-VCAM-004`, `FR-VCAM-005`, `FR-VCAM-006` | Controller delegates start/stop/restart and applies adapter callbacks in unit tests | `NOT_YET_INTEGRATED` — no real replay adapter or EOF-driven callback source |
+| `FR-VCAM-007`, `FR-VCAM-008` | No timing/source-sharing evidence added | `NOT_YET_VERIFIED` |
+| `FR-VCAM-010` | Controller treats normal loop callbacks as active state | `PARTIAL_IMPLEMENTATION` — no live camera-health mapping |
+| `FR-VCAM-013` | Missing catalog/adapter failures are safe and explicit at the controller boundary | `PARTIAL_IMPLEMENTATION` — corrupt media cannot be detected without a decoder |
+
+Do not mark any virtual-camera acceptance test as passed from fake-adapter results. The operator camera UUID mapping, source decoder, pacing, browser video, AI transport, and raw-video model scenarios remain outside this evidence.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

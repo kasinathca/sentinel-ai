@@ -3261,3 +3261,23 @@ Timing tolerances shall be baselined from measured implementation behavior rathe
 The backend manifest/path helper has focused unit coverage for unknown clip IDs, duplicate IDs, unsupported manifest schema, missing files, relative media-root rejection, and absolute/traversal path rejection. These are foundation-level tests only; they do not pass the source lifecycle, replay, media decoding, or end-to-end acceptance tests above.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+<!-- VIRTUAL_CCTV_BACKEND_CONTROLLER_20261008:BEGIN -->
+
+# 2026-10-08 Backend Controller/API Boundary Tests
+
+The backend controller/API boundary adds focused tests for the implementable layer before the real replay adapter is integrated:
+
+| Test ID | Test | Required result |
+|---|---|---|
+| `T-VCAM-BE-001` | list/select approved clip | only registered IDs and display names are public; invalid IDs are rejected |
+| `T-VCAM-BE-002` | select while active | state conflict; active source is not replaced |
+| `T-VCAM-BE-003` | controller first-frame/EOF callbacks | state advances through `starting`, `playing`, `loop-restarting`, `playing`; loop count increments and does not fail the source |
+| `T-VCAM-BE-004` | stop and stale callbacks | adapter stop is requested once and old-session callbacks cannot reactivate the controller |
+| `T-VCAM-BE-005` | restart and invalid start/restart | current session uses the adapter boundary; invalid transitions return a stable conflict |
+| `T-VCAM-BE-006` | missing media/adapter/source failure | explicit safe failure; no filesystem path is returned |
+| `T-VCAM-BE-007` | demo API contract | route envelopes, unknown IDs, path fields, and local-only access are checked |
+
+These unit/API tests use a fake replay adapter. They do **not** pass `T-VCAM-001` through `T-VCAM-010`; real decoding, pacing, EOF looping, operator display, and AI synchronization require the integrated replay adapter.
+
+<!-- VIRTUAL_CCTV_BACKEND_CONTROLLER_20261008:END -->

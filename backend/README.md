@@ -1,91 +1,169 @@
 # Sentinel AI Backend
 
-Current implementation milestone: **Phase 2M — persistence foundation**.
+The backend is a FastAPI modular monolith. Violence inference remains in the separate AI worker. This README documents the **implemented integrated backend boundary**; it does not claim completion of unresolved MVP subsystems.
 
-The backend is a FastAPI modular monolith. The AI worker remains a separate process/component.
+## Implemented HTTP endpoints
 
-## Implemented
+| Method | Path | Current behavior |
+|---|---|---|
+| GET | `/api/v1/health` | FastAPI process liveness only |
+| GET | `/api/v1/health/readiness` | DB connectivity/schema/Alembic readiness |
+| POST | `/api/v1/cameras` | Create camera metadata |
+| GET | `/api/v1/cameras` | List cameras; `enabled` filter implemented |
+| GET | `/api/v1/cameras/{camera_id}` | Read one camera |
+| PATCH | `/api/v1/cameras/{camera_id}` | Update camera metadata |
+| GET | `/api/v1/cameras/{camera_id}/health` | Current placeholder health state (`unknown`) |
+| POST | `/api/v1/ai/violence/results` | Development adapter for structured worker results |
+| GET | `/api/v1/events` | List persisted events, newest first |
+| GET | `/api/v1/events/{event_id}` | Read event detail |
 
-### Phase 2L — AI integration
+Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and stream/snapshot endpoints remain incomplete unless later commits explicitly add them.
 
-- FastAPI application factory and health endpoint;
-- strict violence-worker success/failure validation;
-- frozen model/version contract validation;
-- rolling state keyed by `(camera_id, model_version_id)`;
-- frozen `score >= 0.906` + `3-of-5` criterion;
-- transport-neutral JSONL replay adapter.
+## Why `/health` can be 200 while a DB route fails
 
-### Phase 2M — persistence foundation
+`/api/v1/health` is intentionally a **liveness** route. It does not touch the database. Therefore it can return `200` when the FastAPI process is alive even if a new local SQLite file has not been migrated yet.
 
-- SQLAlchemy 2.x model layer;
-- Alembic migration foundation;
-- `cameras`, `models`, `model_versions`, `violence_event_policies`, `events`, and `violence_event_context`;
-- idempotent frozen violence model/version/global-policy seed;
-- database-backed `ModelRegistry` adapter;
-- explicit violence-event persistence service.
-
-## Important event-lifecycle boundary
-
-Phase 2M does **not** automatically persist every `candidate_condition=True` observation. The Fighting fixture has multiple consecutive qualified observations, and duplicate/cooldown/retrigger behavior remains unresolved.
+Use:
 
 ```text
-validated worker observation
-→ frozen rolling criterion
-→ candidate condition
-→ event-domain lifecycle decision (future slice)
-→ explicit ViolenceEventPersistenceService call
+GET /api/v1/health/readiness
 ```
 
-## Database configuration
+for database readiness.
 
-Environment variable: `SENTINEL_DATABASE_URL`.
+An uninitialized schema returns HTTP `503` with safe guidance to run the documented initializer. The readiness route does not run migrations and does not expose DB URLs or raw SQL exceptions.
 
-Local development default:
+## Database initialization
+
+SQLAlchemy and Alembic are used. SQLite is supported for local development/tests; PostgreSQL remains governed by project design/ADR status.
+
+The database URL is selected by:
 
 ```text
-sqlite+pysqlite:///./backend/runtime/sentinel.db
+SENTINEL_DATABASE_URL
 ```
 
-PostgreSQL example:
+If unset, the default is derived from the repository checkout:
 
 ```text
-postgresql+psycopg://user:password@localhost:5432/sentinel
+backend/runtime/sentinel.db
 ```
 
-Do not commit database credentials.
+No user home directory is hard-coded.
 
-## Update environment and run tests
-
-```powershell
-.\backend\.venv\Scripts\Activate.ps1
-python -m pip install -r .\backend\requirements-dev.txt
-$env:PYTHONPATH = (Resolve-Path ".\backend").Path
-python -m unittest discover -s .\backend\tests -p "test_*.py" -v
-```
-
-## Initialize local development database
+From the repository root:
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path ".\backend").Path
 python .\backend\scripts\init_database.py
 ```
 
-This runs Alembic to `head` and seeds the immutable selected violence model/version and frozen global `0.906 / 3-of-5` policy. `cooldown_ms` remains `NULL`.
+The initializer:
 
-## Replay worker outputs
+1. resolves the configured DB URL;
+2. creates the parent directory for file-backed SQLite when needed;
+3. runs `alembic upgrade head`;
+4. seeds the frozen violence model/version/global policy idempotently;
+5. executes a read-only readiness verification;
+6. fails non-zero if the post-initialization readiness check does not pass.
+
+Read-only check:
 
 ```powershell
-python .\backend\scripts\replay_violence_worker_jsonl.py --input ".\ai_worker\runtime_work\demo-fighting-results.jsonl"
-python .\backend\scripts\replay_violence_worker_jsonl.py --input ".\ai_worker\runtime_work\demo-normal-results.jsonl"
+python .\backend\scripts\check_database.py
 ```
 
-## Deliberately unresolved
+## Start backend
 
-- backend ↔ AI-worker HTTP/queue/IPC transport;
-- authentication mechanism;
-- event duplicate/cooldown/retrigger semantics;
-- automatic event creation from rolling criterion;
-- evidence persistence;
-- WebSocket publication;
-- acknowledgement;
-- detector/tracker integration.
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python -m uvicorn app.main:app --app-dir .\backend --reload
+```
+
+Then verify:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/readiness
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/cameras
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/events
+```
+
+A fresh correctly initialized database should return successful camera/event responses with empty `data` arrays until records are created.
+
+## Public camera contract
+
+Camera create/detail currently exposes:
+
+```json
+{
+  "id": "camera-uuid",
+  "name": "North Entrance",
+  "description": null,
+  "source_kind": "file",
+  "enabled": true,
+  "health": {
+    "state": "unknown",
+    "last_frame_at": null,
+    "last_health_check_at": null
+  },
+  "created_at": "UTC timestamp",
+  "updated_at": "UTC timestamp"
+}
+```
+
+`unknown` is truthful: there is no integrated source-health measurement subsystem yet. `enabled` must not be interpreted as `online`.
+
+## Public event contract
+
+Implemented event responses map persistence names to public API names and include camera relation, acknowledgement summary shape, evidence count shape, and violence context when present.
+
+Acknowledgement/evidence currently report truthful empty/unavailable state; the backend does not fabricate persistence that does not exist.
+
+## Violence worker-result boundary
+
+`POST /api/v1/ai/violence/results` accepts the frozen structured result contract.
+
+The backend validates:
+
+- schema shape;
+- UUID identities;
+- camera existence;
+- frozen model version;
+- score semantics/criterion contract;
+- temporal ordering;
+- explicit worker failures.
+
+The frozen integrated criterion remains:
+
+```text
+threshold = 0.906
+history = latest 5 observations
+qualification = at least 3 positive observations
+stride = 1
+```
+
+A qualified candidate still returns:
+
+```json
+{
+  "candidate_condition": true,
+  "event_persisted": false,
+  "event_lifecycle": "awaiting_domain_policy"
+}
+```
+
+because cooldown/deduplication/episode semantics remain unresolved. This portability/readiness package intentionally does not invent that policy.
+
+## Tests
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python -m unittest discover -s .\backend\tests -p "test_*.py" -v
+```
+
+For an integration-safe disposable database plus frontend/AI checks, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify_integration.ps1
+```

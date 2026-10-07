@@ -12,6 +12,7 @@ import sys
 
 from .contracts import WorkerProcessingRequest, WorkerFailureResult
 from .errors import InvalidRequestError, SentinelWorkerError
+from .paths import resolve_project_root
 from .runtime import ViolenceRuntime
 from .source_resolver import MappingSourceResolver
 
@@ -25,7 +26,14 @@ def _write_json_line(handle, payload: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument(
+        "--root",
+        type=Path,
+        help=(
+            "XD-Violence workspace root. If omitted, SENTINEL_VIOLENCE_ROOT "
+            "must be set."
+        ),
+    )
     parser.add_argument("--source-map", type=Path, required=True)
     parser.add_argument("--request", type=Path)
     parser.add_argument("--source-started-at")
@@ -34,17 +42,25 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    root = args.root.resolve()
+    try:
+        root = resolve_project_root(args.root)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     runtime = ViolenceRuntime(project_root=root)
 
     if args.preflight_only:
         try:
             runtime.start()
-            print(json.dumps({
-                "health": runtime.health().to_dict(),
-                "capabilities": runtime.capabilities(),
-            }, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "health": runtime.health().to_dict(),
+                        "capabilities": runtime.capabilities(),
+                    },
+                    indent=2,
+                )
+            )
             return 0
         finally:
             runtime.close()
@@ -59,9 +75,7 @@ def main() -> int:
     resolver = MappingSourceResolver.from_json_file(args.source_map)
 
     try:
-        request_data = json.loads(
-            args.request.read_text(encoding="utf-8")
-        )
+        request_data = json.loads(args.request.read_text(encoding="utf-8"))
         request = WorkerProcessingRequest.from_dict(request_data)
         source = resolver.resolve(request.source.source_locator_ref)
     except (OSError, json.JSONDecodeError, InvalidRequestError, SentinelWorkerError) as exc:
@@ -71,8 +85,6 @@ def main() -> int:
     output_handle = sys.stdout
 
     if args.output:
-        # Runtime output directories are generated artifacts and may not exist
-        # in a fresh checkout. Create the parent explicitly before opening.
         args.output.parent.mkdir(parents=True, exist_ok=True)
         output_handle = args.output.open("w", encoding="utf-8")
 

@@ -24,8 +24,11 @@ TRAIN_SCRIPT_SHA256 = (
 )
 EXPECTED_MODEL_PARAMETERS = 822_530
 
-EXACT_EXTRACTOR_PYTHON_RELATIVE = (
-    "sentinel_runtime_validation/extractor_exact_jherng/.venv/Scripts/python.exe"
+# The extractor environment root is platform-neutral. Runtime path resolution
+# selects Scripts/python.exe on Windows and bin/python on POSIX, unless an
+# explicit SENTINEL_EXTRACTOR_PYTHON override is supplied.
+EXACT_EXTRACTOR_ENV_RELATIVE = (
+    "sentinel_runtime_validation/extractor_exact_jherng/.venv"
 )
 EXACT_EXTRACTOR_WORKER_RELATIVE = (
     "sentinel_runtime_validation/scripts/phase2g_persistent_extractor_worker.py"

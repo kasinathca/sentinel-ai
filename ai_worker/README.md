@@ -1,209 +1,129 @@
 # Sentinel AI — AI Worker / Frozen Violence Runtime
 
-This directory is the first application integration layer for the qualified
-Sentinel violence/fighting subsystem.
+This package is the repository-side integration layer for the already-qualified Sentinel violence/fighting runtime.
 
-The heavy experiment/model workspace remains external:
+The heavy XD-Violence experiment/model workspace remains **external** to Git. The repository contains source, contracts, tests, examples, and machine-independent configuration logic only.
 
-```text
-C:\Users\kasin\XD-Violence
-```
-
-The Git repository contains only source, tests, contracts, and examples.
-
-## Frozen violence configuration
+## Frozen identity — unchanged
 
 ```text
-model:
-EXP-VIO-TEMPORAL-001
-MODEL-VIO-BIGRU-ATTN-XD-V1
-
+experiment:       EXP-VIO-TEMPORAL-001
+model label:      MODEL-VIO-BIGRU-ATTN-XD-V1
+model_version_id: 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
 checkpoint SHA256:
 1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
 
-live policy:
+live criterion:
 W1 / stride 1 / 3-of-5 / threshold 0.906
-
-model_version_id:
-6d22f83d-17f8-5ecf-9f0f-246fa326ec72
 ```
 
-The worker emits one structured Fighting score per qualified I3D feature step.
+This update does **not** change model identity, threshold, windowing, score semantics, or checksum validation.
 
-The backend owns:
+## Portable workspace configuration
 
-```text
-score >= 0.906
-+
-at least 3 qualifying observations in the latest 5
-```
+No developer-specific home-directory path is used.
 
-as a deterministic event criterion.
-
-Persistent event creation, cooldown/retrigger, evidence, and notification remain
-backend/domain responsibilities.
-
-## Important architecture rule
-
-This package is transport-neutral.
-
-It does **not** decide the final backend ↔ AI-worker transport.
-
-The CLI in this directory is a development adapter only.
-
-## External runtime dependencies
-
-The runtime expects the already-qualified files under the XD-Violence workspace:
-
-```text
-sentinel_temporal/
-sentinel_runtime_validation/
-```
-
-including:
-
-- frozen temporal checkpoint;
-- frozen temporal training implementation used to reconstruct the model class;
-- exact I3D extractor isolated environment;
-- persistent exact-extractor worker;
-- controlled raw-video fixtures for smoke tests.
-
-These heavy/external artifacts must not be copied into Git merely to run this
-package.
-
-## Run pure unit tests
-
-From the Sentinel repository root:
+Configure the external workspace root:
 
 ```powershell
-cd "C:\Users\kasin\Projects\AWT PROJECT"
-
-$env:PYTHONPATH = ".\ai_worker"
-
-python -m unittest discover `
-  -s .\ai_worker\tests `
-  -p "test_*.py" `
-  -v
+$env:SENTINEL_VIOLENCE_ROOT = "<path-to-XD-Violence-workspace>"
 ```
 
-Expected:
+The default artifact layout below that root remains:
 
 ```text
-Ran 14 tests
-OK
+sentinel_temporal/artifacts/best_model.pt
+sentinel_temporal/train_temporal_gru.py
+sentinel_runtime_validation/extractor_exact_jherng/.venv/
+sentinel_runtime_validation/scripts/phase2g_persistent_extractor_worker.py
 ```
 
-## Create the machine-local source map
+The extractor Python executable is resolved by platform:
 
-From the repo root:
+```text
+Windows: .venv/Scripts/python.exe
+POSIX:   .venv/bin/python
+```
+
+Any machine with a different qualified layout may override paths without editing source:
+
+```text
+SENTINEL_TEMPORAL_CHECKPOINT
+SENTINEL_TEMPORAL_TRAIN_SCRIPT
+SENTINEL_EXTRACTOR_PYTHON
+SENTINEL_EXTRACTOR_WORKER
+SENTINEL_RUNTIME_WORK_DIR
+```
+
+Relative override values are resolved under `SENTINEL_VIOLENCE_ROOT`.
+
+## Machine-local source map
+
+Generate the ignored local map:
+
+```powershell
+powershell -ExecutionPolicy Bypass `
+  -File .\ai_worker\scripts\create_local_source_map.ps1
+```
+
+or:
 
 ```powershell
 powershell -ExecutionPolicy Bypass `
   -File .\ai_worker\scripts\create_local_source_map.ps1 `
-  -XDViolenceRoot "C:\Users\kasin\XD-Violence"
+  -XDViolenceRoot "<path-to-XD-Violence-workspace>"
 ```
 
-This creates:
+If neither the argument nor `SENTINEL_VIOLENCE_ROOT` is supplied, the script fails with an explicit configuration error instead of guessing a developer path.
 
-```text
-ai_worker\examples\source_map.local.json
+`ai_worker/examples/source_map.local.json` is ignored by Git.
+
+## Pure/unit tests
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\ai_worker").Path
+python -m unittest discover -s .\ai_worker\tests -p "test_*.py" -v
 ```
 
-It is intentionally ignored by Git.
+These tests do not claim that raw-video inference has run.
 
 ## Runtime preflight
 
-From the repo root:
+With `SENTINEL_VIOLENCE_ROOT` configured:
 
 ```powershell
-$env:PYTHONPATH = ".\ai_worker"
+$env:PYTHONPATH = (Resolve-Path ".\ai_worker").Path
 
 python -m sentinel_violence_runtime.cli `
-  --root "C:\Users\kasin\XD-Violence" `
   --source-map ".\ai_worker\examples\source_map.local.json" `
   --preflight-only
 ```
 
-Expected high-level state:
+`--root` may still be supplied explicitly and takes precedence over the environment variable:
 
-```json
-{
-  "health": {
-    "state": "ready",
-    "process_alive": true,
-    "extractor_ready": true,
-    "temporal_model_ready": true
-  }
-}
+```powershell
+python -m sentinel_violence_runtime.cli `
+  --root "<path-to-XD-Violence-workspace>" `
+  --source-map ".\ai_worker\examples\source_map.local.json" `
+  --preflight-only
 ```
 
 ## Controlled file-job smoke test
 
 ```powershell
-$env:PYTHONPATH = ".\ai_worker"
-
 python -m sentinel_violence_runtime.cli `
-  --root "C:\Users\kasin\XD-Violence" `
   --source-map ".\ai_worker\examples\source_map.local.json" `
   --request ".\ai_worker\examples\request.example.json" `
   --source-started-at "2026-09-12T07:00:00.000Z" `
   --output ".\ai_worker\runtime_work\demo-fighting-results.jsonl"
 ```
 
-The output is one structured worker result per W1 observation.
-
-## Worker result semantics
-
-Example:
-
-```json
-{
-  "schema_version": "1",
-  "job_id": "...",
-  "correlation_id": "...",
-  "camera_id": "...",
-  "window": {
-    "started_at": "...",
-    "ended_at": "..."
-  },
-  "status": "success",
-  "model": {
-    "model_version_id": "6d22f83d-17f8-5ecf-9f0f-246fa326ec72",
-    "task": "violence_fighting"
-  },
-  "result": {
-    "label": "fighting",
-    "score": 0.94,
-    "score_semantics": "uncalibrated sigmoid score for the fighting positive class from EXP-VIO-TEMPORAL-001; higher means more fighting-like"
-  }
-}
-```
-
-`label = fighting` identifies the positive class whose score is being reported.
-It does not mean the worker created a persistent violence event.
+The CLI is a development adapter only. Final backend ↔ worker transport/security remains a separate project decision.
 
 ## Failure semantics
 
-Inference/decode/model failures are explicit failed worker results.
+Model/decode/extractor failures remain explicit failed worker results. They must never be converted into a zero score or a successful `no violence` result.
 
-They are never converted into:
+## Integration boundary
 
-```text
-score = 0
-non-violence
-no event
-```
-
-because that would hide AI unavailability.
-
-## Next backend step
-
-After unit tests, runtime preflight, and the file-job smoke test pass:
-
-1. implement backend validation for this result contract;
-2. maintain rolling criterion state per `(camera_id, model_version_id)`;
-3. feed `qualified=True` into the event-domain service;
-4. add failure-injection integration tests;
-5. decide backend ↔ worker transport separately.
-
-Do not change the frozen model/window/threshold based on official TEST behavior.
+The AI worker produces observations/model results. The backend owns domain-event lifecycle. This package does not implement or guess event cooldown, deduplication, acknowledgement, evidence, auth, or WebSocket behavior.

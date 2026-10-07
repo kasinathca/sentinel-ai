@@ -799,6 +799,10 @@ The following virtual-camera items are **target work**, not yet to be claimed as
 - source synchronization between displayed feed and AI processing;
 - loop-specific tests.
 
+### Current backend foundation update
+
+The backend now contains an internal schema-version-1 manifest loader and path resolver at `backend/app/demo/clip_catalog.py`. It rejects absolute/traversal paths, verifies resolved clip paths remain beneath the configured media root, rejects missing files and duplicate IDs, and omits local paths from its public DTO helper. This helper is not wired to an API or replay source and does not validate decoding, provenance, or redistribution permission. It does not satisfy the virtual-camera acceptance tests by itself.
+
 ---
 
 # 20. Team Ownership and Parallel Work

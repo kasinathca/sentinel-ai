@@ -19,6 +19,12 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 
 Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and stream/snapshot endpoints remain incomplete unless later commits explicitly add them.
 
+## Demo media catalog foundation
+
+`app.demo.clip_catalog.DemoClipCatalog` reads a local `manifest.json` with schema version `1` beneath the machine-local absolute `SENTINEL_DEMO_MEDIA_ROOT`. It resolves registered relative paths beneath that root, rejects absolute/traversal/escaping paths, and exposes only `clip_id` and `display_name` through its public DTO helper.
+
+This is an internal catalog/path-safety foundation only. It is not connected to HTTP routes, a virtual-camera controller, a decoder/replay loop, operator video delivery, or AI-worker processing. It does not establish media provenance/redistribution permission or verify that a file can be decoded. Do not treat manifest registration as evidence that the full virtual CCTV workflow is implemented.
+
 ## Why `/health` can be 200 while a DB route fails
 
 `/api/v1/health` is intentionally a **liveness** route. It does not touch the database. Therefore it can return `200` when the FastAPI process is alive even if a new local SQLite file has not been migrated yet.

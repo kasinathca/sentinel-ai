@@ -1,13 +1,13 @@
 ---
 title: "Sentinel AI — Database Design Specification"
 document_id: "SEN-DB"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 database_engine: "PROPOSED: PostgreSQL"
 modeling_style: "Relational, event-centric, normalized application data"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -3054,3 +3054,142 @@ When a violence event is persisted, `violence_event_context` should preserve:
 
 Do not encode cooldown/retrigger semantics merely because the model policy is
 now frozen. That domain decision remains separate.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Implementation Status Addendum — Phase 2M Persistence Foundation
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+The full logical schema in this document remains broader than the currently implemented database slice. Phase 2M implements only the persistence foundation required for frozen violence integration.
+
+## Implemented physical subset
+
+Migration:
+
+```text
+20260912_0001
+```
+
+Implemented tables:
+
+```text
+cameras
+models
+model_versions
+violence_event_policies
+events
+violence_event_context
+```
+
+Implemented stack:
+
+```text
+SQLAlchemy 2.x
+Alembic
+psycopg 3.x driver/support
+```
+
+Qualified local-development engine:
+
+```text
+SQLite
+backend/runtime/sentinel.db
+```
+
+The runtime SQLite database is ignored by Git.
+
+PostgreSQL remains the proposed final engine, but PostgreSQL runtime has **not** been qualified.
+
+## Frozen seed state
+
+The seed is idempotent and includes the frozen violence model version:
+
+```text
+model_version_id = 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+version_label    = MODEL-VIO-BIGRU-ATTN-XD-V1
+experiment_id    = EXP-VIO-TEMPORAL-001
+artifact_sha256  = 1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
+status_code      = approved
+```
+
+and the frozen global violence policy:
+
+```text
+threshold            = 0.906
+n_required           = 3
+history_window_size  = 5
+stride_feature_steps = 1
+cooldown_ms           = NULL
+```
+
+`cooldown_ms` is intentionally `NULL`; cooldown/retrigger behavior is not baselined.
+
+## Controlled persistence proof
+
+Using the real Fighting worker JSONL fixture, the backend observed the first qualifying state at index `4` and explicitly persisted exactly one `violence_fighting` event plus one `violence_event_context` row.
+
+The stored context snapshots include:
+
+```text
+model_version_id
+output_label = fighting
+score
+threshold_snapshot = 0.906
+n_required_snapshot = 3
+history_window_size_snapshot = 5
+positive_count_snapshot = 3
+```
+
+This proves the explicit persistence path. It does **not** define or prove automatic event lifecycle/deduplication behavior.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Integrated Persistence Baseline — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The Phase 2M section above remains historical evidence. The current integrated migration chain is:
+
+```text
+20260912_0001
+→ 20261005_0002
+```
+
+`20261005_0002` adds the documented nullable camera `description` field.
+
+The currently integrated persistence/readiness subset requires:
+
+```text
+cameras
+models
+model_versions
+violence_event_policies
+events
+violence_event_context
+alembic_version
+```
+
+Database initialization is explicit:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+python .\backend\scripts\check_database.py
+```
+
+`init_database.py` runs Alembic to head, seeds the frozen model/version/global policy idempotently, and then verifies readiness. The HTTP readiness check is read-only and never auto-runs migrations.
+
+No zone/rule, acknowledgement, evidence, authentication, or analytics persistence tables should be described as implemented unless a later migration actually adds them.
+
+The violence persistence service can explicitly persist a qualified evaluation for controlled tests, but the live development adapter still returns:
+
+```text
+event_persisted = false
+event_lifecycle = awaiting_domain_policy
+```
+
+for qualifying candidates because automatic cooldown/deduplication/episode semantics remain unresolved.

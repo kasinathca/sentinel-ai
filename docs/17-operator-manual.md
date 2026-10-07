@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Operator and Administrator Manual"
 document_id: "SEN-OPS"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -2393,3 +2393,71 @@ environment.
 
 The dataset uses weak video-level labels, so the system shall not claim exact
 fight-onset localization accuracy from these results.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Implementation Availability Addendum — Phase 2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+This manual describes the intended operator/administrator workflows, but it must not be read as evidence that all described UI screens currently exist.
+
+At the Phase 2M checkpoint, the verified application-facing implementation is limited to:
+
+- FastAPI health endpoint;
+- transport-neutral violence-worker result consumption;
+- frozen backend violence criterion;
+- SQLAlchemy/Alembic persistence foundation;
+- explicit controlled violence-event persistence.
+
+The following operator-facing capabilities are still pending implementation/qualification:
+
+- frontend application;
+- authentication and role-specific screens;
+- camera/event read pages;
+- live view;
+- WebSocket alert delivery;
+- evidence review;
+- acknowledgement;
+- analytics UI.
+
+Therefore faculty/demo instructions in this manual must only be used after the corresponding screens/workflows exist and are verified.
+
+A model score such as `0.87` must be described as an **uncalibrated sigmoid score for the fighting positive class**, not as an `87% probability of violence`.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Operator-UI Availability — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+A React/Vite operator frontend is now present and integrated with current backend read APIs for:
+
+- dashboard data;
+- camera listing/detail access through the service layer;
+- event listing/detail access through the service layer;
+- backend liveness display;
+- event history view;
+- camera monitoring view;
+- event details view;
+- loading/error/empty states.
+
+The current UI must still represent the following as unavailable/not integrated:
+
+- actual live camera stream/snapshot delivery;
+- measured camera online/offline state;
+- persistent acknowledgement;
+- authenticated operator identity/RBAC;
+- evidence viewing/download;
+- WebSocket/realtime updates;
+- analytics backed by completed analytics endpoints;
+- zone/rule editing unless later backend contracts are implemented.
+
+The backend now also exposes `/api/v1/health/readiness`; frontend readiness-specific UX is separate follow-up work unless a later commit adds it.
+
+Do not present the current mock fixtures as live operational evidence.
+
+A model score remains a model-specific uncalibrated sigmoid score, not a calibrated probability of real-world violence.

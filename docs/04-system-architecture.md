@@ -1,12 +1,12 @@
 ---
 title: "Sentinel AI — System Architecture Specification"
 document_id: "SEN-ARCH"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 architecture_style: "FastAPI modular monolith + separate AI worker"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -86,7 +86,7 @@ The following architecture choices are already accepted:
 
 | Decision | Status |
 |---|---|
-| Frontend framework | `TBD` |
+| Frontend framework | `TBD` — implementation currently uses React/Vite; formal architecture baseline/ADR remains pending |
 | Database engine | `PROPOSED: PostgreSQL` |
 | Web real-time transport | `PROPOSED: WebSocket` |
 | Backend ↔ AI worker transport | `TBD` |
@@ -347,7 +347,7 @@ Sentinel AI shall have at least two distinct runtime process boundaries.
 
 ## 4.1 Process P-01 — Web/Application Backend
 
-**Technology:** FastAPI  
+**Technology:** FastAPI
 **Status:** `CONFIRMED`
 
 Responsibilities:
@@ -2059,35 +2059,35 @@ Reason:
 
 ## 40.1 QA-01 — Worker failure
 
-**Stimulus:** AI worker crashes.  
+**Stimulus:** AI worker crashes.
 **Expected:** backend still serves non-AI API operations; worker-dependent status becomes degraded.
 
 ---
 
 ## 40.2 QA-02 — Repeated detection
 
-**Stimulus:** same person remains inside restricted area across many frames.  
+**Stimulus:** same person remains inside restricted area across many frames.
 **Expected:** one event episode according to duplicate policy, not one event per frame.
 
 ---
 
 ## 40.3 QA-03 — Client disconnect
 
-**Stimulus:** WebSocket disconnects.  
+**Stimulus:** WebSocket disconnects.
 **Expected:** UI indicates disconnect and reconciles state after reconnect.
 
 ---
 
 ## 40.4 QA-04 — Evidence write failure
 
-**Stimulus:** clip cannot be saved.  
+**Stimulus:** clip cannot be saved.
 **Expected:** event remains valid with explicit evidence failure.
 
 ---
 
 ## 40.5 QA-05 — Unauthorized media request
 
-**Stimulus:** user requests event clip without permission.  
+**Stimulus:** user requests event clip without permission.
 **Expected:** media not returned.
 
 ---
@@ -2350,3 +2350,144 @@ implementation constraint for the qualified violence runtime only.
 
 Detailed evidence, hashes, metrics, and experiment lineage are authoritative in
 `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Implementation Status Addendum — Phases 2K–2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+**Status date:** 2026-09-12
+
+This addendum updates implementation-state claims only. It does **not** resolve any architecture decision still marked `TBD` or `PROPOSED`.
+
+## Implemented architecture slices
+
+### Phase 2K — separate violence AI worker runtime
+
+The repository now contains an implemented `ai_worker/` runtime slice with:
+
+- trusted `source_locator_ref` resolution;
+- persistent exact I3D extractor process integration;
+- loading of the frozen temporal violence model;
+- artifact/checksum validation;
+- structured success/failure worker results;
+- explicit failure semantics;
+- a CLI/JSON development adapter.
+
+The worker still produces model observations/results rather than persistent domain events.
+
+### Phase 2L — FastAPI violence integration
+
+The backend now implements:
+
+- FastAPI application construction and `GET /api/v1/health`;
+- strict worker result validation;
+- frozen model-version and score-semantics validation;
+- rolling violence state keyed by `(camera_id, model_version_id)`;
+- the frozen `score >= 0.906` and `3-of-5` backend criterion;
+- explicit worker-failure handling;
+- candidate-condition handoff to the event domain.
+
+JSON/JSONL replay remains a development/integration adapter. The final backend ↔ AI-worker transport remains `TBD`.
+
+### Phase 2M — persistence foundation
+
+The backend now includes SQLAlchemy 2.x and Alembic with an initial migration containing:
+
+```text
+cameras
+models
+model_versions
+violence_event_policies
+events
+violence_event_context
+```
+
+The qualified local-development database is SQLite at `backend/runtime/sentinel.db` and is Git-ignored.
+
+PostgreSQL driver/support is configured through SQLAlchemy/psycopg, but PostgreSQL runtime behavior has **not** been qualified and shall not be described as production-ready.
+
+A database-backed model registry, idempotent frozen model/version/policy seed, and explicit violence-event persistence service are implemented.
+
+## Deliberately unresolved after Phase 2M
+
+The following remain unresolved and must not be inferred from the implemented foundation:
+
+- automatic event creation from every qualifying rolling state;
+- duplicate suppression, cooldown, retrigger, episode grouping, reopening, or incident grouping;
+- backend ↔ AI-worker production transport;
+- authentication/authorization implementation;
+- evidence backend and retention;
+- final detector/tracker;
+- frontend technology;
+- live-camera streaming adapter.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Integrated Architecture Baseline — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+**Branch state:** `main` and `staging` were verified at the same commit on 2026-10-07.
+
+This section records implementation facts without silently converting unresolved architecture decisions into accepted ADRs.
+
+## Implemented integration structure
+
+The current integrated repository contains:
+
+- FastAPI modular-monolith backend;
+- separate violence AI-worker package/runtime boundary;
+- React/Vite operator frontend;
+- SQLAlchemy/Alembic persistence;
+- explicit process liveness and database readiness separation;
+- camera metadata create/list/detail/update APIs;
+- camera-health placeholder API with truthful `unknown` state;
+- event list/detail APIs;
+- development HTTP adapter for structured violence-worker results;
+- portable external XD-Violence workspace configuration;
+- repository-level integration verification tooling.
+
+The current database migration head is:
+
+```text
+20261005_0002
+```
+
+The current frontend implementation uses React/Vite. If the formal frontend-framework architecture decision/ADR is still marked `TBD`, that governance status must be distinguished from the fact that React/Vite is already implemented.
+
+## Still unresolved / not integrated
+
+The current baseline does **not** complete:
+
+- authentication/authorization;
+- durable acknowledgement;
+- evidence capture/storage/delivery;
+- WebSocket/realtime event delivery;
+- detector/tracker integration;
+- zone/rule persistence and deterministic intrusion/loitering/crowd evaluation;
+- measured camera-source health;
+- camera streaming/snapshots;
+- analytics;
+- final violence-event cooldown/deduplication/episode lifecycle;
+- production backend ↔ AI-worker transport;
+- PostgreSQL runtime qualification.
+
+A qualifying violence rolling state remains a candidate condition; automatic event persistence is intentionally held until lifecycle semantics are baselined.
+
+## Verification boundary
+
+The 2026-10-07 integrated gate executed successfully with:
+
+```text
+database migration/readiness = PASS
+backend tests                = 35/35 PASS
+AI-worker pure/unit tests    = 19/19 PASS
+frontend npm audit           = 0 vulnerabilities
+frontend lint                = PASS
+frontend production build    = PASS
+```
+
+Raw-video/model preflight is a separate gate because it requires the external qualified XD-Violence workspace and GPU runtime.

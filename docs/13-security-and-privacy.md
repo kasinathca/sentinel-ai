@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Security and Privacy Specification"
 document_id: "SEN-SEC-PRIV"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -3554,3 +3554,68 @@ Do not commit:
 
 Documentation may record hashes, version IDs, and local path conventions without
 publishing the artifacts themselves.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Implementation Status Addendum — Security Controls Present in Phases 2K–2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+The following controls now exist in implementation:
+
+- the backend treats worker payloads as untrusted and validates the structured result before domain use;
+- frozen model version/task/score semantics are validated;
+- worker failures remain explicit failures rather than successful negative detections;
+- the AI worker resolves trusted `source_locator_ref` values rather than accepting arbitrary application event writes;
+- model/checkpoint identity is hash-locked in the qualified violence runtime;
+- the runtime SQLite database is local and Git-ignored;
+- database configuration supports environment-based connection configuration;
+- persistent model/policy seed values are deterministic and idempotent.
+
+These controls do not complete the system security plan.
+
+Still unresolved/not implemented at this baseline:
+
+- application authentication;
+- authorization/RBAC;
+- production worker transport authentication;
+- production PostgreSQL hardening;
+- evidence-access authorization;
+- WebSocket authentication/origin policy;
+- frontend security controls;
+- production secret-management strategy.
+
+No security certification or production-security claim is implied.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Integrated Security Posture — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+Additional verified integration controls now include:
+
+- machine-specific AI paths are externalized through environment/configuration rather than committed developer-home paths;
+- database location is configurable through `SENTINEL_DATABASE_URL`;
+- `/api/v1/health/readiness` reports safe readiness state without returning the DB URL or raw SQL exception details;
+- migrations remain an explicit setup/deployment action rather than being triggered by HTTP requests;
+- the frontend development proxy target is configurable with `VITE_API_PROXY_TARGET`;
+- the integrated frontend lockfile was verified with `npm audit` reporting zero known vulnerabilities at the time of the 2026-10-07 gate;
+- frozen model/checkpoint identity enforcement remains unchanged.
+
+These controls do not constitute production security approval.
+
+Still unresolved/not implemented include:
+
+- authentication;
+- server-side authorization/RBAC;
+- authenticated acknowledgement identity;
+- production worker authentication;
+- WebSocket authentication/origin policy;
+- evidence authorization;
+- production secret-management strategy;
+- PostgreSQL hardening;
+- final deployment security review.

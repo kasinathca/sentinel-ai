@@ -1,7 +1,7 @@
 ---
 title: "Sentinel AI — Final Technical Report"
 document_id: "SEN-FTR"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
@@ -9,7 +9,7 @@ course_code: "TBD"
 department: "TBD"
 institution: "TBD"
 academic_year: "2026–2027"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 team_members:
   - "TBD"
   - "TBD"
@@ -548,7 +548,7 @@ Microservices are not required for the MVP.
 
 ## 8.2 Backend
 
-The backend is implemented/planned using FastAPI [2].
+The backend is implemented as a FastAPI modular monolith [2]. The current integrated baseline includes liveness/readiness, camera metadata APIs, event read APIs, frozen violence-worker validation/criterion logic, and the persistence foundation. Unimplemented modules remain explicitly identified rather than inferred.
 
 Conceptual backend modules:
 
@@ -590,21 +590,25 @@ It does not own:
 
 ## 8.4 Frontend
 
-Frontend framework:
+Current frontend implementation:
 
 ```text
-TBD
+React + Vite
 ```
 
-The frontend shall consume the backend API and real-time channel.
+It currently consumes implemented REST read APIs for health, cameras, and events. The formal architecture decision/ADR may remain `TBD` until explicitly baselined; WebSocket/realtime delivery is not yet implemented.
 
 ## 8.5 Database
 
-Current candidate:
+Implemented persistence foundation:
 
 ```text
-PROPOSED: PostgreSQL
+SQLAlchemy 2.x
+Alembic
+qualified local-development engine = SQLite
 ```
+
+PostgreSQL remains the proposed final engine. `psycopg` support is configured, but PostgreSQL runtime has not yet been qualified.
 
 The relational design is event-centric.
 
@@ -2120,3 +2124,136 @@ subsystem rather than an autonomous incident authority.
 
 Full evidence lineage is recorded in
 `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Verified Implementation Update — Phases 2K–2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+## Implemented violence integration
+
+The selected violence subsystem is no longer only a model experiment. The repository contains:
+
+- a separate qualified violence AI worker runtime;
+- a FastAPI integration layer that validates worker results and applies the frozen backend criterion;
+- SQLAlchemy/Alembic persistence for the current violence event foundation.
+
+The backend criterion is:
+
+```text
+score >= 0.906
++
+at least 3 positive observations among the latest 5
+```
+
+The worker does not directly create domain events.
+
+## Persistence foundation
+
+Phase 2M implements:
+
+```text
+cameras
+models
+model_versions
+violence_event_policies
+events
+violence_event_context
+```
+
+Local-development persistence is qualified with SQLite.
+
+PostgreSQL driver/support is configured, but PostgreSQL runtime is not yet qualified.
+
+The frozen model/version and global violence policy are seeded idempotently.
+
+## Controlled integrated proof
+
+Using real Fighting worker output:
+
+```text
+observations accepted = 19
+qualified states = 10
+first qualified index = 4
+score at first qualified state = 0.9957476258277893
+```
+
+An explicit persistence call created exactly one `violence_fighting` event and its associated `violence_event_context`.
+
+The stored event context snapshots the frozen model version and policy parameters used at the event decision point.
+
+## Verification status
+
+At the Phase 2M checkpoint:
+
+```text
+backend test suite = 21/21 PASS
+SQLite bootstrap = PASS
+seed idempotence = PASS
+controlled real-fixture event persistence = PASS
+```
+
+These results do not establish production readiness or full application E2E completion.
+
+Still pending include automatic event lifecycle/deduplication, evidence, authentication, frontend, WebSockets, detector/tracker integration, live-camera support, and PostgreSQL runtime qualification.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Integrated Implementation Update — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The promoted repository now integrates all previously completed backend-domain and operator-frontend branches plus setup/readiness/path-portability hardening.
+
+## Current implemented application surface
+
+- FastAPI modular-monolith backend;
+- React/Vite operator frontend;
+- SQLAlchemy/Alembic local persistence;
+- database initialization and readiness verification;
+- camera metadata create/list/detail/update plus truthful placeholder health;
+- event list/detail APIs;
+- frozen violence-worker structured-result validation and rolling criterion;
+- database/model provenance foundation;
+- portable external XD-Violence runtime path configuration.
+
+The Alembic head is `20261005_0002`.
+
+A qualifying violence candidate is **not** automatically persisted by the current development adapter; final cooldown/deduplication/episode semantics remain unresolved.
+
+## Current verification evidence
+
+```text
+database migration/readiness = PASS
+backend tests                = 35/35 PASS
+AI-worker pure/unit tests    = 19/19 PASS
+frontend npm audit           = 0 vulnerabilities
+frontend lint                = PASS
+frontend production build    = PASS
+```
+
+The integrated gate does not execute the external raw-video/GPU model preflight.
+
+## Remaining MVP work
+
+Still incomplete unless later commits add them:
+
+- detector/tracker integration;
+- zone/rule implementation;
+- restricted-area/loitering/crowd deterministic event flows;
+- automatic violence-event lifecycle;
+- camera-offline measurement;
+- authentication/authorization;
+- persisted acknowledgement;
+- evidence;
+- WebSocket/realtime delivery;
+- camera stream/snapshot;
+- analytics;
+- PostgreSQL runtime qualification;
+- complete application E2E acceptance.
+
+These limitations must remain explicit in the final report; the current baseline is an integrated development foundation, not a production-ready CCTV system.

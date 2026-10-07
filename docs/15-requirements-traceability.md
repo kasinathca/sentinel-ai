@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Requirements Traceability Matrix"
 document_id: "SEN-RTM"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -33,9 +33,11 @@ authoritative_for:
 executed and attached conceptually through the experiment artifacts described in
 `19-violence-model-and-runtime-qualification.md`.
 
-Application-level verification remains conservative: model/runtime evidence does
-not by itself prove backend event persistence, duplicate suppression, evidence
-generation, notifications, or operator workflows.
+Application-level verification remains conservative. The current integrated
+baseline adds executed backend/API/readiness, AI-worker pure/unit, and frontend
+build/lint evidence on top of Phase 2M persistence evidence, but that does not
+prove automatic event lifecycle/deduplication, evidence generation,
+notifications, authentication, or complete operator workflows.
 
 ---
 
@@ -83,8 +85,8 @@ No link may be silently inferred during final reporting.
 Requirement definitions: PRESENT
 Design traceability: PRESENT
 Planned test traceability: PRESENT
-Implementation evidence: PARTIAL — violence model/runtime evidence exists
-Test execution evidence: PARTIAL — violence qualification suite executed
+Implementation evidence: PARTIAL — integrated backend/camera/event/frontend foundation plus violence model/runtime evidence exists
+Test execution evidence: PARTIAL — violence qualification plus current backend/AI-worker/frontend integration gates executed
 Final requirement verification: NOT_YET_VERIFIED for whole application
 ```
 
@@ -852,3 +854,97 @@ until the backend/worker/event integration tests also pass.
 Evidence source:
 
 `19-violence-model-and-runtime-qualification.md`
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Execution Evidence Addendum — Phases 2K–2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+Traceability evidence now exists beyond model/runtime qualification:
+
+```text
+Phase 2K
+worker implementation
+→ worker contract/unit tests
+→ real Normal/Fighting fixture outputs
+
+Phase 2L
+worker result
+→ strict FastAPI integration validation
+→ frozen 0.906 / 3-of-5 criterion
+→ event-domain candidate-condition handoff
+
+Phase 2M
+candidate condition
+→ explicit persistence service
+→ events row
+→ violence_event_context row
+→ database-backed model/version provenance
+```
+
+A controlled Fighting replay reached its first qualified state at index `4` and an explicit persistence call created exactly one matching event/context pair.
+
+The full Phase 2M backend test suite executed `21/21 PASS`.
+
+This does **not** automatically change every linked SRS row to `VERIFIED`. Requirement-level verification remains conservative until evidence is attached against the exact requirement/test IDs.
+
+In particular, the following remain unverified or blocked by unresolved design decisions:
+
+- automatic duplicate/cooldown/retrigger lifecycle;
+- evidence;
+- acknowledgement;
+- auth/authorization;
+- frontend;
+- WebSocket delivery;
+- final detector/tracker;
+- production worker transport;
+- PostgreSQL runtime;
+- complete application E2E acceptance.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Execution-Evidence Update — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The promoted baseline adds execution evidence for integration/setup and the currently implemented application surface:
+
+```text
+database migration/readiness
+→ PASS
+
+camera/event HTTP contract regression coverage
+→ PASS within backend 35-test suite
+
+violence worker/backend contract + persistence foundation
+→ PASS within backend suite
+
+AI-worker pure/unit/runtime-path checks
+→ 19/19 PASS
+
+frontend dependency install/audit/lint/build
+→ PASS
+```
+
+This evidence is **partial** and does not automatically mark broad MVP requirements `VERIFIED`.
+
+In particular, requirements depending on the following remain unverified or blocked until dedicated implementation and evidence exist:
+
+- detector/tracker;
+- zone/rule engine;
+- intrusion/loitering/crowd event behavior;
+- automatic violence-event lifecycle;
+- authentication/authorization;
+- persisted acknowledgement;
+- evidence;
+- WebSocket/realtime delivery;
+- live camera/stream integration;
+- analytics;
+- PostgreSQL runtime;
+- complete end-to-end operator workflow.
+
+The current React/Vite frontend and current camera/event read integration are implementation evidence, but UI build/lint success alone is not acceptance evidence for every frontend SRS requirement.

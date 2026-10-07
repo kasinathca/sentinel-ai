@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Verification and Test Plan"
 document_id: "SEN-TEST"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -46,9 +46,12 @@ authoritative_for:
 >
 > This document remains the master test plan for the whole Sentinel system.
 >
-> As of 2026-09-12, the **violence model/runtime qualification suite has
-> execution evidence**, while most backend/frontend/detector/tracker/full-E2E
-> test families remain pending.
+> As of 2026-10-07, violence model/runtime qualification evidence, the Phase 2K–2M
+> worker/backend/persistence evidence, the current backend regression suite, the
+> AI-worker pure/unit suite, and frontend dependency/lint/build checks have
+> execution evidence. Detector/tracker, automatic event lifecycle, realtime,
+> evidence/authentication, and complete application E2E families remain pending
+> unless separately evidenced.
 >
 > Individual test cases become factual only when execution evidence exists.
 
@@ -3103,3 +3106,123 @@ Those remain in the broader system test plan.
 
 Detailed artifacts and hashes are listed in
 `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Executed Evidence Addendum — Phases 2K–2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+This section records executed evidence without changing unrelated test cases from `NOT_YET_EXECUTED`.
+
+## Phase 2K — worker-core integration
+
+Worker unit tests were executed and passed for the implemented violence runtime slice.
+
+Real fixture behavior:
+
+```text
+Fighting:
+observations = 19
+raw positives = 9
+qualified rolling states = 10
+first qualified index = 4
+candidate condition = true
+max score = 0.9957476258277893
+
+Normal:
+observations = 26
+raw positives = 0
+qualified rolling states = 0
+candidate condition = false
+max score = 0.0217826329171658
+```
+
+## Phase 2L — backend AI integration
+
+The backend integration suite passed.
+
+Real worker JSONL replay produced:
+
+```text
+Fighting: accepted 19, qualified 10, first qualified index 4
+Normal:   accepted 26, qualified 0
+```
+
+Failure handling and frozen worker/backend contract parity were exercised.
+
+## Phase 2M — persistence foundation
+
+The full backend suite at the Phase 2M checkpoint executed:
+
+```text
+21 tests
+21 PASS
+```
+
+The tested slice includes schema/persistence behavior, SQLite bootstrap, seed idempotence, and the existing integration tests.
+
+Database initialization was executed twice:
+
+1. first run applied the Alembic migration and created the frozen model/policy seed;
+2. second run remained at Alembic head and preserved idempotent seed state.
+
+A controlled real Fighting fixture persistence proof explicitly created exactly one event with violence context at the first qualifying rolling state.
+
+## Important limitation
+
+This evidence does not verify:
+
+- automatic event lifecycle/deduplication;
+- cooldown/retrigger semantics;
+- frontend;
+- auth;
+- evidence;
+- WebSockets;
+- detector/tracker integration;
+- PostgreSQL runtime;
+- complete application E2E acceptance.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Integrated Verification Evidence Update — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The historical Phase 2K–2M evidence above remains valid for that checkpoint. The current integration gate additionally executed the promoted application baseline.
+
+Executed successfully:
+
+```text
+Alembic fresh-database migration through 20261005_0002
+frozen violence seed
+database readiness check
+backend unittest/API/integration suite: 35/35 PASS
+AI-worker pure/unit suite: 19/19 PASS
+frontend npm ci
+frontend npm audit: 0 vulnerabilities
+frontend lint: 0 warnings / 0 errors
+frontend production build: PASS
+```
+
+The backend suite includes current camera/event API contract tests and database-readiness tests. The AI-worker suite includes portable runtime-path tests.
+
+This evidence still does **not** verify:
+
+- raw-video model preflight on the promoted baseline;
+- detector/tracker integration;
+- zone/rule/intrusion/loitering/crowd end-to-end behavior;
+- automatic violence-event lifecycle;
+- authentication/authorization;
+- persistent acknowledgement;
+- evidence generation/access;
+- WebSocket delivery/reconnect;
+- camera streaming/snapshots;
+- analytics;
+- PostgreSQL runtime;
+- complete application E2E acceptance.
+
+Raw-video/model preflight remains a separate qualified-runtime/GPU gate and must not be inferred from pure/unit tests.

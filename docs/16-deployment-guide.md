@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Deployment, Installation, and Demo Runbook"
 document_id: "SEN-DEPLOY"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -34,8 +34,7 @@ authoritative_for:
 > Several technology choices are still unresolved:
 >
 > - frontend framework;
-> - database final selection;
-> - ORM/migration tooling;
+> - final database engine and PostgreSQL runtime qualification;
 > - backend ↔ AI-worker transport;
 > - video source/streaming transport;
 > - evidence storage backend;
@@ -90,9 +89,11 @@ If actual code/setup differs from this guide, the guide and/or design must be up
 | Separate AI worker | `CONFIRMED` |
 | Modular monolith backend | `CONFIRMED` |
 | Frontend web application | `CONFIRMED` |
-| Relational persistence | `PROPOSED` |
-| PostgreSQL | `PROPOSED_PENDING_ADR` |
-| Alembic migrations | `PROPOSED` |
+| Relational persistence foundation | `IMPLEMENTED_PHASE_2M` |
+| SQLite local-development runtime | `QUALIFIED_PHASE_2M` |
+| PostgreSQL | `DRIVER_CONFIGURED_RUNTIME_NOT_QUALIFIED` |
+| SQLAlchemy 2.x | `IMPLEMENTED_PHASE_2M` |
+| Alembic migrations | `IMPLEMENTED_PHASE_2M` |
 | Uvicorn ASGI server | `PROPOSED` |
 | WebSocket event updates | `PROPOSED` |
 | Docker | `PROPOSED` |
@@ -261,9 +262,21 @@ Final guide shall replace placeholders with exact commands.
 
 # 9. Database
 
-Database selection: `PROPOSED: PostgreSQL`.
+The persistence foundation is implemented through SQLAlchemy 2.x.
 
-Do not make PostgreSQL mandatory until the database ADR is accepted. Once accepted, record the exact major version.
+Qualified local-development engine:
+
+```text
+SQLite
+```
+
+Proposed final engine:
+
+```text
+PostgreSQL
+```
+
+`psycopg` support is configured, but PostgreSQL runtime/migration behavior has not yet been qualified. Do not make PostgreSQL the verified demo runtime until that qualification exists.
 
 # 10. FFmpeg / Decoder Tooling
 
@@ -369,10 +382,11 @@ Recommended ignore policy:
 
 # 17. Backend Virtual Environment
 
+Repository-root environment:
+
 Linux/macOS:
 
 ```bash
-cd backend
 python -m venv .venv
 source .venv/bin/activate
 ```
@@ -380,28 +394,28 @@ source .venv/bin/activate
 Windows PowerShell:
 
 ```powershell
-cd backend
-py -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
 # 18. Backend Dependency Installation
 
-Dependency mechanism is `TBD`.
+The implemented backend currently uses committed requirement files.
 
-Potential final commands include:
+Windows PowerShell from repository root:
 
-```bash
-pip install -r requirements.txt
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r .\backend\requirements-dev.txt
 ```
 
-or:
+Runtime dependencies are also declared in:
 
-```bash
-pip install -e .
+```text
+backend/requirements.txt
 ```
 
-Only one actual project method should remain in the final version.
+Do not replace the working dependency mechanism merely to remove non-failing warnings.
 
 # 19. AI Worker Environment
 
@@ -432,14 +446,17 @@ Exact packages shall come from the selected AI stack. Do not install unused heav
 
 # 21. Frontend Dependencies
 
-After framework/package manager selection:
+The current implementation uses npm with a committed lockfile:
 
-```bash
-cd frontend
-<PACKAGE_MANAGER> install
+```powershell
+cd .\frontend
+npm ci
+npm audit
+npm run lint
+npm run build
 ```
 
-The final guide shall use the actual package manager and lockfile.
+Use `npm run dev` for the local development server.
 
 # 22. PostgreSQL Candidate Setup
 
@@ -490,15 +507,28 @@ Actual value remains local secret.
 
 # 26. Migrations
 
-Migration tool: `PROPOSED: Alembic`.
+Migration tool: `IMPLEMENTED: Alembic`.
 
-If selected:
+Initial revision:
 
-```bash
-alembic upgrade head
+```text
+20260912_0001
 ```
 
-The final guide must verify the actual config path/module and migration command.
+Current integrated Alembic head:
+
+```text
+20261005_0002
+```
+
+The supported Phase 2M initialization path is:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+```
+
+The script runs Alembic to `head` and then performs the idempotent frozen model/version/policy seed.
 
 # 27. Migration Rules
 
@@ -512,15 +542,15 @@ Shared development/demo must not depend on manually-created tables.
 
 # 28. Seed Data
 
-Seed strategy: `TBD`.
+A narrow Phase 2M seed is implemented for immutable violence provenance:
 
-Potential seed content:
+- frozen violence model identity;
+- frozen model version;
+- frozen global violence policy.
 
-- roles;
-- demo user;
-- optional demo camera configuration.
+The seed is idempotent.
 
-Do not seed fake events into final integrated mode without clear disclosure.
+It does **not** seed users, authentication state, fake production events, or unresolved cooldown/retrigger values.
 
 # 29. Runtime Directories
 
@@ -1932,3 +1962,170 @@ The following remain application deployment work:
 - full multi-camera load/capacity measurement.
 
 See `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Qualified Local Development Addendum — Phase 2M
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+## Backend environment observed
+
+```text
+FastAPI    0.141.1
+Pydantic   2.13.5
+Uvicorn    0.52.4
+SQLAlchemy 2.0.52
+Alembic    1.20.0
+psycopg    3.3.5
+httpx      0.28.1
+```
+
+The non-failing Starlette/httpx deprecation warning observed in tests is not a reason to destabilize this environment.
+
+## Qualified local database path
+
+Default local-development URL:
+
+```text
+sqlite+pysqlite:///./backend/runtime/sentinel.db
+```
+
+Physical file:
+
+```text
+backend/runtime/sentinel.db
+```
+
+The initializer creates the missing parent runtime directory automatically.
+
+The SQLite runtime DB is ignored by Git.
+
+## Database initialization — Windows PowerShell
+
+From repository root:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+```
+
+Expected semantics:
+
+```text
+Alembic upgrade to head
++
+idempotent frozen model/version/policy seed
+```
+
+The initialization was executed twice successfully; the second run remained idempotent.
+
+## Backend test command — Windows PowerShell
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python -m unittest discover -s .\backend\tests -p "test_*.py" -v
+```
+
+Phase 2M checkpoint result:
+
+```text
+21 tests
+21 PASS
+```
+
+## PostgreSQL boundary
+
+`psycopg` support is installed and SQLAlchemy can accept a PostgreSQL URL, but PostgreSQL runtime/migrations have not yet been qualified.
+
+Do not describe PostgreSQL as the verified demo database until a separate qualification run exists.
+
+## Worker transport boundary
+
+No production backend ↔ worker transport has been selected.
+
+Do not introduce Redis, RabbitMQ, Kafka, Celery, HTTP worker endpoints, or gRPC through deployment documentation unless an explicit architecture decision baselines one.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Reproducible Local Integration Runbook — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The repository-level verified Windows setup uses a virtual environment at the repository root:
+
+```powershell
+cd "<sentinel-ai-repository>"
+py -3.12 -m venv .venv
+Set-ExecutionPolicy -Scope Process Bypass -Force
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r .\backend\requirements-dev.txt
+```
+
+Backend database setup:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+python .\backend\scripts\init_database.py
+python .\backend\scripts\check_database.py
+```
+
+Current Alembic head:
+
+```text
+20261005_0002
+```
+
+Start the backend:
+
+```powershell
+python -m uvicorn app.main:app --app-dir .\backend --reload
+```
+
+Frontend:
+
+```powershell
+cd .\frontend
+npm ci
+npm audit
+npm run lint
+npm run build
+npm run dev
+```
+
+The frontend has a committed lockfile. Local API proxy configuration is externalized through:
+
+```dotenv
+VITE_API_PROXY_TARGET=http://127.0.0.1:8000
+```
+
+The external qualified violence workspace is configured with:
+
+```text
+SENTINEL_VIOLENCE_ROOT
+SENTINEL_TEMPORAL_CHECKPOINT
+SENTINEL_TEMPORAL_TRAIN_SCRIPT
+SENTINEL_EXTRACTOR_PYTHON
+SENTINEL_EXTRACTOR_WORKER
+SENTINEL_RUNTIME_WORK_DIR
+```
+
+Developer-specific absolute paths must not be committed.
+
+Repository-level verification:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify_integration.ps1
+```
+
+The 2026-10-07 run passed database migration/readiness, 35 backend tests, 19 AI-worker pure/unit tests, frontend dependency installation, zero-vulnerability npm audit, frontend lint, and frontend production build.
+
+Raw-video/model preflight is intentionally separate because it requires the external qualified XD-Violence workspace and GPU runtime.
+
+PostgreSQL remains unqualified as a runtime target.

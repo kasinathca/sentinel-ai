@@ -1,14 +1,14 @@
 ---
 title: "Sentinel AI — API and Integration Contract Specification"
 document_id: "SEN-API"
-version: "0.2.0"
+version: "0.3.0"
 status: "DRAFT_FOR_TEAM_REVIEW"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
 backend: "FastAPI"
 api_style: "PROPOSED: REST-style HTTP + WebSocket event channel"
 worker_transport: "TBD"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 owners:
   - "TBD"
 reviewers:
@@ -334,7 +334,8 @@ No threshold values in examples are requirements.
 
 ## 7.1 `GET /api/v1/health`
 
-**Status:** `PROPOSED`
+**Contract status:** `PROPOSED` pending API baseline approval.
+**Implementation state:** implemented in the Phase 2L FastAPI backend.
 
 Response:
 
@@ -2485,3 +2486,121 @@ Once baselined, an AI assistant shall:
 > implement first
 > → force other components to adapt later
 > ```
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+# Implementation Status Addendum — Phase 2L/2M Integration
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+
+The transport-neutral violence worker contract in this document is now consumed by implemented backend code.
+
+Implemented validation includes:
+
+- `schema_version`;
+- success versus explicit failure;
+- `camera_id`, `job_id`, and `correlation_id` structure;
+- model task `violence_fighting`;
+- frozen model version `6d22f83d-17f8-5ecf-9f0f-246fa326ec72`;
+- score range/shape;
+- the exact score-semantics string;
+- RFC3339 model-window semantics used by the integration layer.
+
+The backend applies the frozen domain criterion:
+
+```text
+positive observation: score >= 0.906
+candidate condition: at least 3 positives among the latest 5
+state key: (camera_id, model_version_id)
+```
+
+`label = "fighting"` identifies the positive class being scored. It does not mean the worker has created an event.
+
+Worker failures remain failures and are not converted into `score = 0`, `normal`, or a successful negative result.
+
+## Endpoint implementation boundary at Phase 2M
+
+Implemented:
+
+```text
+GET /api/v1/health
+```
+
+Not yet implemented/qualified as public application read APIs at this baseline:
+
+```text
+GET /api/v1/cameras
+GET /api/v1/cameras/{camera_id}
+GET /api/v1/events
+GET /api/v1/events/{event_id}
+GET /api/v1/health/readiness
+```
+
+Those remain contract/design targets for later implementation, including Phase 2N where applicable.
+
+The final backend ↔ worker transport remains `TBD`. JSON/JSONL replay is a development adapter only.
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# Current Integrated API Implementation Record — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+Contract-baseline status and implementation status are separate. The following routes are implemented in the current FastAPI application:
+
+```text
+GET   /api/v1/health
+GET   /api/v1/health/readiness
+
+POST  /api/v1/cameras
+GET   /api/v1/cameras
+GET   /api/v1/cameras/{camera_id}
+PATCH /api/v1/cameras/{camera_id}
+GET   /api/v1/cameras/{camera_id}/health
+
+POST  /api/v1/ai/violence/results
+
+GET   /api/v1/events
+GET   /api/v1/events/{event_id}
+```
+
+Current camera-health semantics are intentionally limited:
+
+```text
+state = unknown
+last_frame_at = null
+last_health_check_at = null
+```
+
+`enabled` is configuration state and must not be interpreted as proof that a camera is online.
+
+Event responses currently expose truthful empty/unavailable acknowledgement and evidence summaries; persistent acknowledgement/evidence subsystems do not yet exist.
+
+A qualifying violence-worker result can produce:
+
+```json
+{
+  "candidate_condition": true,
+  "event_persisted": false,
+  "event_lifecycle": "awaiting_domain_policy"
+}
+```
+
+because automatic event lifecycle policy is not baselined.
+
+The following remain unimplemented unless a later commit explicitly adds them:
+
+- zone APIs;
+- deterministic rule APIs;
+- acknowledgement POST/list APIs;
+- evidence APIs;
+- analytics APIs;
+- WebSocket/realtime event channel;
+- stream/snapshot endpoints;
+- authentication/authorization;
+- full event filtering/pagination beyond currently implemented parameters.
+
+The final production backend ↔ AI-worker transport/security mechanism remains unresolved. The current violence-result HTTP route is a development integration adapter.

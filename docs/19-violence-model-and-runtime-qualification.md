@@ -1,11 +1,11 @@
 ---
 title: "Sentinel AI — Violence Model and Runtime Qualification Record"
 document_id: "SEN-VIO-QUAL"
-version: "1.0.0"
+version: "1.1.0"
 status: "FROZEN_EVIDENCE_RECORD"
 project: "Sentinel AI"
 academic_context: "Advanced Web Technologies course project"
-last_updated: "2026-09-12"
+last_updated: "2026-10-07"
 authoritative_for:
   - "selected violence model identity"
   - "violence dataset split counts"
@@ -641,7 +641,7 @@ This record does **not** establish:
 - final camera/live-stream adapter;
 - multi-camera capacity;
 - event duplicate/retrigger semantics;
-- persistent event creation;
+- automatic event lifecycle creation from repeated qualifying states;
 - evidence generation;
 - WebSocket delivery;
 - acknowledgement;
@@ -721,3 +721,152 @@ CONFIRMED
 
 This statement shall not be broadened into a claim that the complete Sentinel
 application is production-ready or fully verified.
+
+---
+
+<!-- PHASE2KLM_DOC_SYNC_20260912 -->
+
+**Historical evidence baseline:** `dc828663ff26ef60d553dc572b4d59168cec06a4`
+
+> **Historical checkpoint:** The Phase 2K–2M statements below describe the 2026-09-12 implementation checkpoint. They are preserved as engineering evidence and must not be read as the current integrated application state. See the 2026-10-07 integrated-baseline section at the end of this document.
+# 21. Engineering Integration Extension — Phases 2K–2M
+
+The scientific/model qualification in Sections 1–20 remains frozen. No training, architecture selection, threshold tuning, or TEST-driven policy change occurred during Phases 2K–2M.
+
+## 21.1 Phase 2K — worker-core implementation
+
+The frozen violence runtime was integrated into the repository `ai_worker/` package with:
+
+- trusted source-reference resolution;
+- persistent exact I3D extractor process integration;
+- frozen temporal checkpoint loading;
+- artifact/hash validation;
+- structured success/failure output;
+- explicit failure behavior;
+- a development CLI adapter.
+
+Real fixture results preserved the qualified behavior:
+
+```text
+Fighting:
+19 observations
+9 raw positive windows
+10 qualified rolling states
+first qualified index = 4
+max score = 0.9957476258277893
+
+Normal:
+26 observations
+0 raw positive windows
+0 qualified rolling states
+max score = 0.0217826329171658
+```
+
+## 21.2 Phase 2L — backend criterion integration
+
+The FastAPI backend consumes the frozen worker result contract and validates:
+
+- model version;
+- task;
+- score semantics;
+- result shape/failure state.
+
+Rolling state is keyed by `(camera_id, model_version_id)`.
+
+The backend—not the worker—applies:
+
+```text
+score >= 0.906
+3-of-5
+```
+
+A qualified rolling state is a candidate domain condition, not an instruction to create one event per qualifying observation.
+
+## 21.3 Phase 2M — persistence foundation
+
+SQLAlchemy/Alembic persistence now stores the frozen model/policy provenance and supports explicit violence-event creation.
+
+The local SQLite database path was qualified; PostgreSQL runtime was not.
+
+The model/policy seed is idempotent.
+
+A controlled real Fighting replay reached its first qualified state at index `4` and explicitly persisted exactly one event/context pair.
+
+This proves:
+
+```text
+real worker result
+→ backend validation
+→ frozen rolling criterion
+→ explicit domain persistence
+```
+
+It does not yet prove:
+
+```text
+automatic event lifecycle
+duplicate suppression
+cooldown/retrigger
+episode grouping/reopening
+evidence
+notification
+acknowledgement
+complete application E2E
+```
+
+## 21.4 Freeze preserved
+
+Official TEST remains closed for tuning.
+
+No Phase 2K–2M engineering work changed:
+
+```text
+MODEL-VIO-BIGRU-ATTN-XD-V1
+model_version_id 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+EXP-VIO-LIVE-WINDOW-004
+threshold 0.906
+W1
+stride 1
+3-of-5
+```
+
+---
+<!-- INTEGRATED_BASELINE_SYNC_20261007 -->
+# 22. Promoted Integration Baseline — 2026-10-07
+
+**Code baseline:** `c7086121430562a481e45f5a63616e1f0c96a9b6`
+
+The scientific/model qualification remains frozen. No 2026-10-07 integration work changed:
+
+```text
+MODEL-VIO-BIGRU-ATTN-XD-V1
+model_version_id = 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+threshold = 0.906
+W1
+stride = 1
+3-of-5
+```
+
+The promoted repository adds portability and application-integration hardening around that frozen runtime:
+
+- external XD-Violence root is configurable rather than tied to a developer home path;
+- checkpoint/training/extractor paths can be overridden explicitly;
+- extractor Python resolution is platform-aware;
+- runtime-path failure behavior is unit-tested;
+- backend database readiness is explicit;
+- camera/event application routes and React/Vite frontend are integrated.
+
+The promoted integration gate executed:
+
+```text
+backend tests             = 35/35 PASS
+AI-worker pure/unit tests = 19/19 PASS
+frontend build/lint       = PASS
+npm audit                 = 0 vulnerabilities
+```
+
+These counts are engineering integration evidence, not new model-quality evaluation.
+
+The integrated gate intentionally did **not** rerun raw-video/GPU preflight because that requires the external qualified workspace. Therefore the earlier raw-video qualification evidence remains the authoritative model/runtime evidence; it is not replaced by the 19 pure/unit tests.
+
+Automatic violence-event lifecycle, evidence, notification, acknowledgement, and complete application E2E remain unqualified.

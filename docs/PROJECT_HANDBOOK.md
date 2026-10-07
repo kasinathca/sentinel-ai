@@ -3119,3 +3119,32 @@ The following external sources were checked for this handbook on **2026-08-19**.
 > - and which claims are supported by evidence.
 >
 > If the only explanation for an implementation choice is "the AI assistant generated it," the project documentation is incomplete.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Confirmed Project Decision — Camera Input Baseline
+
+The following project decision is now accepted and supersedes older `TBD`/generalized assumptions for the academic camera-input demonstration:
+
+```text
+camera count: exactly one
+academic camera source: looping virtual CCTV replay from approved local video
+physical CCTV dependency: none
+EOF behavior: automatic loop while active
+demo source selection: separate Demo Control Panel
+normal operator UI: no file picker
+multi-camera: out of scope
+RTSP/ONVIF/physical camera: future scope only
+```
+
+The exact low-level browser streaming transport may still be selected during implementation, but it must preserve the confirmed behavior above.
+
+The camera-source abstraction should permit a future physical-camera adapter without changing downstream AI/domain semantics.
+
+This decision is recorded by ADR-001 and specified by `21-virtual-cctv-replay-integration.md`.
+
+The frozen violence model remains unchanged.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

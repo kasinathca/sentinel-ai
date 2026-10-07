@@ -2257,3 +2257,24 @@ Still incomplete unless later commits add them:
 - complete application E2E acceptance.
 
 These limitations must remain explicit in the final report; the current baseline is an integrated development foundation, not a production-ready CCTV system.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Final-Report Claim Addendum — Camera Input
+
+For the academic implementation/report, the preferred wording is:
+
+> Sentinel AI uses a single virtual CCTV replay source for deterministic demonstration. Approved local recorded videos are replayed as the camera input and loop automatically at end-of-file. A separate Demo Control Panel selects the source, while the normal operator interface consumes the logical camera feed without file-selection behavior. The source abstraction is intended to permit future RTSP or physical-camera adapters without changing downstream AI/domain semantics.
+
+Do **not** claim that:
+
+- a physical CCTV system was connected;
+- RTSP/ONVIF compatibility was validated;
+- multiple cameras were supported;
+- looped demo clips constitute independent field-evaluation evidence.
+
+When implementation is complete, report the actual test results for loop stability, positive/negative fixtures, and source/AI synchronization.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

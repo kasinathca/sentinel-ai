@@ -305,3 +305,46 @@ Whenever the external runtime layout changes:
 2. prefer configuration overrides over machine-specific path edits;
 3. update `.env.example` and AI-worker README;
 4. rerun pure/unit tests and qualified runtime preflight.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Integration Record Addendum — Virtual CCTV Documentation Baseline
+
+Immediately before this documentation kit was prepared, the following remote branches were verified identical:
+
+```text
+main
+staging
+aaditi/frontend-operator-ui
+gouri/backend-domain
+```
+
+Verified common commit:
+
+```text
+81d7222d8880b52a4990a9987540b9e68eb74b59
+```
+
+The approved next documentation baseline introduces:
+
+- one camera only;
+- looping recorded-video virtual CCTV;
+- separate Demo Control Panel;
+- no physical CCTV dependency;
+- no multi-camera requirement;
+- no model retuning;
+- explicit target-vs-implemented distinction.
+
+Safe propagation rule:
+
+1. update `main` from the verified common baseline;
+2. commit documentation once;
+3. fast-forward the three other branches to the documentation commit if they have not diverged;
+4. if any branch has diverged, stop and merge/review normally;
+5. never force-push merely to synchronize documentation.
+
+The provided `apply_and_sync_all_branches.ps1` implements this conservative workflow.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

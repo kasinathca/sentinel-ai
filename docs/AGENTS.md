@@ -1641,3 +1641,32 @@ This vertical slice has priority over:
 >
 > Accuracy of the engineering record is more important than making the project appear sophisticated.
 
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Mandatory Agent Rule — Single-Camera Virtual CCTV Baseline
+
+For future AI-assisted work, the following are now `CONFIRMED`:
+
+- exactly one logical camera for the academic project;
+- local approved recorded videos act as the camera source through a virtual CCTV replay adapter;
+- the active clip loops automatically at EOF;
+- the Demo Control Panel is separate from the normal operator panel;
+- the normal operator panel shall not gain a file picker;
+- physical CCTV/RTSP/ONVIF is not required for MVP;
+- multi-camera behavior is out of scope;
+- client-supplied arbitrary paths are forbidden;
+- frozen violence model identity/policy shall not be changed by replay integration.
+
+Agents must not:
+
+1. reintroduce multi-camera scope because generalized earlier documents mention multiple cameras;
+2. claim the looping replay source is implemented until code/tests prove it;
+3. claim physical live CCTV integration;
+4. alter the frozen model/threshold as a shortcut to make demo clips work;
+5. copy heavy/private demo video assets into Git without explicit approval.
+
+Primary new authority: `docs/21-virtual-cctv-replay-integration.md` and `docs/adr/ADR-001-single-looping-virtual-cctv-source.md`.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

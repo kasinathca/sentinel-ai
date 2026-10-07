@@ -3619,3 +3619,38 @@ Still unresolved/not implemented include:
 - production secret-management strategy;
 - PostgreSQL hardening;
 - final deployment security review.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Security Addendum — Demo Media and Virtual CCTV
+
+Threat boundary for demo media:
+
+```text
+untrusted browser clip_id
+        ↓
+validated registered ID
+        ↓
+trusted manifest
+        ↓
+canonical path under configured media root
+```
+
+Required controls:
+
+- reject absolute browser-supplied paths;
+- reject `..` traversal;
+- reject IDs not present in the approved registry;
+- verify resolved paths remain below `SENTINEL_DEMO_MEDIA_ROOT`;
+- do not return local absolute paths to the browser;
+- treat malformed/corrupt media as failure;
+- do not commit private/restricted video fixtures or redistribution-prohibited data;
+- keep machine-local configuration outside Git.
+
+Because the Demo Control Panel controls local test media, deployment should default to development/local access until authentication/authorization is implemented.
+
+The normal operator panel shall not expose the demo media catalog unless an explicit future requirement adds such behavior.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

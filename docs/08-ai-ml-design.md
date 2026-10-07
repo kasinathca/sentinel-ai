@@ -3679,3 +3679,36 @@ Final raw-video temporal-policy parity matched:
 
 See `19-violence-model-and-runtime-qualification.md` for complete experiment
 lineage and evidence.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 AI/ML Addendum — Camera-Source Replay Integration
+
+The virtual CCTV decision changes input orchestration, not the frozen violence model.
+
+The qualified violence subsystem remains frozen with its existing:
+
+- exact I3D preprocessing/extractor lineage;
+- temporal model;
+- model version;
+- threshold;
+- rolling criterion;
+- score semantics.
+
+The final replay path shall present the selected clip as a temporally paced single camera source.
+
+Requirements for AI integration:
+
+1. AI analyzes the same selected `clip_id`/session presented to the operator.
+2. EOF is a source loop transition, not an artificial negative result.
+3. Worker/decode failure remains explicit failure.
+4. Looping shall not trigger model retraining or threshold calibration.
+5. Any temporal-buffer behavior at loop boundary shall be explicit and tested.
+6. Current whole-file `process_file()` behavior may remain a preflight/development path; it does not by itself satisfy the final looping virtual-camera requirement.
+7. Multi-camera worker scheduling is not required.
+
+The frozen model output shall continue to be described as an uncalibrated fighting-class sigmoid score, not a calibrated probability.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

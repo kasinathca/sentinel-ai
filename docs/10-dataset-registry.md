@@ -2546,3 +2546,39 @@ Therefore:
 
 Detailed experiment usage is recorded in
 `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Dataset Registry Addendum — `DATA-SENT-DEMO-V1`
+
+`DATA-SENT-DEMO-V1` is the controlled system-integration/demo fixture collection for the single virtual CCTV source.
+
+**Registration state:** metadata must be completed from the actual final local files; do not fabricate unknown values.
+
+Minimum registry columns:
+
+| Field | Required |
+|---|---|
+| fixture_id | yes |
+| clip_id | yes |
+| display_name | yes |
+| original_filename | yes |
+| relative_path | yes |
+| sha256 | yes |
+| duration_ms | yes when measurable |
+| expected_scenario | yes |
+| expected_class | yes for controlled validation |
+| provenance | yes |
+| permission_status | yes |
+| formal_dataset_name | when applicable |
+| formal_split | when applicable |
+| redistribution_allowed | yes/no/unknown |
+| notes | optional |
+
+The application-facing Demo Control Panel may use neutral `display_name` values such as `Scenario 01` so the expected class is not revealed during presentation.
+
+The manifest shall never contain developer-specific absolute paths in Git. Paths are relative to `SENTINEL_DEMO_MEDIA_ROOT`.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

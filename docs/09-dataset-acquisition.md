@@ -2512,3 +2512,34 @@ Commit instead:
 - hashes;
 - scripts;
 - small machine-readable evaluation reports where appropriate.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Dataset/Fixture Acquisition Addendum — Demo CCTV Media
+
+The academic demo requires a small controlled set of local video fixtures sufficient to demonstrate at least:
+
+- fighting/violence-positive behavior;
+- non-violence/negative behavior;
+- source looping;
+- media failure handling where practical.
+
+The actual binaries remain outside Git.
+
+Before a clip is used in the final demo, record:
+
+- source/provenance;
+- permission/redistribution status;
+- original filename;
+- SHA-256;
+- duration;
+- expected scenario;
+- relationship to training/validation/test data.
+
+Do not silently treat demo fixtures as new independent model-evaluation evidence.
+
+If a fixture originates from XD-Violence or another formal dataset, preserve its known split/context and do not claim it represents unseen field CCTV deployment.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

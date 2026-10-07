@@ -2461,3 +2461,40 @@ The backend now also exposes `/api/v1/health/readiness`; frontend readiness-spec
 Do not present the current mock fixtures as live operational evidence.
 
 A model score remains a model-specific uncalibrated sigmoid score, not a calibrated probability of real-world violence.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Operator Manual Addendum — Academic Virtual CCTV Mode
+
+There are two distinct surfaces.
+
+## Demo Control Panel
+
+Used by the demonstrator to:
+
+- select an approved scenario;
+- start the single virtual camera;
+- stop it;
+- restart it;
+- observe source-control errors.
+
+The selected video loops automatically at EOF while active.
+
+## Normal Sentinel Operator Panel
+
+Used to observe:
+
+- the one camera feed;
+- camera operational state;
+- AI/system status;
+- events/history features that are actually implemented.
+
+The normal panel shall not require the operator to browse the filesystem or select an MP4 file.
+
+For academic honesty, documentation and oral explanation should describe the source as a **virtual CCTV replay source backed by recorded footage** rather than claim access to a physical CCTV installation.
+
+Operationally, EOF loop restart is normal behavior and must not be treated as camera failure.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

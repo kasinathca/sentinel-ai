@@ -2604,3 +2604,59 @@ The following remain unimplemented unless a later commit explicitly adds them:
 - full event filtering/pagination beyond currently implemented parameters.
 
 The final production backend ↔ AI-worker transport/security mechanism remains unresolved. The current violence-result HTTP route is a development integration adapter.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 API Addendum — Demo Source Controller
+
+**Contract status:** `CONFIRMED TARGET`; implementation status remains separate.
+
+Target endpoints:
+
+```text
+GET  /api/v1/demo/clips
+PUT  /api/v1/demo/source
+POST /api/v1/demo/source/start
+POST /api/v1/demo/source/stop
+POST /api/v1/demo/source/restart
+GET  /api/v1/demo/source/status
+```
+
+Rules:
+
+- the client sends `clip_id`, never an arbitrary path;
+- only one virtual camera exists;
+- initial implementation should require the source to be stopped before selecting a different clip;
+- EOF loops automatically and is not surfaced as camera-offline failure;
+- corrupt/missing media returns explicit failure;
+- start should not synchronously run an entire long inference job inside an ordinary FastAPI request;
+- the normal operator UI should consume camera/domain APIs, not demo source-selection APIs.
+
+Example source-selection body:
+
+```json
+{
+  "clip_id": "scenario-01"
+}
+```
+
+Example status concept:
+
+```json
+{
+  "data": {
+    "state": "playing",
+    "clip_id": "scenario-01",
+    "position_ms": 12450,
+    "loop_count": 2
+  }
+}
+```
+
+Absolute local paths shall not appear in browser-facing responses.
+
+The final browser video transport remains an implementation choice; it must preserve the one-camera abstraction and source synchronization.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

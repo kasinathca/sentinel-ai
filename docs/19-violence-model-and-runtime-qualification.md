@@ -870,3 +870,33 @@ These counts are engineering integration evidence, not new model-quality evaluat
 The integrated gate intentionally did **not** rerun raw-video/GPU preflight because that requires the external qualified workspace. Therefore the earlier raw-video qualification evidence remains the authoritative model/runtime evidence; it is not replaced by the 19 pure/unit tests.
 
 Automatic violence-event lifecycle, evidence, notification, acknowledgement, and complete application E2E remain unqualified.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Qualification Extension — Virtual CCTV Replay Boundary
+
+This section does not alter the frozen qualification record.
+
+The approved single-camera replay architecture is an integration extension around the qualified violence runtime.
+
+Unchanged frozen identity:
+
+```text
+EXP-VIO-TEMPORAL-001
+MODEL-VIO-BIGRU-ATTN-XD-V1
+model_version_id = 6d22f83d-17f8-5ecf-9f0f-246fa326ec72
+checkpoint SHA256 = 1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772
+threshold = 0.906
+criterion = 3-of-5
+stride = 1 feature step
+```
+
+The virtual-camera milestone must demonstrate runtime compatibility on registered positive and negative fixtures, but it shall not reopen the held-out test set for tuning.
+
+Looped replays are repeated system-input exposures, not additional statistically independent test examples.
+
+Physical CCTV/RTSP behavior remains outside the qualification evidence until separately tested.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

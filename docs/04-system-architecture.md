@@ -2491,3 +2491,47 @@ frontend production build    = PASS
 ```
 
 Raw-video/model preflight is a separate gate because it requires the external qualified XD-Violence workspace and GPU runtime.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Architecture Addendum — Singleton Looping Virtual Camera
+
+**Architecture decision:** accepted by ADR-001.
+
+The current academic architecture shall contain one logical camera and a replay-source adapter:
+
+```text
+Demo Control Panel
+      │ clip_id + control
+      ▼
+Singleton VirtualCameraController
+      │
+      ▼
+ApprovedClipResolver
+      │ trusted local path
+      ▼
+LoopingRecordedVideoSource
+      ├────────► operator video delivery
+      └────────► AI-worker processing
+                      │
+                      ▼
+                 FastAPI/domain
+```
+
+Architectural invariants:
+
+1. exactly one camera session may be active;
+2. EOF loops; EOF is not offline failure;
+3. the normal operator panel does not select files;
+4. only the source/controller layer needs file-specific knowledge;
+5. arbitrary client paths are forbidden;
+6. the AI worker remains a separate process/runtime boundary;
+7. model identity/policy is unchanged;
+8. physical RTSP/CCTV adapters are future scope, not blockers;
+9. multi-camera orchestration is out of scope.
+
+The existing worker `file` adapter is an implementation starting point, not proof that the real-time-paced looping source is already complete.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

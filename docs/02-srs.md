@@ -3921,3 +3921,41 @@ Those remain governed by their own requirements/open decisions.
 
 Qualification evidence is recorded in
 `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Requirements Addendum — Single-Camera Virtual CCTV Replay
+
+**Decision status:** `CONFIRMED TARGET`
+
+The following requirements supplement the existing `FR-DEMO-001` reproducible recorded-video requirement.
+
+| ID | Requirement |
+|---|---|
+| `FR-VCAM-001` | The academic system shall expose exactly one logical camera. |
+| `FR-VCAM-002` | The camera shall be backed by an approved server-side recorded-video source for the academic demo. |
+| `FR-VCAM-003` | Source selection/control shall exist in a Demo Control Panel separate from the normal operator panel. |
+| `FR-VCAM-004` | Starting the source shall activate the selected clip as the single virtual camera feed. |
+| `FR-VCAM-005` | Stopping the source shall terminate replay and associated AI processing cleanly. |
+| `FR-VCAM-006` | EOF shall automatically restart the same clip while the camera session remains active. |
+| `FR-VCAM-007` | Replay shall be paced as a camera-like temporal feed rather than intentionally collapsed into instantaneous whole-file playback. |
+| `FR-VCAM-008` | The operator display and AI pipeline shall use the same selected `clip_id`/camera session. |
+| `FR-VCAM-009` | The normal operator UI shall not expose a file picker or arbitrary filesystem path. |
+| `FR-VCAM-010` | Natural EOF/loop restart shall not be classified as camera-offline failure. |
+| `FR-VCAM-011` | Client input shall use opaque approved source IDs; arbitrary paths and traversal shall be rejected. |
+| `FR-VCAM-012` | The virtual-camera integration shall preserve the frozen violence model and policy. |
+| `FR-VCAM-013` | Corrupt/unreadable media shall produce an explicit source/worker failure, never a fabricated successful negative. |
+| `FR-VCAM-014` | Multi-camera behavior shall not be implemented without a future explicit scope decision. |
+
+Additional non-functional requirements:
+
+- long-running replay/inference shall not block ordinary FastAPI interactive endpoints;
+- video binaries and machine-local paths shall remain outside Git;
+- demo-fixture provenance/hash/split membership shall be documented;
+- the project shall not claim physical CCTV integration.
+
+Implementation status must remain separate from requirement status.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

@@ -1574,3 +1574,68 @@ A model result is not itself a persisted domain event.
 
 The event-state diagram shall keep duplicate/cooldown/retrigger behavior
 separate because that lifecycle remains unresolved.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 System-Model Addendum — Single Virtual CCTV
+
+## Component model
+
+```mermaid
+flowchart LR
+    Demo[Demo Control Panel] --> VC[Singleton Virtual Camera Controller]
+    VC --> R[Approved Clip Resolver]
+    R --> S[Looping Recorded-Video Source]
+    S --> V[Operator Video Delivery]
+    S --> AI[Separate AI Worker]
+    AI --> B[FastAPI / Domain]
+    B --> UI[Normal Sentinel Operator UI]
+```
+
+## Source lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Ready: select approved clip
+    Ready --> Starting: start
+    Starting --> Playing: first valid frame
+    Playing --> LoopRestarting: EOF
+    LoopRestarting --> Playing: reopen/seek succeeds
+    Playing --> Stopped: stop
+    Starting --> Failed: source/decode failure
+    Playing --> Failed: unrecoverable decode failure
+    LoopRestarting --> Failed: reopen failure
+    Stopped --> Ready: source remains selected
+```
+
+## Sequence
+
+```mermaid
+sequenceDiagram
+    actor D as Demonstrator
+    participant C as Demo Control Panel
+    participant B as FastAPI
+    participant V as Virtual Camera
+    participant A as AI Worker
+    participant O as Operator UI
+
+    D->>C: select clip_id
+    C->>B: select source
+    D->>C: start
+    C->>B: start source
+    B->>V: start registered clip
+    V-->>O: camera frames/feed
+    V-->>A: same source session
+    A-->>B: structured violence results
+    B-->>O: camera/AI/domain state
+    loop each EOF
+        V->>V: restart same clip
+    end
+```
+
+All system models that imply multiple simultaneous cameras are generalized design material and are not part of the current academic implementation target.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

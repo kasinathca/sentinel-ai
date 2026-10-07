@@ -4166,3 +4166,67 @@ A UI feature is done when:
 > `TBD`
 >
 > rather than creating a plausible-looking control with no authoritative meaning.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 UI/UX Addendum — One Camera + Separate Demo Control Panel
+
+This addendum supersedes older generalized UI assumptions that require a camera grid, camera selector, or multiple simultaneous camera views for the academic baseline.
+
+## Normal operator UI
+
+The operator UI shall show one logical camera only. It shall have **no file picker**.
+
+It shall not expose:
+
+- file picker;
+- upload control;
+- filesystem path;
+- dataset expected label;
+- source-map path;
+- XD-Violence workspace details.
+
+The camera surface should present normal operational state such as:
+
+```text
+DEMO-CAM-01
+ONLINE
+AI PROCESSING
+```
+
+The operator experience should be indistinguishable at the domain/UI level from consuming a camera feed, while project documentation remains honest that the academic source is a virtual replay camera.
+
+## Separate Demo Control Panel
+
+Required controls:
+
+- approved clip selector;
+- Start Feed;
+- Stop Feed;
+- Restart;
+- state;
+- optional position/loop diagnostics.
+
+This panel is a demonstration/testing surface and shall be visually/structurally separate from normal monitoring.
+
+## Loop behavior
+
+When EOF occurs:
+
+- video resumes from the beginning;
+- no offline banner is shown merely due to EOF;
+- brief loop transition may be hidden or shown only as diagnostics;
+- current camera identity remains unchanged.
+
+## Remove from critical academic path
+
+- multi-camera selector;
+- camera grid;
+- simultaneous live views;
+- physical-camera setup workflow.
+
+Those generalized concepts may remain future-scope design material but shall not be represented as current requirements.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

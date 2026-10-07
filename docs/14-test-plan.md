@@ -3226,3 +3226,36 @@ This evidence still does **not** verify:
 - complete application E2E acceptance.
 
 Raw-video/model preflight remains a separate qualified-runtime/GPU gate and must not be inferred from pure/unit tests.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Test-Plan Addendum — Single Looping Virtual CCTV
+
+Add the following system-integration tests:
+
+| Test ID | Test | Required result |
+|---|---|---|
+| `T-VCAM-001` | start registered positive clip | source reaches playing state |
+| `T-VCAM-002` | start registered negative clip | source reaches playing state |
+| `T-VCAM-003` | reach EOF | same clip restarts automatically |
+| `T-VCAM-004` | observe at least two loops | camera remains online |
+| `T-VCAM-005` | stop during playback | playback/inference stops cleanly |
+| `T-VCAM-006` | restart | position returns to beginning |
+| `T-VCAM-007` | unknown `clip_id` | stable rejection |
+| `T-VCAM-008` | traversal/absolute-path attempt | rejected |
+| `T-VCAM-009` | registered path missing | explicit source failure |
+| `T-VCAM-010` | corrupt media | explicit failure; never successful normal score |
+| `T-VCAM-011` | normal operator UI | no file picker/source path |
+| `T-VCAM-012` | demo UI | source selector/control present |
+| `T-VCAM-013` | single-camera scope | no multi-camera selector/grid |
+| `T-VCAM-014` | positive fixture | expected frozen-model candidate behavior demonstrated |
+| `T-VCAM-015` | negative fixture | expected non-candidate behavior demonstrated |
+| `T-VCAM-016` | model identity | frozen IDs/hash/policy unchanged |
+| `T-VCAM-017` | display/AI source identity | both resolve to same session/clip |
+| `T-VCAM-018` | EOF semantics | no camera-offline solely due to looping |
+
+Timing tolerances shall be baselined from measured implementation behavior rather than invented in advance.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

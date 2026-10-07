@@ -3806,3 +3806,29 @@ Full application event persistence/alert-delivery performance remains a separate
 system-level evaluation item.
 
 See `19-violence-model-and-runtime-qualification.md`.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Model-Card Addendum — Virtual Camera Does Not Change Model Claims
+
+The looping virtual CCTV adapter is an integration/input-source change only.
+
+It does not change:
+
+- the selected temporal model;
+- official train/validation/test split;
+- model checkpoint;
+- measured held-out metrics;
+- threshold provenance;
+- score semantics;
+- post-test no-retuning rule.
+
+Repeated model scores observed across repeated loops are not additional independent evaluation samples.
+
+A successful academic demonstration using selected replay fixtures shall be reported as **system-integration demonstration evidence**, not as proof of generalized real-world CCTV accuracy.
+
+Physical CCTV compatibility and field performance remain unverified unless separately tested.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

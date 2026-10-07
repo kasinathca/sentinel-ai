@@ -3193,3 +3193,28 @@ event_lifecycle = awaiting_domain_policy
 ```
 
 for qualifying candidates because automatic cooldown/deduplication/episode semantics remain unresolved.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Database Impact Addendum — Virtual CCTV Replay
+
+The single-camera replay decision does **not require a database migration by itself**.
+
+Initial virtual-camera session state should remain runtime/ephemeral unless later requirements justify persistence.
+
+No new table shall be invented merely to store:
+
+- current playback position;
+- loop count;
+- current selected demo clip;
+- transient source process ID.
+
+If implementation later persists demo-run evidence, that change requires a separate schema decision/migration.
+
+Existing camera metadata may represent the single logical camera, but the project shall not add multi-camera database behavior merely because the schema is generalized.
+
+Actual demo-fixture metadata/provenance belongs in the dataset/demo registry or controlled manifest, not in the application database by default.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

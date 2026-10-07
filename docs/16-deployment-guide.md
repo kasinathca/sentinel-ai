@@ -2129,3 +2129,43 @@ The 2026-10-07 run passed database migration/readiness, 35 backend tests, 19 AI-
 Raw-video/model preflight is intentionally separate because it requires the external qualified XD-Violence workspace and GPU runtime.
 
 PostgreSQL remains unqualified as a runtime target.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Deployment/Demo Addendum — Virtual CCTV Media
+
+Additional machine-local configuration:
+
+```powershell
+$env:SENTINEL_DEMO_MEDIA_ROOT = "C:\path\to\Sentinel-Demo-Media"
+```
+
+Recommended folder:
+
+```text
+Sentinel-Demo-Media/
+├── fight/
+├── non_violence/
+└── manifest.json
+```
+
+The folder shall not be committed to the repository by default.
+
+Demo readiness checklist:
+
+1. configure external qualified violence workspace;
+2. configure demo media root;
+3. validate manifest;
+4. verify positive and negative media exist;
+5. run AI raw-video preflight;
+6. start backend;
+7. start frontend;
+8. start virtual camera through Demo Control Panel;
+9. verify loop;
+10. verify AI/operator state.
+
+No RTSP server, CCTV credential, ONVIF service, NVR, or physical camera is required for the academic runbook.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

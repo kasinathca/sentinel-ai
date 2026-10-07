@@ -948,3 +948,30 @@ In particular, requirements depending on the following remain unverified or bloc
 - complete end-to-end operator workflow.
 
 The current React/Vite frontend and current camera/event read integration are implementation evidence, but UI build/lint success alone is not acceptance evidence for every frontend SRS requirement.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Traceability Addendum — Virtual CCTV Replay
+
+| Requirement | Design/Contract | Primary test |
+|---|---|---|
+| `FR-VCAM-001` one camera | `21` §2, §7 | `T-VCAM-013` |
+| `FR-VCAM-002` approved file source | `21` §12–13 | `T-VCAM-001/002` |
+| `FR-VCAM-003` separate demo controller | UI/UX addendum | `T-VCAM-011/012` |
+| `FR-VCAM-004` start | API addendum | `T-VCAM-001` |
+| `FR-VCAM-005` stop | API addendum | `T-VCAM-005` |
+| `FR-VCAM-006` loop EOF | source state model | `T-VCAM-003/004/018` |
+| `FR-VCAM-007` paced replay | architecture/AI design | measured replay test |
+| `FR-VCAM-008` shared source | architecture | `T-VCAM-017` |
+| `FR-VCAM-009` no file picker in operator UI | UI/UX | `T-VCAM-011` |
+| `FR-VCAM-010` EOF not offline | state model | `T-VCAM-018` |
+| `FR-VCAM-011` opaque IDs/path safety | API + security | `T-VCAM-007/008` |
+| `FR-VCAM-012` model freeze | AI/ML + qualification | `T-VCAM-016` |
+| `FR-VCAM-013` explicit media failure | API/AI | `T-VCAM-009/010` |
+| `FR-VCAM-014` no multi-camera creep | scope/UI | `T-VCAM-013` |
+
+Do not mark implementation/verification complete in the RTM until the cited tests exist and pass.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

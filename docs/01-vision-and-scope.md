@@ -2677,3 +2677,30 @@ Accessed:
 > It does not attempt facial recognition, universal anomaly detection, autonomous criminality judgement, or large-scale enterprise deployment.
 >
 > The project's primary success condition is not that an AI model produces a prediction in isolation. The primary success condition is that a documented, testable, reproducible end-to-end software workflow turns legitimate video observations into traceable operator-facing events and preserves the human review lifecycle accurately.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Scope Baseline Addendum — Single Looping Virtual CCTV
+
+**Decision status:** `CONFIRMED`
+
+Sentinel AI's academic MVP is now constrained to **exactly one logical camera**. Access to a physical live CCTV installation is not a dependency for project completion.
+
+The camera input for the academic demonstration shall be a controlled local recorded video presented through a looping virtual CCTV source. The source restarts automatically at EOF while active.
+
+The source is selected through a separate Demo Control Panel. The normal operator panel remains an operational monitoring surface and shall not contain file-selection controls.
+
+The following are explicitly outside the current academic MVP:
+
+- multiple cameras or multi-camera UI;
+- RTSP/IP-camera/ONVIF/NVR/DVR integration;
+- physical-CCTV credentials or deployment;
+- cross-camera tracking/analytics.
+
+Future source adapters may be added without changing downstream AI/domain semantics.
+
+This addendum is governed in detail by `21-virtual-cctv-replay-integration.md` and ADR-001.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

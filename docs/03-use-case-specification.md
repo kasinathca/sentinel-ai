@@ -318,12 +318,12 @@ Expected behavior:
 
 ## UC-AUTH-001 — Authenticate to Sentinel
 
-**Status:** `TBD_SCOPE`  
-**Primary actor:** Unauthenticated User  
-**Supporting actor:** Authentication subsystem  
-**Goal:** Obtain authorized access to Sentinel functions.  
-**Trigger:** User attempts to access the application or submits authentication credentials.  
-**Related requirements:** `FR-AUTH-001`, `FR-AUTH-002`, `FR-AUTH-003`  
+**Status:** `TBD_SCOPE`
+**Primary actor:** Unauthenticated User
+**Supporting actor:** Authentication subsystem
+**Goal:** Obtain authorized access to Sentinel functions.
+**Trigger:** User attempts to access the application or submits authentication credentials.
+**Related requirements:** `FR-AUTH-001`, `FR-AUTH-002`, `FR-AUTH-003`
 **Priority:** `MUST` if authentication is baselined.
 
 ### Preconditions
@@ -403,9 +403,9 @@ Expected behavior:
 
 ## UC-AUTH-002 — End Authenticated Session
 
-**Status:** `TBD_SCOPE`  
-**Primary actor:** Authenticated User  
-**Goal:** End the current authenticated session.  
+**Status:** `TBD_SCOPE`
+**Primary actor:** Authenticated User
+**Goal:** End the current authenticated session.
 **Related requirements:** `FR-AUTH-004`
 
 ### Preconditions
@@ -441,10 +441,10 @@ Expected behavior:
 
 ## UC-CAM-001 — Register Camera or Video Source
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
-**Goal:** Create a system-known video source that Sentinel may monitor.  
-**Related requirements:** `FR-CAM-001`, `NFR-SEC-005`  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
+**Goal:** Create a system-known video source that Sentinel may monitor.
+**Related requirements:** `FR-CAM-001`, `NFR-SEC-005`
 **Data touched:** camera/source configuration.
 
 ### Preconditions
@@ -507,9 +507,9 @@ If the design separates configuration from activation:
 
 ## UC-CAM-002 — View Source List and Health
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator or Administrator  
-**Goal:** Understand which sources exist and their current system-visible health state.  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator or Administrator
+**Goal:** Understand which sources exist and their current system-visible health state.
 **Related requirements:** `FR-CAM-002`, `FR-CAM-006`, `NFR-REL-001`
 
 ### Preconditions
@@ -551,9 +551,9 @@ If the design separates configuration from activation:
 
 ## UC-CAM-003 — Edit Source Configuration
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
-**Goal:** Change supported mutable source properties.  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
+**Goal:** Change supported mutable source properties.
 **Related requirements:** `FR-CAM-004`
 
 ### Preconditions
@@ -591,9 +591,9 @@ If the design separates configuration from activation:
 
 ## UC-CAM-004 — Disable or Re-enable Source
 
-**Status:** `PROPOSED_SCOPE`  
-**Primary actor:** Administrator  
-**Goal:** Intentionally stop or resume processing without deleting source history.  
+**Status:** `PROPOSED_SCOPE`
+**Primary actor:** Administrator
+**Goal:** Intentionally stop or resume processing without deleting source history.
 **Related requirements:** `FR-CAM-005`, `FR-CAM-008`
 
 ### Preconditions
@@ -628,9 +628,9 @@ If the design separates configuration from activation:
 
 ## UC-ZONE-001 — Create Monitoring Zone
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
-**Goal:** Define a polygonal region for rule evaluation.  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
+**Goal:** Define a polygonal region for rule evaluation.
 **Related requirements:** `FR-ZONE-001`, `FR-ZONE-004`, `FR-ZONE-005`
 
 ### Preconditions
@@ -697,8 +697,8 @@ If the source no longer exists or is inaccessible:
 
 ## UC-ZONE-002 — Edit Monitoring Zone
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
 **Related requirements:** `FR-ZONE-002`, `FR-ZONE-003`
 
 ### Main success flow
@@ -734,8 +734,8 @@ New zone-based events stop while historical events remain available.
 
 ## UC-RULE-001 — Configure Restricted-Area Intrusion Rule
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
 **Related requirements:** `FR-RULE-001`, `FR-RULE-003`, `FR-INT-001`
 
 ### Goal
@@ -773,8 +773,8 @@ No value shall be guessed before baseline.
 
 ## UC-RULE-002 — Configure Loitering Rule
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
 **Related requirements:** `FR-RULE-001`, `FR-LOIT-001`, `FR-LOIT-002`, `FR-LOIT-003`
 
 ### Goal
@@ -810,8 +810,8 @@ Backend rejects rule if threshold is mandatory.
 
 ## UC-RULE-003 — Configure Crowd Threshold Rule
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
 **Related requirements:** `FR-CROWD-001`, `FR-CROWD-002`
 
 ### Main success flow
@@ -834,8 +834,8 @@ Backend rejects rule if threshold is mandatory.
 
 ## UC-RULE-004 — Enable or Disable Rule
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Administrator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Administrator
 **Related requirements:** `FR-RULE-002`
 
 ### Main flow — disable
@@ -859,9 +859,9 @@ Backend rejects rule if threshold is mandatory.
 
 ## UC-MON-001 — Monitor Active Event Feed
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator  
-**Supporting actors:** Backend, real-time transport  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator
+**Supporting actors:** Backend, real-time transport
 **Related requirements:** `FR-ALT-001`, `FR-ALT-002`, `FR-ALT-003`, `FR-UI-005`
 
 ### Goal
@@ -917,9 +917,9 @@ Allow an operator to become aware of newly created events without manually refre
 
 ## UC-EVT-001 — Generate Restricted-Area Intrusion Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** System  
-**Supporting actors:** AI Worker, Camera/Video Source  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** System
+**Supporting actors:** AI Worker, Camera/Video Source
 **Related requirements:** `FR-DET-001`, `FR-TRK-001`, `FR-INT-001`, `FR-INT-002`, `FR-INT-003`, `FR-EVT-001`, `FR-EVT-007`
 
 ### Goal
@@ -987,9 +987,9 @@ This behavior is `TBD` and must be defined in architecture/SRS baseline.
 
 ## UC-EVT-002 — Generate Loitering Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** System  
-**Supporting actor:** AI Worker  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** System
+**Supporting actor:** AI Worker
 **Related requirements:** `FR-LOIT-001`, `FR-LOIT-002`, `FR-LOIT-003`, `FR-LOIT-004`
 
 ### Preconditions
@@ -1036,8 +1036,8 @@ System does not create an event per frame.
 
 ## UC-EVT-003 — Generate Crowd-Threshold Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** System  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** System
 **Related requirements:** `FR-CROWD-001`, `FR-CROWD-002`, `FR-CROWD-003`
 
 ### Preconditions
@@ -1079,9 +1079,9 @@ Behavior follows retrigger policy.
 
 ## UC-EVT-004 — Generate Violence/Fighting Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** System  
-**Supporting actor:** AI Worker  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** System
+**Supporting actor:** AI Worker
 **Related requirements:** `FR-VIO-001`, `FR-VIO-002`, `FR-VIO-003`, `FR-VIO-004`, `MLR-VIO-*`
 
 ### Preconditions
@@ -1140,9 +1140,9 @@ The model result may or may not be persisted according to AI/data design.
 
 ## UC-EVT-005 — Generate Camera-Offline Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Health Monitoring Process  
-**Supporting actor:** Camera/Video Source  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Health Monitoring Process
+**Supporting actor:** Camera/Video Source
 **Related requirements:** `FR-CAM-006`, `FR-CAM-007`, `FR-CAM-008`
 
 ### Preconditions
@@ -1186,8 +1186,8 @@ A dedicated recovery event is `TBD`.
 
 ## UC-EVT-006 — Acknowledge Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator
 **Related requirements:** `FR-ALT-004`, `FR-ALT-005`, `NFR-REL-004`
 
 ### Goal
@@ -1239,8 +1239,8 @@ Backend rejects transition according to lifecycle rules.
 
 ## UC-EVT-007 — Record False-Positive Feedback
 
-**Status:** `PROPOSED_SCOPE`  
-**Primary actor:** Operator or Reviewer  
+**Status:** `PROPOSED_SCOPE`
+**Primary actor:** Operator or Reviewer
 **Related requirements:** `FR-ALT-006`
 
 ### Goal
@@ -1276,8 +1276,8 @@ Record that a generated event was judged operationally false-positive without de
 
 ## UC-EVD-001 — Review Event Evidence
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator or Reviewer  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator or Reviewer
 **Related requirements:** `FR-EVD-001`, `FR-EVD-002`, `FR-EVD-003`, `FR-EVD-004`, `FR-EVD-005`
 
 ### Preconditions
@@ -1337,8 +1337,8 @@ System reports missing/deleted evidence state.
 
 ## UC-HIST-001 — Search and Filter Event History
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator or Reviewer  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator or Reviewer
 **Related requirements:** `FR-HIST-001` through `FR-HIST-006`
 
 ### Goal
@@ -1392,8 +1392,8 @@ Backend denies or returns authorized-safe behavior without leaking inaccessible 
 
 ## UC-HIST-002 — Open Historical Event
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator or Reviewer  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator or Reviewer
 **Related requirements:** `FR-EVT-004`, `FR-HIST-001`, `FR-EVD-001`
 
 ### Main success flow
@@ -1421,8 +1421,8 @@ Access denied without protected-data leakage.
 
 ## UC-ANL-001 — View Analytics Dashboard
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Operator or Reviewer  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Operator or Reviewer
 **Related requirements:** `FR-ANL-001` through `FR-ANL-005`
 
 ### Goal
@@ -1473,9 +1473,9 @@ No hard-coded fake production metrics.
 
 ## UC-AI-001 — Run Person Detection and Tracking Pipeline
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** AI Worker  
-**Supporting actor:** Camera/Video Source  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** AI Worker
+**Supporting actor:** Camera/Video Source
 **Related requirements:** `MLR-DET-001`, `MLR-DET-002`, `MLR-TRK-001`, `FR-DET-001`, `FR-TRK-001`
 
 ### Goal
@@ -1542,8 +1542,8 @@ Input is rejected with explicit failure.
 
 ## UC-AI-002 — Run Violence/Fighting Inference
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** AI Worker  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** AI Worker
 **Related requirements:** `MLR-VIO-001` through `MLR-VIO-006`, `FR-VIO-001`, `FR-VIO-002`
 
 ### Main success flow
@@ -1579,8 +1579,8 @@ No successful negative classification is fabricated.
 
 ## UC-SYS-001 — Handle AI Worker Failure
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** System  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** System
 **Related requirements:** `FR-INTG-004`, `MLR-INF-001`, `NFR-REL-001`, `NFR-REL-002`
 
 ### Trigger
@@ -1608,8 +1608,8 @@ AI worker becomes unreachable or unable to perform inference.
 
 ## UC-SYS-002 — Handle Malformed AI Result
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Backend  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Backend
 **Related requirements:** `FR-INTG-003`, `NFR-SEC-005`
 
 ### Trigger
@@ -1636,8 +1636,8 @@ Backend receives AI payload that violates contract.
 
 ## UC-SYS-003 — Handle Evidence Write Failure
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Backend/Evidence subsystem  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Backend/Evidence subsystem
 **Related requirements:** `FR-EVD-001`, `FR-EVD-003`
 
 ### Trigger
@@ -1664,8 +1664,8 @@ Event exists, but snapshot/clip cannot be stored.
 
 ## UC-SYS-004 — Recover from Real-Time Client Disconnect
 
-**Status:** `TBD_SCOPE`  
-**Primary actor:** Web Client  
+**Status:** `TBD_SCOPE`
+**Primary actor:** Web Client
 **Related requirements:** `FR-UI-005`, `NFR-REL-005`
 
 ### Preconditions
@@ -1692,8 +1692,8 @@ Event exists, but snapshot/clip cannot be stored.
 
 ## UC-SYS-005 — Replay Deterministic Test Video
 
-**Status:** `CONFIRMED_SCOPE`  
-**Primary actor:** Developer/Test Actor  
+**Status:** `CONFIRMED_SCOPE`
+**Primary actor:** Developer/Test Actor
 **Related requirements:** `FR-DEMO-001`, `NFR-TEST-003`
 
 ### Goal
@@ -1726,8 +1726,8 @@ Reproduce at least one complete Sentinel event flow using known input.
 
 ## UC-ADM-001 — Review Audit-Sensitive Action
 
-**Status:** `PROPOSED_SCOPE`  
-**Primary actor:** Administrator or Reviewer  
+**Status:** `PROPOSED_SCOPE`
+**Primary actor:** Administrator or Reviewer
 **Related requirements:** `FR-AUD-001`, `FR-AUD-002`
 
 ### Goal
@@ -2083,3 +2083,59 @@ successful negative classification.
 
 The final cooldown/retrigger event lifecycle is still unresolved and is not
 invented here.
+
+---
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:BEGIN -->
+
+# 2026-10-07 Use-Case Addendum — Control and Observe the Virtual CCTV Feed
+
+## UC-DEMO-VCAM-001 — Select and Start Demo CCTV Source
+
+**Primary actor:** project demonstrator/tester
+**Preconditions:** backend available; approved clip registry loaded; one logical camera configured; no active source session.
+
+Main flow:
+
+1. Actor opens the separate Demo Control Panel.
+2. System lists approved clip display names/IDs only.
+3. Actor selects one clip.
+4. Actor selects **Start Feed**.
+5. Backend resolves the opaque clip ID under the trusted media root.
+6. Replay adapter opens the clip.
+7. Single virtual camera enters `STARTING`.
+8. On first valid frame, camera enters `PLAYING/ONLINE`.
+9. Normal operator panel displays the camera feed.
+10. AI pipeline processes the same source session.
+11. Backend consumes structured AI results using the frozen policy.
+
+## UC-DEMO-VCAM-002 — Automatic Loop
+
+1. Active clip reaches EOF.
+2. Replay adapter enters `LOOP_RESTARTING`.
+3. Adapter seeks/reopens the same registered clip.
+4. Camera remains logically active.
+5. Replay resumes from the beginning.
+6. Loop count may increment for diagnostics.
+7. No camera-offline event is created solely because EOF occurred.
+
+## UC-DEMO-VCAM-003 — Stop Feed
+
+1. Actor selects **Stop Feed**.
+2. Source stops producing frames.
+3. AI processing for that camera session is stopped/closed safely.
+4. Camera state becomes `STOPPED` or the agreed non-playing state.
+5. Actor may select another approved clip.
+
+## Alternative/error flows
+
+- unknown clip ID → reject request;
+- registered file missing → explicit source failure;
+- corrupt/unsupported media → explicit source failure;
+- attempt to change source while playing → initial implementation should require stop first;
+- browser-supplied path → reject;
+- physical CCTV unavailable → not an error because it is not a project dependency.
+
+The prior deterministic recorded-video replay use case remains valid; this addendum defines its final single-camera CCTV-like presentation for the academic project.
+
+<!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

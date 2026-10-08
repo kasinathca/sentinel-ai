@@ -38,6 +38,22 @@ class FakeReplayAdapter:
             callbacks.first_frame()
 
 
+class FakeAIOrchestrator:
+    def __init__(self) -> None:
+        self.starts = []
+        self.restarts = []
+        self.stop_count = 0
+
+    def start(self, clip, source_session_id) -> None:
+        self.starts.append((clip.clip_id, source_session_id))
+
+    def restart(self, clip, source_session_id) -> None:
+        self.restarts.append((clip.clip_id, source_session_id))
+
+    def stop(self) -> None:
+        self.stop_count += 1
+
+
 class VirtualCameraControllerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -176,6 +192,20 @@ class VirtualCameraControllerTests(unittest.TestCase):
             controller.start()
         self.assertEqual(failure.exception.http_status, 503)
         self.assertEqual(controller.snapshot().state, DemoSourceState.FAILED)
+
+    def test_ai_orchestration_uses_and_cleans_up_the_source_session(self) -> None:
+        ai = FakeAIOrchestrator()
+        controller = VirtualCameraController(
+            lambda: self.catalog, self.adapter, ai_orchestrator=ai
+        )
+        controller.select_source("scenario-01")
+        started = controller.start()
+        self.assertEqual(ai.starts, [("scenario-01", started.session_id)])
+        restarted = controller.restart()
+        self.assertEqual(restarted.session_id, started.session_id)
+        self.assertEqual(ai.restarts, [("scenario-01", started.session_id)])
+        controller.stop()
+        self.assertEqual(ai.stop_count, 1)
 
 
 if __name__ == "__main__":

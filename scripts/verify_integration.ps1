@@ -9,6 +9,12 @@ $OldPythonPath = $env:PYTHONPATH
 $OldDatabaseUrl = $env:SENTINEL_DATABASE_URL
 $TempDb = Join-Path $env:TEMP ("sentinel_verify_" + [guid]::NewGuid().ToString("N") + ".db")
 $TempDbUrlPath = $TempDb.Replace("\", "/")
+$VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
+$PythonExecutable = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
+    $VenvPython
+} else {
+    "python"
+}
 
 function Invoke-Checked {
     param([scriptblock]$Command, [string]$Label)
@@ -25,16 +31,16 @@ try {
     $env:SENTINEL_DATABASE_URL = "sqlite+pysqlite:///$TempDbUrlPath"
     $env:PYTHONPATH = (Resolve-Path ".\backend").Path
 
-    Invoke-Checked { python .\backend\scripts\init_database.py } "Disposable DB migration + seed"
-    Invoke-Checked { python .\backend\scripts\check_database.py } "Database readiness"
+    Invoke-Checked { & $PythonExecutable .\backend\scripts\init_database.py } "Disposable DB migration + seed"
+    Invoke-Checked { & $PythonExecutable .\backend\scripts\check_database.py } "Database readiness"
     Invoke-Checked {
-        python -m unittest discover -s .\backend\tests -p "test_*.py" -v
+        & $PythonExecutable -m unittest discover -s .\backend\tests -p "test_*.py" -v
     } "Backend test suite"
 
     if (-not $SkipAiWorker) {
         $env:PYTHONPATH = (Resolve-Path ".\ai_worker").Path
         Invoke-Checked {
-            python -m unittest discover -s .\ai_worker\tests -p "test_*.py" -v
+            & $PythonExecutable -m unittest discover -s .\ai_worker\tests -p "test_*.py" -v
         } "AI-worker pure/unit test suite"
     }
 

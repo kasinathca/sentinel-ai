@@ -34,7 +34,7 @@ class ViolenceConditionConsumer(Protocol):
     event domain.
     """
 
-    def consume(self, evaluation: ViolenceConditionEvaluation) -> None:
+    def consume(self, evaluation: ViolenceConditionEvaluation) -> UUID | None:
         ...
 
 
@@ -44,5 +44,6 @@ class RecordingViolenceConditionConsumer:
     def __init__(self) -> None:
         self.evaluations: list[ViolenceConditionEvaluation] = []
 
-    def consume(self, evaluation: ViolenceConditionEvaluation) -> None:
+    def consume(self, evaluation: ViolenceConditionEvaluation) -> UUID | None:
         self.evaluations.append(evaluation)
+        return None

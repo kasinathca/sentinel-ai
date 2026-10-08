@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
@@ -15,10 +15,8 @@ from app.ai_integration.errors import (
 from app.ai_integration.service import ViolenceWorkerResultService
 from app.db.session import get_session_factory
 from app.db.models import Camera
-from app.events.violence_conditions import (
-    ViolenceConditionEvaluation,
-    ViolenceConditionConsumer,
-)
+from app.cameras.constants import DEMO_CAMERA_ID
+from app.events.persistence import SessionViolenceEventConsumer
 from app.ai_integration.schemas import WorkerViolenceResult
 
 
@@ -34,19 +32,7 @@ def get_db():
         yield session
 
 
-class DatabaseViolenceConditionConsumer(ViolenceConditionConsumer):
-    """
-    Receives a violence condition evaluation.
-
-    The frozen criterion produces candidates. Event episode/deduplication
-    semantics are unresolved, so this adapter intentionally does not persist.
-    """
-
-    def consume(self, evaluation: ViolenceConditionEvaluation) -> None:
-        return None
-
-
-_condition_consumer = DatabaseViolenceConditionConsumer()
+_condition_consumer = SessionViolenceEventConsumer(get_session_factory())
 
 
 _model_registry = DatabaseModelRegistry(
@@ -63,12 +49,21 @@ _worker_service = ViolenceWorkerResultService(
 @router.post("/violence/results")
 def consume_violence_result(
     payload: WorkerViolenceResult,
+    request: Request,
     session: Session = Depends(get_db),
 ):
     if session.get(Camera, payload.camera_id) is None:
         raise HTTPException(status_code=404, detail="Camera was not found.")
     try:
-        evaluation = _worker_service.consume_payload(payload)
+        if payload.camera_id == DEMO_CAMERA_ID:
+            active_session = request.app.state.demo_controller.snapshot().session_id
+            if active_session is None or payload.correlation_id != active_session:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Worker result does not belong to the active source session.",
+                )
+        outcome = _worker_service.consume_payload_with_outcome(payload)
+        evaluation = outcome.evaluation
 
     except WorkerContractValidationError as exc:
         raise HTTPException(
@@ -119,9 +114,12 @@ def consume_violence_result(
             "n_required_snapshot": evaluation.n_required_snapshot,
             "m_history_snapshot": evaluation.m_history_snapshot,
             "score_semantics": evaluation.score_semantics,
-            "event_persisted": False,
+            "event_persisted": outcome.event_id is not None,
+            "event_id": str(outcome.event_id) if outcome.event_id else None,
             "event_lifecycle": (
-                "awaiting_domain_policy"
+                "persisted_for_source_session"
+                if outcome.event_id is not None
+                else "qualified_not_persisted"
                 if evaluation.candidate_condition
                 else "not_qualified"
             ),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+import threading
 from uuid import UUID, uuid4
 from sqlalchemy.orm import Session, sessionmaker
 from app.db.models import AIModelVersion,Camera,Event,ViolenceEventContext
@@ -22,3 +23,26 @@ class ViolenceEventPersistenceService:
             session.add(Event(id=event_id,event_type_code=self.EVENT_TYPE,camera_id=evaluation.camera_id,rule_id=None,occurred_at=evaluation.window_ended_at,severity_code=None,requires_attention=bool(requires_attention),lifecycle_status_code=None,correlation_id=evaluation.correlation_id,summary=None))
             session.add(ViolenceEventContext(event_id=event_id,model_version_id=evaluation.model_version_id,output_label=self.OUTPUT_LABEL,score_value=evaluation.score,event_threshold_snapshot=evaluation.threshold_snapshot,score_semantics=evaluation.score_semantics,window_started_at=evaluation.window_started_at,window_ended_at=evaluation.window_ended_at,n_required_snapshot=evaluation.n_required_snapshot,history_window_size_snapshot=evaluation.m_history_snapshot,positive_count_snapshot=evaluation.positive_count))
         return PersistedViolenceEvent(event_id=event_id,camera_id=evaluation.camera_id,model_version_id=evaluation.model_version_id,correlation_id=evaluation.correlation_id,occurred_at_iso=evaluation.window_ended_at.isoformat())
+
+
+class SessionViolenceEventConsumer:
+    """Persist at most one qualified violence event per source session."""
+
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
+        self._persistence = ViolenceEventPersistenceService(session_factory)
+        self._events: dict[UUID, UUID] = {}
+        self._lock = threading.Lock()
+
+    def consume(self, evaluation: ViolenceConditionEvaluation) -> UUID | None:
+        if not evaluation.candidate_condition:
+            return None
+        with self._lock:
+            existing = self._events.get(evaluation.correlation_id)
+            if existing is not None:
+                return existing
+            persisted = self._persistence.create_from_qualified_condition(
+                evaluation=evaluation,
+                requires_attention=True,
+            )
+            self._events[evaluation.correlation_id] = persisted.event_id
+            return persisted.event_id

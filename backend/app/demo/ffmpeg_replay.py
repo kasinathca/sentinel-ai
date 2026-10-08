@@ -217,6 +217,7 @@ class FFmpegReplayAdapter:
             except (OSError, ValueError):
                 if not self._stop_event.is_set() and not self._restart_event.is_set():
                     callbacks.failed()
+                    self._terminate_process()
                     self._finish_process(process, progress_thread)
                     return
 

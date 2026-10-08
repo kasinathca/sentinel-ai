@@ -9,7 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.cameras.service import create_camera, get_camera, list_cameras, update_camera
-from app.cameras.constants import DEMO_CAMERA_ID
+from app.cameras.constants import (
+    DEMO_CAMERA_ID,
+    DEMO_CAMERA_NAME,
+    DEMO_CAMERA_SOURCE_KIND,
+)
 from app.demo.controller import DemoSourceState, VirtualCameraController
 from app.db.session import get_session_factory
 
@@ -54,6 +58,8 @@ def _camera_health(camera, controller: VirtualCameraController | None) -> dict:
         }
 
     state = controller.snapshot().state
+    if not camera.enabled:
+        state = DemoSourceState.STOPPED
     health_state = {
         DemoSourceState.IDLE: "stopped",
         DemoSourceState.READY: "stopped",
@@ -98,6 +104,11 @@ def create_camera_endpoint(
     request: Request,
     session: Session = Depends(get_db),
 ):
+    if payload.name.strip() == DEMO_CAMERA_NAME:
+        raise HTTPException(
+            status_code=409,
+            detail="The DEMO-CAM-01 name is reserved for the canonical demo camera.",
+        )
     camera = create_camera(
         session,
         name=payload.name,
@@ -156,13 +167,55 @@ def update_camera_endpoint(
     session: Session = Depends(get_db),
 ):
     changes = payload.model_dump(exclude_unset=True)
-    camera = update_camera(session, camera_id, **changes)
+    camera = get_camera(session, camera_id)
     if camera is None:
         raise HTTPException(status_code=404, detail="Camera was not found.")
-    if "description" in changes:
-        camera.description = changes["description"]
-    session.commit()
+
+    requested_name = changes.get("name")
+    if camera_id == DEMO_CAMERA_ID:
+        if requested_name is not None and requested_name != DEMO_CAMERA_NAME:
+            raise HTTPException(
+                status_code=409,
+                detail="The canonical demo camera name cannot be changed.",
+            )
+        requested_source_kind = changes.get("source_kind")
+        if (
+            requested_source_kind is not None
+            and requested_source_kind != DEMO_CAMERA_SOURCE_KIND
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="The canonical demo camera source_kind cannot be changed.",
+            )
+    elif requested_name is not None and requested_name.strip() == DEMO_CAMERA_NAME:
+        raise HTTPException(
+            status_code=409,
+            detail="The DEMO-CAM-01 name is reserved for the canonical demo camera.",
+        )
+
+    controller: VirtualCameraController = request.app.state.demo_controller
+    sync_disable = camera_id == DEMO_CAMERA_ID and changes.get("enabled") is False
+    previous_enabled = camera.enabled
+    if sync_disable:
+        # Serialize disable against Start so no request can begin replay between
+        # the database check and controller shutdown.
+        controller.set_enabled(False)
+
+    try:
+        camera = update_camera(session, camera_id, **changes)
+        assert camera is not None
+        if "description" in changes:
+            camera.description = changes["description"]
+        session.commit()
+    except Exception:
+        session.rollback()
+        if sync_disable and previous_enabled:
+            # Restore eligibility after a failed database update; stay stopped.
+            controller.set_enabled(True)
+        raise
     session.refresh(camera)
+    if camera_id == DEMO_CAMERA_ID and changes.get("enabled") is True:
+        controller.set_enabled(True)
     return {
         "data": camera_to_dict(
             camera, controller=request.app.state.demo_controller
@@ -187,10 +240,12 @@ def get_camera_health(
 
 
 @router.get("/{camera_id}/stream")
-def stream_demo_camera(camera_id: UUID, request: Request):
+def stream_demo_camera(
+    camera_id: UUID,
+    request: Request,
+    session: Session = Depends(get_db),
+):
     """Expose the canonical local demo source as an MJPEG multipart stream."""
-    if camera_id != DEMO_CAMERA_ID:
-        raise HTTPException(status_code=404, detail="Camera stream was not found.")
     if request.client is None or request.client.host not in {
         "127.0.0.1",
         "::1",
@@ -199,6 +254,13 @@ def stream_demo_camera(camera_id: UUID, request: Request):
         raise HTTPException(
             status_code=403, detail="Camera stream is available only locally."
         )
+    if camera_id != DEMO_CAMERA_ID:
+        raise HTTPException(status_code=404, detail="Camera stream was not found.")
+    camera = get_camera(session, camera_id)
+    if camera is None:
+        raise HTTPException(status_code=404, detail="Camera was not found.")
+    if not camera.enabled:
+        raise HTTPException(status_code=409, detail="Camera source is disabled.")
     controller: VirtualCameraController = request.app.state.demo_controller
     adapter = request.app.state.demo_replay_adapter
     if adapter is None or not hasattr(adapter, "wait_for_frame"):

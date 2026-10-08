@@ -3297,3 +3297,14 @@ These unit/API tests use a fake replay adapter. They do **not** pass `T-VCAM-001
 These backend seed/controller/API/adapter tests do not verify actual FFmpeg decoding, measured timing, approved media behavior, browser playback, or raw-video AI behavior.
 
 <!-- VIRTUAL_CCTV_CAMERA_SESSION_20261008:END -->
+
+## 2026-10-08 PR #3 Hardening Tests
+
+| Test ID | Test | Required result |
+|---|---|---|
+| `T-VCAM-BE-013` | reserved canonical identity API guards | reserved create/name claims and canonical identity mutations return 409; allowed no-op/description and ordinary camera changes continue to work; rejected operations leave identity fields unchanged |
+| `T-VCAM-BE-014` | disabled source start/enable behavior | disabled start returns 409 without adapter start or session; re-enable persists without auto-start; explicit start succeeds after re-enable |
+| `T-VCAM-BE-015` | disable ordering, stream, and health | active disable stops adapter before persistence; stop failure leaves DB enabled and controller truthfully active; disabled stream is rejected even if controller state is active; disabled health is stopped |
+| `T-VCAM-BE-016` | deterministic FFmpeg adapter lifecycle | fake-process tests cover first frame, natural EOF/second pass, explicit restart, stop, spawn failure, nonzero exit, zero-frame exit, parser failure, terminate/kill cleanup |
+
+These lifecycle checks use an injected fake process and do not claim a real FFmpeg smoke test or formal pacing tolerance.

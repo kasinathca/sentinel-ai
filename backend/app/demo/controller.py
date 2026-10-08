@@ -127,6 +127,7 @@ class VirtualCameraController:
         self._loop_count = 0
         self._session_id: UUID | None = None
         self._last_frame_at: datetime | None = None
+        self._camera_enabled = True
         self._generation = 0
         self._state_lock = threading.RLock()
         self._operation_lock = threading.Lock()
@@ -153,8 +154,14 @@ class VirtualCameraController:
                 self._state = DemoSourceState.READY
                 return self.snapshot()
 
-    def start(self) -> DemoSourceSnapshot:
+    def start(self, *, enabled: bool = True) -> DemoSourceSnapshot:
         with self._operation_lock:
+            if not enabled or not self._camera_enabled:
+                raise DemoControllerError(
+                    "DEMO_CAMERA_DISABLED",
+                    "Enable the canonical demo camera before starting its source.",
+                    409,
+                )
             with self._state_lock:
                 if self._clip is None:
                     raise DemoControllerError(
@@ -216,24 +223,39 @@ class VirtualCameraController:
 
     def stop(self) -> DemoSourceSnapshot:
         with self._operation_lock:
+            return self._stop_locked()
+
+    def set_enabled(self, enabled: bool) -> DemoSourceSnapshot:
+        """Synchronize API-controlled enablement with replay under one lock."""
+        with self._operation_lock:
+            if enabled:
+                with self._state_lock:
+                    self._camera_enabled = True
+                    return self.snapshot()
+            snapshot = self._stop_locked()
             with self._state_lock:
-                should_stop_adapter = self._state in self._ACTIVE_STATES or (
-                    self._state == DemoSourceState.FAILED
-                )
-                self._generation += 1
-                self._state = DemoSourceState.STOPPED
-                self._position_ms = None
-                self._session_id = None
-            if should_stop_adapter and self._replay_adapter is not None:
-                try:
-                    self._replay_adapter.stop()
-                except Exception as exc:
-                    with self._state_lock:
-                        self._state = DemoSourceState.FAILED
-                    raise DemoControllerError(
-                        "SOURCE_UNAVAILABLE", "The replay source could not be stopped.", 503
-                    ) from exc
-            return self.snapshot()
+                self._camera_enabled = False
+                return snapshot
+
+    def _stop_locked(self) -> DemoSourceSnapshot:
+        """Stop the adapter before changing public state; operation lock held."""
+        with self._state_lock:
+            should_stop_adapter = self._state in self._ACTIVE_STATES or (
+                self._state == DemoSourceState.FAILED
+            )
+        if should_stop_adapter and self._replay_adapter is not None:
+            try:
+                self._replay_adapter.stop()
+            except Exception as exc:
+                raise DemoControllerError(
+                    "SOURCE_UNAVAILABLE", "The replay source could not be stopped.", 503
+                ) from exc
+        with self._state_lock:
+            self._generation += 1
+            self._state = DemoSourceState.STOPPED
+            self._position_ms = None
+            self._session_id = None
+        return self.snapshot()
 
     def restart(self) -> DemoSourceSnapshot:
         with self._operation_lock:

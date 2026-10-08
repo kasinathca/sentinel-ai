@@ -1001,3 +1001,9 @@ The backend now seeds canonical camera `DEMO-CAM-01` (`02b1cbc6-d4a3-5630-8c4e-2
 ### 2026-10-08 replay implementation evidence update
 
 The optional FFmpeg adapter, local canonical-camera MJPEG route, and focused unit/API checks are implemented. Their status is PARTIAL_IMPLEMENTATION pending execution against approved real media, measured natural-rate/EOF behavior, browser playback, and shared-source AI integration. The route does not currently submit inference jobs or stream frames to the AI worker.
+
+## 2026-10-08 PR #3 review-hardening evidence
+
+Canonical camera identity is enforced by the backend camera routes, with no global uniqueness rule or schema migration. The exact `DEMO-CAM-01` name is reserved for its canonical UUID; canonical `name` and `source_kind` cannot be changed, while description and enabled state remain mutable.
+
+For the canonical camera, `enabled=false` prevents start and stream delivery, maps health to `stopped`, and disabling an active source stops it before the database update. A stop error prevents persistence of the disabled state. Re-enabling does not automatically start playback. Deterministic fake-process coverage now exercises FFmpeg first-frame, EOF/loop, restart, stop, process failures, zero-frame success, parser failure, and kill fallback. These are component tests; real-media and browser acceptance remain pending.

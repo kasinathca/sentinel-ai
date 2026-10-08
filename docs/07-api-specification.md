@@ -1826,17 +1826,13 @@ If implemented:
 
 # 76. Camera Stream Endpoint
 
-Not defined yet.
-
-Potential:
+General/production camera transport remains `TBD`. For the accepted academic virtual-CCTV baseline only, the canonical `DEMO-CAM-01` camera has a local-only MJPEG endpoint at:
 
 ```text
 GET /api/v1/cameras/{camera_id}/stream
 ```
 
-Status: `TBD`.
-
-Streaming depends on selected camera/input/browser design.
+Its implemented contract and disabled-camera behavior are recorded in the 2026-10-08 integration addendum below. This does not resolve production camera transport, other camera stream types, or the snapshot endpoint.
 
 ---
 
@@ -2427,7 +2423,7 @@ Before `BASELINED`:
 | API-OD-005 | Authentication mechanism | `TBD` |
 | API-OD-006 | Role permissions | `TBD` |
 | API-OD-007 | Camera source kinds | `TBD` |
-| API-OD-008 | Stream/snapshot interface | `TBD` |
+| API-OD-008 | General/production stream and snapshot interface | `TBD`; canonical academic local MJPEG route is implemented in the integration addendum |
 | API-OD-009 | Normalized geometry | `PROPOSED` |
 | API-OD-010 | Intrusion position method | `TBD` |
 | API-OD-011 | Rule threshold semantics | `TBD` |
@@ -2691,7 +2687,11 @@ The academic camera identity is `DEMO-CAM-01` with canonical persistent `camera_
 
 `GET /api/v1/demo/source/status` now includes `session_id`. It is null before a session and after stop; it is generated on Start, remains stable across automatic loops and explicit Restart, and is distinct from the persistent camera UUID. Camera APIs map only the canonical demo camera's controller state as follows: `IDLE/READY/STOPPED → stopped`, `STARTING → starting`, `PLAYING/LOOP_RESTARTING → online`, `FAILED → error`. Other cameras remain `unknown`. `last_frame_at` is sourced from an actual first-frame/position callback, and `last_health_check_at` is set when health is evaluated; neither is fabricated from `enabled`.
 
-Real replay, browser video, AI worker launch/cancellation, and same-source E2E remain unverified.
+For `DEMO-CAM-01`, the exact name is reserved for UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` with `source_kind=file`. Camera create/update routes reject attempts to claim or mutate that identity with HTTP 409. The canonical camera may still update `description` and `enabled`; unrelated camera names are not made globally unique.
+
+The canonical camera's persisted `enabled=false` state prevents source start (`409 DEMO_CAMERA_DISABLED`), prevents MJPEG delivery (`409`), and maps health to `stopped`, not `offline`. Disabling an active session stops replay before persisting the change; a failed stop returns an error and leaves the camera enabled. Re-enabling does not start replay automatically. The MJPEG endpoint verifies the canonical database row is enabled and the process-local source is active before streaming. The endpoint is local-only, returns multipart MJPEG in-memory JPEG frames, and exposes no filesystem path. This contract applies only to the academic virtual camera; general production camera transport remains unresolved.
+
+Actual approved-media decoding, browser playback, AI worker launch/cancellation, and same-source E2E remain unverified.
 
 
 ### 2026-10-08 Replay implementation addendum

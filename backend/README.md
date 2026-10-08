@@ -24,7 +24,7 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 | POST | `/api/v1/demo/source/restart` | Delegate restart of active clip to replay adapter; local-only |
 | GET | `/api/v1/demo/source/status` | Read process-local controller status; local-only |
 
-Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and snapshot endpoints remain incomplete unless later commits explicitly add them.
+Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, device-level source-health measurement, general/production streaming, and snapshot endpoints remain incomplete unless later commits explicitly add them.
 
 ## Demo media catalog foundation
 
@@ -36,7 +36,7 @@ Pagination/filtering beyond current implemented parameters, authentication/autho
 
 For a local replay setup, set `SENTINEL_DEMO_MEDIA_ROOT` to an absolute directory containing `manifest.json` and the approved media files. The manifest must register each clip by an opaque `clip_id`, display name, and relative path. FFmpeg is resolved from `PATH` by default; set `SENTINEL_FFMPEG_BINARY` to an executable path when it is installed elsewhere. No endpoint accepts or returns arbitrary media paths.
 
-The controller is connected to the optional FFmpeg replay adapter and local MJPEG delivery. It is still not connected to AI-worker processing or an operator frontend. Database initialization now seeds canonical camera UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` as `DEMO-CAM-01` with `source_kind=file`. The idempotent seed preserves unrelated cameras and operational `enabled` state and fails on canonical identity conflicts. No migration is required.
+The controller is connected to the optional FFmpeg replay adapter and local MJPEG delivery. Camera APIs reserve the canonical identity and respect its persisted `enabled` value: disabled sources cannot start or stream, disabling an active source stops replay before persistence, and re-enabling does not auto-start. Health reports intentional disable as `stopped`, not `offline`. The controller is still not connected to AI-worker processing or an operator frontend. Database initialization now seeds canonical camera UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` as `DEMO-CAM-01` with `source_kind=file`. The idempotent seed preserves unrelated cameras and operational `enabled` state and fails on canonical identity conflicts. No migration is required.
 
 Camera health for that exact UUID maps controller states to `stopped`, `starting`, `online`, or `error`; other cameras remain `unknown`. A source-session UUID is created on start, retained through loop/restart, and cleared on stop. The catalog/controller do not establish media provenance/redistribution permission. Do not treat component tests as proof that an actual clip decodes or that browser playback works.
 

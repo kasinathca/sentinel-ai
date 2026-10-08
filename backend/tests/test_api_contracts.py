@@ -114,6 +114,68 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "", "source_kind": "file"}).status_code, 422)
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "x", "source_kind": "file", "unexpected": 1}).status_code, 422)
 
+    def _insert_demo_camera(self, *, enabled: bool = True) -> None:
+        with self.sessions.begin() as session:
+            session.add(
+                Camera(
+                    id=DEMO_CAMERA_ID,
+                    name=DEMO_CAMERA_NAME,
+                    description="Single logical virtual CCTV source.",
+                    source_kind="file",
+                    enabled=enabled,
+                )
+            )
+
+    def test_canonical_camera_identity_is_protected_by_create_and_patch(self):
+        reserved_create = self.client.post(
+            "/api/v1/cameras",
+            json={"name": "DEMO-CAM-01", "source_kind": "file"},
+        )
+        self.assertEqual(reserved_create.status_code, 409)
+
+        normal_create = self.client.post(
+            "/api/v1/cameras", json={"name": "West Door", "source_kind": "file"}
+        )
+        self.assertEqual(normal_create.status_code, 201)
+        normal_id = normal_create.json()["data"]["id"]
+        normal_rename = self.client.patch(
+            f"/api/v1/cameras/{normal_id}", json={"name": "West Door 2"}
+        )
+        self.assertEqual(normal_rename.status_code, 200)
+
+        self._insert_demo_camera()
+        canonical_path = f"/api/v1/cameras/{DEMO_CAMERA_ID}"
+        rename = self.client.patch(canonical_path, json={"name": "North Camera"})
+        source_change = self.client.patch(
+            canonical_path, json={"source_kind": "rtsp"}
+        )
+        self.assertEqual(rename.status_code, 409)
+        self.assertEqual(source_change.status_code, 409)
+
+        unchanged = self.client.patch(
+            canonical_path,
+            json={"name": DEMO_CAMERA_NAME, "source_kind": "file"},
+        )
+        self.assertEqual(unchanged.status_code, 200)
+        described = self.client.patch(canonical_path, json={"description": "Updated"})
+        self.assertEqual(described.status_code, 200)
+        self.assertEqual(described.json()["data"]["description"], "Updated")
+
+        with self.sessions() as session:
+            canonical = session.get(Camera, DEMO_CAMERA_ID)
+            self.assertEqual(canonical.name, DEMO_CAMERA_NAME)
+            self.assertEqual(canonical.source_kind, "file")
+            self.assertEqual(canonical.description, "Updated")
+
+    def test_reserved_camera_name_cannot_be_assigned_to_another_camera(self):
+        response = self.client.patch(
+            f"/api/v1/cameras/{CAMERA_ID}", json={"name": "DEMO-CAM-01"}
+        )
+        self.assertEqual(response.status_code, 409)
+        with self.sessions() as session:
+            camera = session.get(Camera, CAMERA_ID)
+            self.assertEqual(camera.name, "North Entrance")
+
     def test_canonical_demo_camera_health_uses_controller_and_others_stay_unknown(self):
         with self.sessions.begin() as session:
             session.add(

@@ -999,3 +999,11 @@ The controller status carries a current source-session UUID. A Start creates it,
 ## 2026-10-08 Replay adapter implementation status
 
 The backend implements an optional FFmpeg CLI adapter and GET /api/v1/cameras/{camera_id}/stream using multipart MJPEG. The endpoint is local-only and restricted to the canonical camera; it emits only in-memory JPEG data. Backend tests cover the command contract, safe JPEG frame extraction, and fake-adapter stream framing. They do not replace acceptance tests with an installed FFmpeg executable and approved positive/negative fixtures. The AI worker's existing whole-file execution is not connected to the replay frames: Gouri's source-session UUID is ready for correlation, while worker dispatch/frame synchronization remains Kasi's integration dependency. No new Python dependency or database migration was added.
+
+## 2026-10-08 PR #3 Identity and Enabled-State Guarantees
+
+The reserved identity is `DEMO-CAM-01` / `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` / `source_kind=file`. The camera API rejects create/rename attempts that claim the reserved name and rejects changes to the canonical name or source kind. This is a narrow reservation, not global camera-name uniqueness, and it requires no database migration.
+
+`enabled=false` prevents canonical replay start and stream access. When an active canonical camera is disabled through the API, the controller must stop successfully before `enabled=false` is persisted. A stop failure returns a safe error and leaves the camera enabled and controller state unchanged. Re-enabling does not auto-start playback. Disabled health is `stopped`, not `offline`. The stream route checks the persisted canonical row and rejects disabled access even if process-local state is inconsistent.
+
+The PR's deterministic fake-process suite exercises first-frame delivery, natural EOF and a second pass, explicit restart, stop, spawn/nonzero/zero-frame/parser failures, and terminate-to-kill cleanup. It does not replace a real FFmpeg/media smoke test. General/production transport, frontend use of the MJPEG contract, and AI-worker source synchronization remain separate work.

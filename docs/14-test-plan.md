@@ -3258,4 +3258,6 @@ Add the following system-integration tests:
 
 Timing tolerances shall be baselined from measured implementation behavior rather than invented in advance.
 
+The backend manifest/path helper has focused unit coverage for unknown clip IDs, duplicate IDs, unsupported manifest schema, missing files, relative media-root rejection, and absolute/traversal path rejection. These are foundation-level tests only; they do not pass the source lifecycle, replay, media decoding, or end-to-end acceptance tests above.
+
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

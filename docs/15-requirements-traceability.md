@@ -974,4 +974,6 @@ The current React/Vite frontend and current camera/event read integration are im
 
 Do not mark implementation/verification complete in the RTM until the cited tests exist and pass.
 
+The current clip-catalog tests exercise only the internal registry/path-safety foundation. They are not evidence that `FR-VCAM-002` or `FR-VCAM-011` is fully verified: no demo HTTP route consumes the catalog, no playback source exists, and actual media provenance/permission is not checked by this helper.
+
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

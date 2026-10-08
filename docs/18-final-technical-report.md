@@ -2277,4 +2277,8 @@ Do **not** claim that:
 
 When implementation is complete, report the actual test results for loop stability, positive/negative fixtures, and source/AI synchronization.
 
+## 2026-10-07 Backend catalog foundation verification
+
+On the working branch based on `main` commit `61b1dd0690ccf52258b6b6cdf0733d5b19451a3c`, the backend catalog/path-safety foundation added seven focused tests. The integrated script with `-SkipFrontend` passed database migration/readiness, **42/42 backend tests**, and **19/19 AI-worker tests**. The full script was also attempted, but this environment has no `npm` executable, so frontend install/lint/build were not run in this verification. These checks do not verify media playback, camera session lifecycle, or AI processing of a looping source.
+
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

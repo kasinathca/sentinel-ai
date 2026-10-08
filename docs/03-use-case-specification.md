@@ -22,6 +22,11 @@ authoritative_for:
   - "use-case-to-requirement traceability"
 ---
 
+<!-- SENTINEL_20261008_SCOPE:BEGIN -->
+**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `docs/22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `docs/19-violence-model-and-runtime-qualification.md` remains unchanged. This note does not claim the end-to-end system is already operational.
+<!-- SENTINEL_20261008_SCOPE:END -->
+
+
 # Sentinel AI — Use Case Specification
 
 > **Document purpose**

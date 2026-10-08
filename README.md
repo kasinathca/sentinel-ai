@@ -55,7 +55,14 @@ $env:SENTINEL_AI_PYTHON = "<Python executable with the qualified temporal runtim
 $env:SENTINEL_FFMPEG_BINARY = "<path-to-ffmpeg.exe>"
 ```
 
-`SENTINEL_DEMO_MEDIA_ROOT` must contain `manifest.json` plus the referenced clips. Manifest paths are relative; the browser sees only `clip_id` and `display_name`.
+`SENTINEL_DEMO_MEDIA_ROOT` is a controlled local drop folder. No manifest is
+required: copy a supported top-level video (`.mp4`, `.mov`, `.m4v`, `.mkv`,
+`.avi`, or `.webm`) into it and select **Refresh Videos**. Sentinel inspects
+the source with FFprobe. A compatible 1280×720 H.264/yuv420p/30 FPS MP4 is
+validated and used directly; other decodable inputs are normalized in the
+background to `.sentinel/processed/<opaque-id>.mp4` with the original left
+untouched. The browser sees only the opaque ID, display name, ingest state, and
+safe media metadata.
 
 Terminal 1, from the repository root:
 
@@ -75,7 +82,12 @@ npm ci
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Open `http://127.0.0.1:5173`, choose **Camera Monitoring**, select an approved clip, and use Start/Stop/Restart. A positive clip raises the red alert only after genuine model output satisfies the frozen backend criterion. A failed or unavailable worker is shown as an error, never as a negative prediction.
+Open `http://127.0.0.1:5173`, choose **Camera Monitoring**, refresh the available
+videos, select a Ready source, and use Start/Stop/Restart. Playback and frozen
+AI inference receive the same validated canonical file. A red alert appears
+only after genuine model output satisfies the frozen criterion. The current
+rolling latest-five result may later become nonqualifying while the truthful
+session-level detection and persisted event remain visible.
 
 ## Backend setup
 

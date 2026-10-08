@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import tempfile
 import unittest
 
-from app.demo.clip_catalog import DemoClipCatalog, DemoClipNotFound
+from app.demo.clip_catalog import DemoCatalogError, DemoClip, DemoClipNotFound
 from app.demo.controller import (
     DemoControllerError,
     DemoSourceState,
@@ -19,11 +18,13 @@ class FakeReplayAdapter:
         self.emit_first_frame = emit_first_frame
         self.callbacks: PlaybackCallbacks | None = None
         self.started: list[str] = []
+        self.started_paths: list[Path] = []
         self.stop_count = 0
         self.restart_count = 0
 
     def start(self, clip, callbacks: PlaybackCallbacks) -> None:
         self.started.append(clip.clip_id)
+        self.started_paths.append(clip.resolved_path)
         self.callbacks = callbacks
         if self.emit_first_frame:
             callbacks.first_frame()
@@ -41,12 +42,14 @@ class FakeReplayAdapter:
 class FakeAIOrchestrator:
     def __init__(self) -> None:
         self.starts = []
+        self.start_paths = []
         self.restarts = []
         self.loop_restarts = []
         self.stop_count = 0
 
     def start(self, clip, source_session_id) -> None:
         self.starts.append((clip.clip_id, source_session_id))
+        self.start_paths.append(clip.resolved_path)
 
     def restart(self, clip, source_session_id) -> None:
         self.restarts.append((clip.clip_id, source_session_id))
@@ -58,6 +61,23 @@ class FakeAIOrchestrator:
         self.stop_count += 1
 
 
+class StaticCatalog:
+    def __init__(self, clips: list[DemoClip]) -> None:
+        self.clips = {clip.clip_id: clip for clip in clips}
+
+    def list_clips(self) -> list[DemoClip]:
+        return list(self.clips.values())
+
+    def get_clip(self, clip_id: str) -> DemoClip:
+        try:
+            clip = self.clips[clip_id]
+        except KeyError as exc:
+            raise DemoClipNotFound("Unknown demo clip ID.") from exc
+        if clip.resolved_path is None or not clip.resolved_path.is_file():
+            raise DemoCatalogError("Selected source is unavailable.")
+        return clip
+
+
 class VirtualCameraControllerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -65,27 +85,12 @@ class VirtualCameraControllerTests(unittest.TestCase):
         (self.root / "clips").mkdir()
         (self.root / "clips" / "scenario.mp4").write_bytes(b"test media")
         (self.root / "clips" / "scenario_02.mp4").write_bytes(b"test media 2")
-        (self.root / "manifest.json").write_text(
-            json.dumps(
-                {
-                    "schema_version": "1",
-                    "clips": [
-                        {
-                            "clip_id": "scenario-01",
-                            "display_name": "Scenario 01",
-                            "relative_path": "clips/scenario.mp4",
-                        },
-                        {
-                            "clip_id": "scenario-02",
-                            "display_name": "Scenario 02",
-                            "relative_path": "clips/scenario_02.mp4",
-                        },
-                    ],
-                }
-            ),
-            encoding="utf-8",
+        self.catalog = StaticCatalog(
+            [
+                DemoClip("scenario-01", "Scenario 01", "clips/scenario.mp4", self.root / "clips" / "scenario.mp4"),
+                DemoClip("scenario-02", "Scenario 02", "clips/scenario_02.mp4", self.root / "clips" / "scenario_02.mp4"),
+            ]
         )
-        self.catalog = DemoClipCatalog(self.root)
         self.adapter = FakeReplayAdapter()
         self.controller = VirtualCameraController(lambda: self.catalog, self.adapter)
 
@@ -205,6 +210,7 @@ class VirtualCameraControllerTests(unittest.TestCase):
         controller.select_source("scenario-01")
         started = controller.start()
         self.assertEqual(ai.starts, [("scenario-01", started.session_id)])
+        self.assertEqual(ai.start_paths, self.adapter.started_paths)
         self.adapter.callbacks.first_frame()
         self.adapter.callbacks.loop_restart_started()
         self.adapter.callbacks.loop_restart_completed()

@@ -2153,7 +2153,7 @@ Recommended folder:
 Sentinel-Demo-Media/
 ├── fight/
 ├── non_violence/
-└── manifest.json
+└── manifest.json  # historical proposal; not used by current operation
 ```
 
 The folder shall not be committed to the repository by default.
@@ -2162,7 +2162,7 @@ Demo readiness checklist:
 
 1. configure external qualified violence workspace;
 2. configure demo media root;
-3. validate manifest;
+3. validate the configured media directory (historical step; no current manifest);
 4. verify positive and negative media exist;
 5. run AI raw-video preflight;
 6. start backend;
@@ -2174,6 +2174,22 @@ Demo readiness checklist:
 No RTSP server, CCTV credential, ONVIF service, NVR, or physical camera is required for the academic runbook.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+## 2026-10-09 Dynamic local ingest addendum
+
+The current academic workflow supersedes the earlier manifest-based setup.
+Configure `SENTINEL_DEMO_MEDIA_ROOT` as an absolute controlled directory and
+place supported top-level source videos there. `manifest.json` is neither
+required nor consulted. FFmpeg and FFprobe must both be installed or supplied
+through `SENTINEL_FFMPEG_BINARY` and `SENTINEL_FFPROBE_BINARY`.
+
+Sentinel validates stable files with FFprobe. Noncanonical files are prepared
+under `<media-root>/.sentinel` as 1280×720 H.264/yuv420p constant-30-FPS MP4
+derivatives; originals remain unchanged. The single-click
+`launch_sentinel_demo.cmd` validates both tools, the frozen AI runtime, the
+database, backend readiness, and frontend readiness. Ctrl+C first requests an
+application source stop and then terminates only launcher-owned process trees,
+including any normalization child process.
 
 # 2026-10-08 Final Local Academic Demo Runbook
 

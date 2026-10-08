@@ -387,6 +387,9 @@ Does not own:
 
 ## 8.2 Approved Clip Resolver
 
+> Historical design note: the manifest bullets below describe the superseded
+> 2026-10-07 proposal. The 2026-10-09 dynamic-ingest section is authoritative.
+
 Owns:
 
 - parsing the registered manifest;
@@ -524,6 +527,9 @@ Until automatic violence-event lifecycle policy is implemented, the demo may sho
 
 # 12. Demo Media Organization
 
+> Superseded by the 2026-10-09 dynamic-ingest section below. Current operation
+> uses supported top-level files in the controlled directory and no manifest.
+
 Recommended machine-local layout:
 
 ```text
@@ -550,6 +556,8 @@ The path is machine-local configuration.
 ---
 
 # 13. Demo Media Manifest
+
+> Legacy proposal only; this manifest is not read by current normal operation.
 
 Example only:
 
@@ -699,7 +707,7 @@ Required flow:
 ```text
 browser sends clip_id
         ↓
-backend reads approved manifest
+backend resolves its folder-discovered opaque-ID record
         ↓
 backend resolves under SENTINEL_DEMO_MEDIA_ROOT
         ↓
@@ -804,9 +812,12 @@ The following virtual-camera items are **target work**, not yet to be claimed as
 - source synchronization between displayed feed and AI processing;
 - loop-specific tests.
 
-### Current backend foundation update
+### Historical backend foundation update (superseded)
 
-The backend now contains an internal schema-version-1 manifest loader and path resolver at `backend/app/demo/clip_catalog.py`. It rejects absolute/traversal paths, verifies resolved clip paths remain beneath the configured media root, rejects missing files and duplicate IDs, and omits local paths from its public DTO helper. This helper is not wired to an API or replay source and does not validate decoding, provenance, or redistribution permission. It does not satisfy the virtual-camera acceptance tests by itself.
+At this earlier checkpoint the backend contained an internal schema-version-1
+manifest loader. The 2026-10-09 implementation status later in this document
+supersedes that design with folder discovery, FFprobe validation, and automatic
+normalization.
 
 ---
 
@@ -1020,3 +1031,29 @@ The PR's deterministic fake-process suite exercises first-frame delivery, natura
 The backend persists at most one violence event per active session. Natural loops and continued positive windows do not flood events. The operator page implements approved clip selection, Start/Stop/Restart, MJPEG display, AI state/latest score, and the qualified alert using one-second polling.
 
 Real FFmpeg, the exact extractor, frozen temporal checkpoint, positive/negative fixtures, SQLite persistence, and Chrome rendering were exercised on 2026-10-08. This remains a single local virtual CCTV source; physical-camera and multi-camera behavior are outside the milestone.
+
+## 2026-10-09 Dynamic ingest and normalization extension
+
+The controlled source directory is now authoritative; the legacy manifest is
+not used for normal operation. `GET /api/v1/demo/clips` explicitly reconciles
+supported top-level source files and returns deterministic opaque identifiers,
+ingest state, normalization mode, and safe canonical metadata. It does not
+expose paths. The polled source-status endpoint performs no scan or probing.
+
+Stable sources are inspected with FFprobe. Canonical MP4/H.264/yuv420p,
+1280×720, constant-30-FPS files are directly validated. Other decodable inputs
+are queued to one background FFmpeg worker and converted with
+`scale=1280:720:force_original_aspect_ratio=decrease:out_range=tv`, centered
+1280×720 padding, `setsar=1`, `fps=30`, explicit yuv420p formatting and TV
+color range, libx264 CRF 20/medium, no audio, and
+fast-start. A path/size/mtime-ns fingerprint caches unchanged results.
+Temporary output is re-probed and atomically published only after canonical
+validation. Original media is never overwritten.
+
+`DemoClip.resolved_path` identifies the final validated source. The controller
+passes that same object to `FFmpegReplayAdapter` and `DemoAIOrchestrator`, so
+display and inference cannot silently diverge. Natural EOF still queues one
+serialized real inference pass in the same logical source session. Cumulative
+counts are diagnostic only; event qualification remains exclusively the
+frozen threshold 0.906 applied to a complete latest-five history with at least
+three positive observations.

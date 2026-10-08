@@ -39,7 +39,12 @@ class DemoAIStatus:
     candidate_condition: bool = False
     event_id: UUID | None = None
     processed_windows_total: int = 0
+    positive_windows_total: int = 0
     analyzed_passes: int = 0
+    max_positive_count_observed_in_any_5_window: int = 0
+    ever_qualified: bool = False
+    first_qualified_at: datetime | None = None
+    session_violence_detected: bool = False
     error: str | None = None
 
     def to_public_dict(self) -> dict[str, object]:
@@ -51,13 +56,22 @@ class DemoAIStatus:
             "latest_score": self.latest_score,
             "latest_score_positive": self.latest_score_positive,
             "history_count": self.history_count,
+            "current_history_count": self.history_count,
             "positive_count": self.positive_count,
+            "current_positive_count": self.positive_count,
             "complete_history": self.complete_history,
             "candidate_condition": self.candidate_condition,
+            "current_candidate_condition": self.candidate_condition,
             "event_id": str(self.event_id) if self.event_id else None,
+            "session_event_id": str(self.event_id) if self.event_id else None,
             "processed_windows": self.processed_windows_total,
             "processed_windows_total": self.processed_windows_total,
+            "positive_windows_total": self.positive_windows_total,
             "analyzed_passes": self.analyzed_passes,
+            "max_positive_count_observed_in_any_5_window": self.max_positive_count_observed_in_any_5_window,
+            "ever_qualified": self.ever_qualified,
+            "first_qualified_at": self.first_qualified_at.isoformat() if self.first_qualified_at else None,
+            "session_violence_detected": self.session_violence_detected,
             "error": self.error,
             "model_version_id": MODEL_VERSION_ID,
             "threshold": LIVE_THRESHOLD,
@@ -331,6 +345,9 @@ class DemoAIOrchestrator:
                 return
             evaluation = outcome.evaluation
             self._latest_window_ended_at = evaluation.window_ended_at
+            first_qualified_at = self._status.first_qualified_at
+            if evaluation.candidate_condition and first_qualified_at is None:
+                first_qualified_at = evaluation.window_ended_at
             self._status = replace(
                 self._status,
                 state="processing",
@@ -343,6 +360,22 @@ class DemoAIOrchestrator:
                 candidate_condition=evaluation.candidate_condition,
                 event_id=outcome.event_id or self._status.event_id,
                 processed_windows_total=self._status.processed_windows_total + 1,
+                positive_windows_total=(
+                    self._status.positive_windows_total
+                    + int(evaluation.score_positive)
+                ),
+                max_positive_count_observed_in_any_5_window=max(
+                    self._status.max_positive_count_observed_in_any_5_window,
+                    evaluation.positive_count if evaluation.complete_history else 0,
+                ),
+                ever_qualified=(
+                    self._status.ever_qualified or evaluation.candidate_condition
+                ),
+                first_qualified_at=first_qualified_at,
+                session_violence_detected=(
+                    self._status.session_violence_detected
+                    or outcome.event_id is not None
+                ),
                 error=None,
             )
 

@@ -14,7 +14,7 @@ from app.ai_integration.constants import (
 from app.cameras.constants import DEMO_CAMERA_ID
 from app.cameras.router import get_db
 from app.db.models import Camera
-from app.demo.clip_catalog import DemoCatalogError, DemoClipNotFound
+from app.demo.clip_catalog import DemoCatalogError, DemoClipNotFound, DemoClipNotReady
 from app.demo.controller import DemoControllerError, VirtualCameraController
 
 
@@ -57,7 +57,17 @@ def list_demo_clips(controller: VirtualCameraController = Depends(get_demo_contr
         clips = [clip.to_public_dict() for clip in controller.list_clips()]
         return {
             "data": clips,
-            "meta": {"limit": len(clips), "next_cursor": None, "has_more": False},
+            "meta": {
+                "limit": len(clips),
+                "next_cursor": None,
+                "has_more": False,
+                "ready": sum(clip["state"] == "ready" for clip in clips),
+                "preparing": sum(
+                    clip["state"] in {"waiting_for_file", "validating", "transcoding"}
+                    for clip in clips
+                ),
+                "rejected": sum(clip["state"] in {"rejected", "failed"} for clip in clips),
+            },
         }
     except DemoCatalogError as exc:
         raise DemoControllerError(
@@ -74,6 +84,12 @@ def select_demo_source(
 ):
     try:
         return {"data": controller.select_source(payload.clip_id).to_public_dict()}
+    except DemoClipNotReady as exc:
+        raise DemoControllerError(
+            "DEMO_CLIP_NOT_READY",
+            f"The requested demo video is not ready ({exc.state}).",
+            409,
+        ) from exc
     except DemoClipNotFound as exc:
         raise DemoControllerError(
             "DEMO_CLIP_NOT_FOUND", "The requested demo clip is not registered.", 404
@@ -125,13 +141,22 @@ def demo_source_status(
             "latest_score": None,
             "latest_score_positive": False,
             "history_count": 0,
+            "current_history_count": 0,
             "positive_count": 0,
+            "current_positive_count": 0,
             "complete_history": False,
             "candidate_condition": False,
+            "current_candidate_condition": False,
             "event_id": None,
+            "session_event_id": None,
             "processed_windows": 0,
             "processed_windows_total": 0,
+            "positive_windows_total": 0,
             "analyzed_passes": 0,
+            "max_positive_count_observed_in_any_5_window": 0,
+            "ever_qualified": False,
+            "first_qualified_at": None,
+            "session_violence_detected": False,
             "error": "AI orchestration is not configured.",
             "model_version_id": MODEL_VERSION_ID,
             "threshold": LIVE_THRESHOLD,

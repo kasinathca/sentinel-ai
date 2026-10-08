@@ -2666,8 +2666,8 @@ The following routes are implemented in the backend branch as a **partial contro
 
 | Method | Path | Implemented behavior |
 |---|---|---|
-| GET | `/api/v1/demo/clips` | Lists `clip_id` and `display_name` from the approved manifest. |
-| PUT | `/api/v1/demo/source` | Selects a registered clip while no session is active. |
+| GET | `/api/v1/demo/clips` | Reconciles the controlled top-level media folder and lists opaque IDs plus safe ingest/normalization metadata. No manifest or local path is exposed. |
+| PUT | `/api/v1/demo/source` | Selects a validated ready clip while no session is active. |
 | POST | `/api/v1/demo/source/start` | Starts optional FFmpeg replay when available; otherwise returns `503 SOURCE_UNAVAILABLE`. |
 | POST | `/api/v1/demo/source/stop` | Invalidates session callbacks and requests adapter stop when one is active. |
 | POST | `/api/v1/demo/source/restart` | Delegates restart of the active clip to an injected adapter. |

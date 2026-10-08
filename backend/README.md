@@ -17,7 +17,7 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 | POST | `/api/v1/ai/violence/results` | Development adapter for structured worker results |
 | GET | `/api/v1/events` | List persisted events, newest first |
 | GET | `/api/v1/events/{event_id}` | Read event detail |
-| GET | `/api/v1/demo/clips` | List approved clip IDs/display names; local-only |
+| GET | `/api/v1/demo/clips` | Rescan the controlled folder and return opaque IDs plus safe ingest state/media metadata; local-only |
 | PUT | `/api/v1/demo/source` | Select a clip while no source session is active; local-only |
 | POST | `/api/v1/demo/source/start` | Start the optional FFmpeg adapter; returns unavailable if FFmpeg is not configured/available |
 | POST | `/api/v1/demo/source/stop` | Stop process-local source controller; local-only |
@@ -26,15 +26,34 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 
 Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, device-level source-health measurement, general/production streaming, and snapshot endpoints remain incomplete unless later commits explicitly add them.
 
-## Demo media catalog foundation
+## Demo media ingest
 
-`app.demo.clip_catalog.DemoClipCatalog` reads a local `manifest.json` with schema version `1` beneath the machine-local absolute `SENTINEL_DEMO_MEDIA_ROOT`. It resolves registered relative paths beneath that root, rejects absolute/traversal/escaping paths, and exposes only `clip_id` and `display_name` through its public DTO helper. The demo API consumes this catalog.
+`app.demo.clip_catalog.DemoClipCatalog` treats the absolute
+`SENTINEL_DEMO_MEDIA_ROOT` as its filesystem boundary and scans only supported
+top-level video files. It assigns a deterministic UUID5-derived opaque clip ID
+from the normalized relative filename. No manifest is required and filenames
+have no inference meaning. FFprobe validates video metadata. Canonical
+1280×720 H.264/yuv420p constant-30-FPS MP4 sources are used directly; other
+decodable sources are normalized by one background FFmpeg worker using
+aspect-preserving scale-to-fit with TV-range output, letterbox/pillarbox
+padding, `setsar=1`, `fps=30`, explicit yuv420p formatting, `libx264`, CRF 20,
+medium preset, no audio, and `+faststart`.
+
+Derivatives and fingerprint metadata live below `.sentinel/`. Output is first
+written to `.sentinel/temp`, validated with FFprobe, and atomically moved to
+`.sentinel/processed`. The original is never modified. A path/size/mtime-ns
+fingerprint avoids repeated work and invalidates the cache when the source
+changes. The API never returns an absolute or relative filesystem path.
 
 `app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The app uses an external FFmpeg executable when available on `PATH` or configured through `SENTINEL_FFMPEG_BINARY`; it never installs or downloads FFmpeg. The adapter reads only catalog-resolved clips, paces input, loops after EOF, and exposes decoded JPEG frames through a local-only MJPEG endpoint. If FFmpeg is unavailable, starting returns `SOURCE_UNAVAILABLE`. Component tests use fakes; real media decoding and timing have not been verified in this environment.
 
 
 
-For a local replay setup, set `SENTINEL_DEMO_MEDIA_ROOT` to an absolute directory containing `manifest.json` and the approved media files. The manifest must register each clip by an opaque `clip_id`, display name, and relative path. FFmpeg is resolved from `PATH` by default; set `SENTINEL_FFMPEG_BINARY` to an executable path when it is installed elsewhere. No endpoint accepts or returns arbitrary media paths.
+For local replay, set `SENTINEL_DEMO_MEDIA_ROOT` to an absolute controlled
+directory containing the source videos. FFmpeg and FFprobe resolve from
+`PATH`; override them with `SENTINEL_FFMPEG_BINARY` and
+`SENTINEL_FFPROBE_BINARY`. No endpoint accepts or returns arbitrary media
+paths.
 
 The controller is connected to the optional FFmpeg replay adapter, local MJPEG
 delivery, and the separate frozen AI worker. Every real FFmpeg loop boundary
@@ -42,8 +61,11 @@ queues a fresh whole-file inference pass for the same source-session UUID. One
 manager consumes those passes sequentially, so workers never overlap and
 rolling criterion history continues across natural loops. Explicit Stop clears
 the source session; a later Start creates an independent session. The status API
-reports individual-score polarity, rolling history/positive counts, history
-completeness, cumulative processed windows, and completed replay passes.
+reports individual-score polarity, current rolling history/positive counts,
+history completeness, cumulative processed/positive windows, completed replay
+passes, strongest complete five-window result, first qualification time, and
+latched session-level detection/event identity. Cumulative diagnostics never
+replace the frozen 0.906 plus complete 3-of-5 decision rule.
 
 Camera APIs reserve the canonical identity and respect its persisted `enabled`
 value: disabled sources cannot start or stream, disabling an active source stops

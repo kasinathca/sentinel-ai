@@ -7,6 +7,7 @@ import {
   startDemoSource,
   stopDemoSource,
 } from "../services/demoService";
+import { describeRollingCondition, describeSessionDetection, isClipSelectable } from "../services/demoViewModel";
 
 const DEMO_CAMERA_ID = "02b1cbc6-d4a3-5630-8c4e-27cdcc062d57";
 const ACTIVE_STATES = new Set(["starting", "playing", "loop-restarting"]);
@@ -21,6 +22,20 @@ function CameraMonitoring({ cameras = [], onBack }) {
   const [selectedClipId, setSelectedClipId] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  async function refreshVideos() {
+    const availableClips = await getDemoClips();
+    setClips(availableClips);
+    setSelectedClipId((current) => {
+      const currentReady = availableClips.some(
+        (clip) => clip.clip_id === current && isClipSelectable(clip)
+      );
+      return currentReady
+        ? current
+        : availableClips.find(isClipSelectable)?.clip_id || "";
+    });
+    return availableClips;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +73,23 @@ function CameraMonitoring({ cameras = [], onBack }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!clips.some((clip) => ["waiting_for_file", "validating", "transcoding"].includes(clip.state))) return undefined;
+    let cancelled = false;
+    const poll = window.setInterval(async () => {
+      try {
+        const availableClips = await getDemoClips();
+        if (!cancelled) setClips(availableClips);
+      } catch (pollError) {
+        if (!cancelled) setError(pollError.message);
+      }
+    }, 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+    };
+  }, [clips]);
+
   async function run(action) {
     setBusy(true);
     setError(null);
@@ -89,7 +121,8 @@ function CameraMonitoring({ cameras = [], onBack }) {
 
   const active = ACTIVE_STATES.has(status?.state);
   const ai = status?.ai || {};
-  const selectedClip = clips.find((clip) => clip.clip_id === status?.clip_id);
+  const selectedClip = clips.find((clip) => clip.clip_id === selectedClipId);
+  const pendingClips = clips.filter((clip) => clip.state !== "ready");
 
   return (
     <div className="camera-monitoring">
@@ -102,12 +135,18 @@ function CameraMonitoring({ cameras = [], onBack }) {
       {error && <section className="state-card error-state"><strong>Demo unavailable</strong><p>{error}</p></section>}
 
       <section className="demo-control-panel">
-        <h2>Demo Control Panel</h2>
-        <label>Approved clip
+        <div className="demo-panel-heading">
+          <div><h2>Available Videos</h2><p>Drop a supported video into the controlled source directory, then refresh.</p></div>
+          <button type="button" disabled={busy || active} onClick={() => run(refreshVideos)}>Refresh Videos</button>
+        </div>
+        <label>Sentinel source
           <select value={selectedClipId} disabled={busy || active} onChange={(event) => setSelectedClipId(event.target.value)}>
-            {clips.map((clip) => <option key={clip.clip_id} value={clip.clip_id}>{clip.display_name}</option>)}
+            {!clips.length && <option value="">No videos discovered</option>}
+            {clips.map((clip) => <option key={clip.clip_id} value={clip.clip_id} disabled={!isClipSelectable(clip)}>{clip.display_name} — {clip.state.replaceAll("_", " ")}</option>)}
           </select>
         </label>
+        {pendingClips.length > 0 && <div className="ingest-list">{pendingClips.map((clip) => <p key={clip.clip_id}><strong>{clip.display_name}</strong>: {clip.reason || clip.state.replaceAll("_", " ")}</p>)}</div>}
+        {selectedClip?.media && <p className="prepared-media">Sentinel source: {selectedClip.normalization === "transcoded" ? "Prepared" : "Validated directly"} · {selectedClip.media.width}×{selectedClip.media.height} · {selectedClip.media.codec.toUpperCase()} · {selectedClip.media.fps} FPS</p>}
         <div className="demo-actions">
           <button type="button" disabled={busy || active || !selectedClipId} onClick={start}>Start</button>
           <button type="button" disabled={busy || !active} onClick={() => run(stopDemoSource)}>Stop</button>
@@ -133,10 +172,15 @@ function CameraMonitoring({ cameras = [], onBack }) {
           <div><span>Processed windows (session)</span><strong>{ai.processed_windows_total ?? ai.processed_windows ?? 0}</strong></div>
           <div><span>Analyzed replay passes</span><strong>{ai.analyzed_passes ?? 0}</strong></div>
           <div><span>Latest violence score</span><strong>{ai.latest_score == null ? "Not available" : ai.latest_score.toFixed(6)}</strong></div>
-          <div><span>Latest threshold result</span><strong>{ai.latest_score == null ? "Not available" : ai.latest_score_positive ? "At or above threshold" : "Below threshold"}</strong></div>
-          <div><span>Rolling history</span><strong>{ai.history_count ?? 0}/{ai.m_history ?? 5} windows · {ai.positive_count ?? 0} positive</strong></div>
-          <div><span>History readiness</span><strong>{ai.complete_history ? "Complete" : "Incomplete"}</strong></div>
-          <div><span>Qualified condition</span><strong>{ai.candidate_condition ? `${ai.n_required ?? 3}-of-${ai.m_history ?? 5} qualified` : "Not qualified"}</strong></div>
+          <div><span>Latest observation</span><strong>{ai.latest_score == null ? "Not available" : ai.latest_score_positive ? "Positive" : "Negative"}</strong></div>
+          <div><span>History</span><strong>{ai.history_count ?? 0} / {ai.m_history ?? 5} observations</strong></div>
+          <div><span>Current rolling window</span><strong>{ai.positive_count ?? 0} / {ai.m_history ?? 5} positive</strong></div>
+          <div><span>Current rolling qualification</span><strong>{describeRollingCondition(ai)}</strong></div>
+          <div><span>Positive observations this session</span><strong>{ai.positive_windows_total ?? 0} / {ai.processed_windows_total ?? 0}</strong></div>
+          <div><span>Strongest rolling result observed</span><strong>{ai.max_positive_count_observed_in_any_5_window ?? 0} / {ai.m_history ?? 5} positive</strong></div>
+          <div><span>Violence detected this session</span><strong>{describeSessionDetection(ai)}</strong></div>
+          <div><span>First qualified at</span><strong>{ai.first_qualified_at || "Not detected"}</strong></div>
+          <div><span>Persisted event</span><strong>{ai.event_id || "None"}</strong></div>
           <div><span>Frozen threshold</span><strong>{ai.threshold ?? 0.906}</strong></div>
           <div><span>Score meaning</span><strong>{ai.score_semantics || "uncalibrated fighting score"}</strong></div>
         </div>

@@ -19,12 +19,20 @@ from app.demo.ai_orchestrator import DemoAIOrchestrator
 
 def create_app(demo_controller: VirtualCameraController | None = None) -> FastAPI:
     ai_orchestrator = None
+    demo_catalog = None
     if demo_controller is None:
         ai_orchestrator = DemoAIOrchestrator(
             _worker_service.consume_payload_with_outcome
         )
+
+        def catalog_factory() -> DemoClipCatalog:
+            nonlocal demo_catalog
+            if demo_catalog is None:
+                demo_catalog = DemoClipCatalog.from_environment()
+            return demo_catalog
+
         controller = VirtualCameraController(
-            catalog_factory=DemoClipCatalog.from_environment,
+            catalog_factory=catalog_factory,
             replay_adapter=FFmpegReplayAdapter.from_environment(),
             ai_orchestrator=ai_orchestrator,
         )
@@ -37,6 +45,8 @@ def create_app(demo_controller: VirtualCameraController | None = None) -> FastAP
             yield
         finally:
             application.state.demo_controller.stop()
+            if demo_catalog is not None:
+                demo_catalog.shutdown()
 
     application = FastAPI(
         title="Sentinel AI API",
@@ -52,6 +62,9 @@ def create_app(demo_controller: VirtualCameraController | None = None) -> FastAP
     application.state.demo_controller = controller
     application.state.demo_replay_adapter = controller.replay_adapter
     application.state.demo_ai_orchestrator = ai_orchestrator
+    application.state.demo_catalog_factory = (
+        catalog_factory if demo_controller is None else None
+    )
 
     @application.exception_handler(DemoControllerError)
     async def demo_controller_error_handler(

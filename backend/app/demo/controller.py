@@ -19,6 +19,7 @@ from app.demo.clip_catalog import (
     DemoClip,
     DemoClipCatalog,
     DemoClipNotFound,
+    DemoClipNotReady,
 )
 
 
@@ -196,6 +197,15 @@ class VirtualCameraController:
 
             try:
                 clip = self._catalog_factory().get_clip(clip_id)
+            except DemoClipNotReady as exc:
+                with self._state_lock:
+                    self._state = DemoSourceState.FAILED
+                    self._position_ms = None
+                raise DemoControllerError(
+                    "DEMO_CLIP_NOT_READY",
+                    f"The selected demo video is not ready ({exc.state}).",
+                    409,
+                ) from exc
             except DemoClipNotFound as exc:
                 with self._state_lock:
                     self._state = DemoSourceState.FAILED

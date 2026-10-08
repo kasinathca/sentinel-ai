@@ -77,6 +77,7 @@ try {
     $defaultAiPython = Join-Path $env:LOCALAPPDATA "Programs\Python\Python310\python.exe"
     $aiPython = if ($env:SENTINEL_AI_PYTHON) { $env:SENTINEL_AI_PYTHON } elseif (Test-Path -LiteralPath $defaultAiPython) { $defaultAiPython } else { (Get-Command python.exe -ErrorAction Stop).Source }
     $ffmpeg = if ($env:SENTINEL_FFMPEG_BINARY) { $env:SENTINEL_FFMPEG_BINARY } else { (Get-Command ffmpeg.exe -ErrorAction Stop).Source }
+    $ffprobe = if ($env:SENTINEL_FFPROBE_BINARY) { $env:SENTINEL_FFPROBE_BINARY } else { (Get-Command ffprobe.exe -ErrorAction Stop).Source }
     $npm = if ($env:SENTINEL_NPM) { $env:SENTINEL_NPM } else { (Get-Command npm.cmd -ErrorAction Stop).Source }
 
     Require-File $venvPython "Repository virtual-environment Python"
@@ -84,7 +85,6 @@ try {
     Require-Directory (Join-Path $repoRoot "frontend") "Frontend directory"
     Require-Directory (Join-Path $repoRoot "ai_worker") "AI worker directory"
     Require-Directory $mediaRoot "Demo media folder"
-    Require-File (Join-Path $mediaRoot "manifest.json") "Demo manifest"
     Require-Directory $violenceRoot "XD-Violence workspace"
     Require-File (Join-Path $violenceRoot "sentinel_temporal\artifacts\best_model.pt") "Frozen checkpoint"
     Require-File (Join-Path $violenceRoot "sentinel_temporal\train_temporal_gru.py") "Frozen temporal model source"
@@ -92,6 +92,7 @@ try {
     Require-File (Join-Path $violenceRoot "sentinel_runtime_validation\scripts\phase2g_persistent_extractor_worker.py") "Exact extractor worker"
     Require-File $aiPython "Qualified AI Python"
     Require-File $ffmpeg "FFmpeg"
+    Require-File $ffprobe "FFprobe"
     Require-File $npm "npm"
     Assert-Port-Free $backendPort "Backend"
     Assert-Port-Free $frontendPort "Frontend"
@@ -103,6 +104,7 @@ try {
     $env:SENTINEL_VIOLENCE_ROOT = $violenceRoot
     $env:SENTINEL_AI_PYTHON = $aiPython
     $env:SENTINEL_FFMPEG_BINARY = $ffmpeg
+    $env:SENTINEL_FFPROBE_BINARY = $ffprobe
     $env:PYTHONPATH = Join-Path $repoRoot "ai_worker"
 
     Write-Host "Running frozen AI preflight..."
@@ -149,8 +151,8 @@ Remove-Item -LiteralPath $RuntimePath -Recurse -Force -ErrorAction SilentlyConti
     $watchdogProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $watchdogArgs -PassThru -WindowStyle Hidden
     Wait-Http "http://127.0.0.1:$backendPort/api/v1/health" "Backend health" $startupTimeout | Out-Null
     Wait-Http "http://127.0.0.1:$backendPort/api/v1/health/readiness" "Backend readiness" $startupTimeout | Out-Null
-    $clips = (Invoke-RestMethod -Uri "http://127.0.0.1:$backendPort/api/v1/demo/clips" -TimeoutSec 5).data
-    if ($null -eq $clips -or $clips.Count -lt 1) { Fail "The demo catalog returned no clips." }
+    $catalogResponse = Invoke-RestMethod -Uri "http://127.0.0.1:$backendPort/api/v1/demo/clips" -TimeoutSec 5
+    $clips = @($catalogResponse.data)
 
     $env:VITE_API_PROXY_TARGET = "http://127.0.0.1:$backendPort"
     $frontendOut = Join-Path $runtimeDir "frontend.out.log"
@@ -161,13 +163,24 @@ Remove-Item -LiteralPath $RuntimePath -Recurse -Force -ErrorAction SilentlyConti
     Wait-Http "http://127.0.0.1:$frontendPort" "Frontend" $startupTimeout | Out-Null
 
     $sha = (& git -C $repoRoot rev-parse HEAD).Trim()
-    Write-Host "`nSentinel AI is ready."
-    Write-Host "Repository SHA: $sha"
-    Write-Host "Backend status: ready (http://127.0.0.1:$backendPort)"
-    Write-Host "AI preflight status: ready"
-    Write-Host "Frontend status: ready (http://127.0.0.1:$frontendPort)"
-    Write-Host "Media root: $mediaRoot"
-    Write-Host "Violence root: $violenceRoot"
+    Write-Host "`nSentinel AI Demo"
+    Write-Host "------------------------------------------------"
+    Write-Host "Repository       : $sha"
+    Write-Host "Media root       : $mediaRoot"
+    Write-Host "Input videos     : $($clips.Count)"
+    Write-Host "Ready canonical  : $($catalogResponse.meta.ready)"
+    Write-Host "Need preparation : $($catalogResponse.meta.preparing)"
+    Write-Host "Rejected         : $($catalogResponse.meta.rejected)"
+    Write-Host "FFmpeg           : PASS"
+    Write-Host "FFprobe          : PASS"
+    Write-Host "AI preflight     : PASS"
+    Write-Host "Database         : PASS"
+    Write-Host "Backend          : READY (http://127.0.0.1:$backendPort)"
+    Write-Host "Frontend         : READY (http://127.0.0.1:$frontendPort)"
+    Write-Host "`nDrop another ordinary supported video into:"
+    Write-Host $mediaRoot
+    Write-Host "Then use Camera Monitoring -> Refresh Videos."
+    Write-Host "No manifest and no manual FFmpeg command are required."
     Write-Host "Press Ctrl+C to stop Sentinel AI safely."
     if ($env:SENTINEL_LAUNCH_NO_BROWSER -ne "1") { Start-Process "http://127.0.0.1:$frontendPort" }
 

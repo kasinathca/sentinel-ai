@@ -2515,4 +2515,23 @@ Operationally, EOF loop restart is normal behavior and must not be treated as ca
 7. Select **Stop** before changing clips. This clears the active session and terminates FFmpeg and AI processing.
 8. Choose the contrasting clip and start again. **Restart** begins the current clip again while retaining the same session/deduplication boundary.
 
-AI `failed` is not “normal.” Check the configured workspace/Python, hashes, extractor, and GPU. For video failures check the approved manifest and FFmpeg. EOF loop restart is normal and is not camera-offline state.
+AI `failed` is not “normal.” Check the configured workspace/Python, hashes,
+extractor, and GPU. For video failures check the controlled media folder,
+FFprobe, FFmpeg, and the safe per-video ingest reason shown in Camera
+Monitoring. EOF loop restart is normal and is not camera-offline state.
+
+## 2026-10-09 Refresh Videos workflow
+
+1. Copy a supported ordinary video into the configured media directory; do
+   not enter a filesystem path in the browser.
+2. Open Camera Monitoring and select **Refresh Videos**.
+3. Wait for the source to progress through waiting/checking/preparing to
+   **Ready**. The original remains untouched.
+4. Select the Ready opaque source and press **Start**. The prepared canonical
+   source is used for both the virtual feed and frozen AI.
+5. Read latest observation, current rolling qualification, and session
+   detection separately. A positive latest observation can still have
+   insufficient history. After a real event, a later 2/5 rolling result is
+   nonqualifying while “Violence detected this session: YES” remains true.
+6. Press **Stop** before changing sources. Use Ctrl+C in the launcher console
+   for full safe shutdown.

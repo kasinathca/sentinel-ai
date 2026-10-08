@@ -98,8 +98,50 @@ class DemoAIOrchestratorTests(unittest.TestCase):
         self.assertFalse(public["complete_history"])
         self.assertFalse(public["candidate_condition"])
         self.assertEqual(public["processed_windows_total"], 1)
+        self.assertEqual(public["positive_windows_total"], 1)
+        self.assertEqual(public["max_positive_count_observed_in_any_5_window"], 0)
+        self.assertFalse(public["ever_qualified"])
+        self.assertFalse(public["session_violence_detected"])
         self.assertEqual(public["n_required"], 3)
         self.assertEqual(public["m_history"], 5)
+
+    def test_session_detection_and_cumulative_evidence_latch_while_rolling_state_changes(self) -> None:
+        orchestrator = DemoAIOrchestrator(lambda payload: payload)
+        started = datetime.now(timezone.utc)
+        with orchestrator._lock:
+            orchestrator._generation = 4
+            orchestrator._status = orchestrator._status.__class__(
+                state="processing", source_session_id=self.session_id
+            )
+
+        def evaluation(index, *, score_positive, positive_count, candidate):
+            return ViolenceConditionEvaluation(
+                camera_id=uuid4(), model_version_id=UUID(MODEL_VERSION_ID), job_id=uuid4(),
+                correlation_id=self.session_id,
+                window_started_at=started + timedelta(seconds=index),
+                window_ended_at=started + timedelta(seconds=index + 1),
+                score=0.99 if score_positive else 0.2,
+                score_positive=score_positive, history_count=5,
+                positive_count=positive_count, complete_history=True,
+                candidate_condition=candidate, threshold_snapshot=0.906,
+                n_required_snapshot=3, m_history_snapshot=5,
+                score_semantics=SCORE_SEMANTICS,
+            )
+
+        event_id = uuid4()
+        orchestrator._accept_outcome(4, self.session_id, ViolenceProcessingOutcome(evaluation(0, score_positive=True, positive_count=4, candidate=True), event_id))
+        orchestrator._accept_outcome(4, self.session_id, ViolenceProcessingOutcome(evaluation(1, score_positive=False, positive_count=2, candidate=False), None))
+        public = orchestrator.status().to_public_dict()
+
+        self.assertFalse(public["candidate_condition"])
+        self.assertEqual(public["positive_count"], 2)
+        self.assertTrue(public["ever_qualified"])
+        self.assertTrue(public["session_violence_detected"])
+        self.assertEqual(public["event_id"], str(event_id))
+        self.assertIsNotNone(public["first_qualified_at"])
+        self.assertEqual(public["processed_windows_total"], 2)
+        self.assertEqual(public["positive_windows_total"], 1)
+        self.assertEqual(public["max_positive_count_observed_in_any_5_window"], 4)
 
 
 if __name__ == "__main__":

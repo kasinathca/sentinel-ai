@@ -2281,4 +2281,10 @@ When implementation is complete, report the actual test results for loop stabili
 
 On the working branch based on `main` commit `61b1dd0690ccf52258b6b6cdf0733d5b19451a3c`, the backend catalog/path-safety foundation added seven focused tests. The integrated script with `-SkipFrontend` passed database migration/readiness, **42/42 backend tests**, and **19/19 AI-worker tests**. The full script was also attempted, but this environment has no `npm` executable, so frontend install/lint/build were not run in this verification. These checks do not verify media playback, camera session lifecycle, or AI processing of a looping source.
 
+## 2026-10-08 Controller/API Boundary Update
+
+The stacked branch adds a process-local virtual-camera controller and the six documented demo-control endpoints. The backend and AI-worker portions of `scripts/verify_integration.ps1 -SkipFrontend` passed: disposable migration/readiness, **57/57 backend tests**, and **19/19 AI-worker tests**. The full `scripts/verify_integration.ps1` passed on 2026-10-08 using a temporary official Node.js `v24.21.0` Windows archive (bundled npm `11.19.0`): frontend `npm ci` installed 24 packages with zero reported vulnerabilities, `npm run lint` passed, and `npm run build` passed. No project dependency manifest or lockfile changed. The external runtime was used from the workspace for verification rather than installed system-wide.
+
+The new controller/API tests use a fake replay adapter. The default app has no actual replay adapter and returns `SOURCE_UNAVAILABLE` on source start. This result does not verify video decoding, real-time pacing, automatic EOF looping, operator playback, AI source synchronization, camera-health mapping, raw-video/GPU behavior, or any complete virtual-camera acceptance test. No database schema changed.
+
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

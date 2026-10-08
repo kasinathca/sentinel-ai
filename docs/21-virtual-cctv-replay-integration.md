@@ -974,3 +974,17 @@ The single-camera virtual CCTV milestone is complete only when:
 - integration verification passes.
 
 Anything not demonstrated by code/tests remains documented as target work rather than completed work.
+
+---
+
+# 2026-10-08 Backend Controller/API Boundary Update
+
+The backend branch now includes:
+
+- local-only routes for approved clip listing, selection, start, stop, restart, and status;
+- a process-local singleton controller with explicit states and callbacks for first frame, playback position, loop restart, and source failure;
+- safe error envelopes and tests using a fake replay adapter.
+
+The default application has no real replay adapter configured. Consequently, list/select/status and controller-boundary tests are available, but `POST .../start` returns `SOURCE_UNAVAILABLE` in the default app. No video is decoded or looped by this implementation. No operator video is delivered, no AI worker receives frames from the selected clip, and normal camera health remains `unknown` because a mapping from `DEMO-CAM-01` to a persisted camera UUID has not been specified/configured.
+
+The implementation also records several lifecycle/API details as `PROPOSED` for team review in `docs/07-api-specification.md`; they are not new accepted product decisions. Real replay, playback pacing, EOF tests, camera-status mapping, and shared-source AI integration remain required before claiming the virtual-camera milestone complete.

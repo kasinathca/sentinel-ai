@@ -16,14 +16,22 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 | POST | `/api/v1/ai/violence/results` | Development adapter for structured worker results |
 | GET | `/api/v1/events` | List persisted events, newest first |
 | GET | `/api/v1/events/{event_id}` | Read event detail |
+| GET | `/api/v1/demo/clips` | List approved clip IDs/display names; local-only |
+| PUT | `/api/v1/demo/source` | Select a clip while no source session is active; local-only |
+| POST | `/api/v1/demo/source/start` | Delegate to replay adapter; default app returns unavailable until one is configured |
+| POST | `/api/v1/demo/source/stop` | Stop process-local source controller; local-only |
+| POST | `/api/v1/demo/source/restart` | Delegate restart of active clip to replay adapter; local-only |
+| GET | `/api/v1/demo/source/status` | Read process-local controller status; local-only |
 
 Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and stream/snapshot endpoints remain incomplete unless later commits explicitly add them.
 
 ## Demo media catalog foundation
 
-`app.demo.clip_catalog.DemoClipCatalog` reads a local `manifest.json` with schema version `1` beneath the machine-local absolute `SENTINEL_DEMO_MEDIA_ROOT`. It resolves registered relative paths beneath that root, rejects absolute/traversal/escaping paths, and exposes only `clip_id` and `display_name` through its public DTO helper.
+`app.demo.clip_catalog.DemoClipCatalog` reads a local `manifest.json` with schema version `1` beneath the machine-local absolute `SENTINEL_DEMO_MEDIA_ROOT`. It resolves registered relative paths beneath that root, rejects absolute/traversal/escaping paths, and exposes only `clip_id` and `display_name` through its public DTO helper. The demo API consumes this catalog.
 
-This is an internal catalog/path-safety foundation only. It is not connected to HTTP routes, a virtual-camera controller, a decoder/replay loop, operator video delivery, or AI-worker processing. It does not establish media provenance/redistribution permission or verify that a file can be decoded. Do not treat manifest registration as evidence that the full virtual CCTV workflow is implemented.
+`app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The current app has no real replay adapter: catalog listing and clip selection work when the media root is configured, while starting a source returns `SOURCE_UNAVAILABLE`. Tests use a fake adapter only for controller/API behavior.
+
+The controller is not connected to a decoder/replay loop, operator video delivery, or AI-worker processing. The default camera-health API remains `unknown` because no mapping from `DEMO-CAM-01` to an existing persisted camera UUID is configured. The catalog/controller do not establish media provenance/redistribution permission or verify that a file can be decoded. Do not treat these routes as evidence that virtual CCTV playback is implemented.
 
 ## Why `/health` can be 200 while a DB route fails
 

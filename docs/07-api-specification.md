@@ -2659,4 +2659,28 @@ Absolute local paths shall not appear in browser-facing responses.
 
 The final browser video transport remains an implementation choice; it must preserve the one-camera abstraction and source synchronization.
 
+## 2026-10-08 backend controller/API foundation record
+
+The following routes are implemented in the backend branch as a **partial controller/API foundation**:
+
+| Method | Path | Implemented behavior |
+|---|---|---|
+| GET | `/api/v1/demo/clips` | Lists `clip_id` and `display_name` from the approved manifest. |
+| PUT | `/api/v1/demo/source` | Selects a registered clip while no session is active. |
+| POST | `/api/v1/demo/source/start` | Delegates to an injected replay adapter; the default app has none and returns `503 SOURCE_UNAVAILABLE`. |
+| POST | `/api/v1/demo/source/stop` | Invalidates session callbacks and requests adapter stop when one is active. |
+| POST | `/api/v1/demo/source/restart` | Delegates restart of the active clip to an injected adapter. |
+| GET | `/api/v1/demo/source/status` | Returns process-local state, selected `clip_id`, `position_ms`, and `loop_count`. |
+
+Success responses use the `data` envelope. Demo controller errors use the standard `error` envelope and do not include local paths. The router rejects non-loopback clients because authentication is not implemented.
+
+The target document leaves some action details as implementation choices. The following behavior is an explicit **PROPOSED implementation detail for team review**, not a separately accepted product decision:
+
+- start without a selected clip, start while active, selecting while active, and restart while inactive return `409 DEMO_SOURCE_STATE_CONFLICT`;
+- stop is idempotent and reports `stopped`;
+- restarting an active session resets `position_ms` and `loop_count` and waits for the adapter's first-frame callback;
+- unknown IDs return `404 DEMO_CLIP_NOT_FOUND`; invalid catalog configuration returns `503 SOURCE_CONFIGURATION_INVALID`; unavailable media/adapter returns `503 SOURCE_UNAVAILABLE`.
+
+The default app has no decoder or replay adapter. These routes and fake-adapter tests do not verify `T-VCAM-001` through `T-VCAM-010`, AI source synchronization, playback pacing, browser video delivery, or real camera-health mapping. The latter also requires a documented mapping from canonical `DEMO-CAM-01` to an existing persisted camera UUID.
+
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->

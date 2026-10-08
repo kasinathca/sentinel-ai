@@ -984,11 +984,20 @@ The catalog is now consumed by local-only demo-control routes and a process-loca
 |---|---|---|
 | `FR-VCAM-002`, `FR-VCAM-011` | Catalog-backed list/select routes plus safe ID/path tests | `PARTIAL_IMPLEMENTATION` — playback/source authorization not fully verified |
 | `FR-VCAM-003` | Backend endpoints for a separate demo-control surface | `PARTIAL_IMPLEMENTATION` — no Demo Control Panel UI in this branch |
-| `FR-VCAM-004`, `FR-VCAM-005`, `FR-VCAM-006` | Controller delegates start/stop/restart and applies adapter callbacks in unit tests | `NOT_YET_INTEGRATED` — no real replay adapter or EOF-driven callback source |
-| `FR-VCAM-007`, `FR-VCAM-008` | No timing/source-sharing evidence added | `NOT_YET_VERIFIED` |
-| `FR-VCAM-010` | Controller treats normal loop callbacks as active state | `PARTIAL_IMPLEMENTATION` — no live camera-health mapping |
-| `FR-VCAM-013` | Missing catalog/adapter failures are safe and explicit at the controller boundary | `PARTIAL_IMPLEMENTATION` — corrupt media cannot be detected without a decoder |
+| `FR-VCAM-004`, `FR-VCAM-005`, `FR-VCAM-006` | Optional FFmpeg adapter implements paced start/stop/restart and EOF loop callbacks | `PARTIAL_IMPLEMENTATION` — component-tested; real-media execution remains unverified |
+| `FR-VCAM-007`, `FR-VCAM-008` | FFmpeg command requests natural-rate pacing; session ID is stable across loop/restart | `PARTIAL_IMPLEMENTATION` — no measured timing or AI source synchronization evidence |
+| `FR-VCAM-010` | Canonical camera health maps controller state; normal loop stays online | `PARTIAL_IMPLEMENTATION` — no hardware-health measurement or stale-frame timeout |
+| `FR-VCAM-013` | Missing catalog/adapter failures and FFmpeg decode failures are explicit; no path is exposed | `PARTIAL_IMPLEMENTATION` — corrupt-file behavior lacks real decoder fixture verification |
 
 Do not mark any virtual-camera acceptance test as passed from fake-adapter results. The operator camera UUID mapping, source decoder, pacing, browser video, AI transport, and raw-video model scenarios remain outside this evidence.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+## 2026-10-08 Canonical Camera / Session / Health Evidence
+
+The backend now seeds canonical camera `DEMO-CAM-01` (`02b1cbc6-d4a3-5630-8c4e-27cdcc062d57`, `source_kind=file`) without a migration. Tests `T-VCAM-BE-008` through `T-VCAM-BE-010` cover seed idempotency/conflicts/preservation, session identity, and controller-derived health mapping. This is backend component evidence only; real replay, displayed/AI source synchronization, and raw-video behavior remain unverified.
+
+
+### 2026-10-08 replay implementation evidence update
+
+The optional FFmpeg adapter, local canonical-camera MJPEG route, and focused unit/API checks are implemented. Their status is PARTIAL_IMPLEMENTATION pending execution against approved real media, measured natural-rate/EOF behavior, browser playback, and shared-source AI integration. The route does not currently submit inference jobs or stream frames to the AI worker.

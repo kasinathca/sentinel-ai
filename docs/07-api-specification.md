@@ -2667,7 +2667,7 @@ The following routes are implemented in the backend branch as a **partial contro
 |---|---|---|
 | GET | `/api/v1/demo/clips` | Lists `clip_id` and `display_name` from the approved manifest. |
 | PUT | `/api/v1/demo/source` | Selects a registered clip while no session is active. |
-| POST | `/api/v1/demo/source/start` | Delegates to an injected replay adapter; the default app has none and returns `503 SOURCE_UNAVAILABLE`. |
+| POST | `/api/v1/demo/source/start` | Starts optional FFmpeg replay when available; otherwise returns `503 SOURCE_UNAVAILABLE`. |
 | POST | `/api/v1/demo/source/stop` | Invalidates session callbacks and requests adapter stop when one is active. |
 | POST | `/api/v1/demo/source/restart` | Delegates restart of the active clip to an injected adapter. |
 | GET | `/api/v1/demo/source/status` | Returns process-local state, selected `clip_id`, `position_ms`, and `loop_count`. |
@@ -2681,6 +2681,19 @@ The target document leaves some action details as implementation choices. The fo
 - restarting an active session resets `position_ms` and `loop_count` and waits for the adapter's first-frame callback;
 - unknown IDs return `404 DEMO_CLIP_NOT_FOUND`; invalid catalog configuration returns `503 SOURCE_CONFIGURATION_INVALID`; unavailable media/adapter returns `503 SOURCE_UNAVAILABLE`.
 
-The default app has no decoder or replay adapter. These routes and fake-adapter tests do not verify `T-VCAM-001` through `T-VCAM-010`, AI source synchronization, playback pacing, browser video delivery, or real camera-health mapping. The latter also requires a documented mapping from canonical `DEMO-CAM-01` to an existing persisted camera UUID.
+The app configures an external FFmpeg replay adapter when an executable is available through `PATH` or `SENTINEL_FFMPEG_BINARY`. Adapter unit/API tests do not verify actual clip decoding, natural-rate timing, EOF behavior on real media, browser playback, or synchronization with the AI worker.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+## 2026-10-08 Canonical Camera and Session Correlation Update
+
+The academic camera identity is `DEMO-CAM-01` with canonical persistent `camera_id=02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` and `source_kind=file`. The existing worker contract already carries `camera_id`, `job_id`, and `correlation_id`; the intended integration maps the active source-session UUID to `correlation_id` and creates a distinct `job_id` per worker execution. The actual worker launch/transport remains a separate integration task.
+
+`GET /api/v1/demo/source/status` now includes `session_id`. It is null before a session and after stop; it is generated on Start, remains stable across automatic loops and explicit Restart, and is distinct from the persistent camera UUID. Camera APIs map only the canonical demo camera's controller state as follows: `IDLE/READY/STOPPED → stopped`, `STARTING → starting`, `PLAYING/LOOP_RESTARTING → online`, `FAILED → error`. Other cameras remain `unknown`. `last_frame_at` is sourced from an actual first-frame/position callback, and `last_health_check_at` is set when health is evaluated; neither is fabricated from `enabled`.
+
+Real replay, browser video, AI worker launch/cancellation, and same-source E2E remain unverified.
+
+
+### 2026-10-08 Replay implementation addendum
+
+GET /api/v1/cameras/{camera_id}/stream is a local-only multipart MJPEG stream for the canonical demo camera UUID. It returns 404 for other camera IDs, 409 if the source is not active, and 503 if no replay adapter is configured. The endpoint emits in-memory JPEG frames and does not expose media paths. FFmpeg is an optional external executable selected from PATH or SENTINEL_FFMPEG_BINARY; source start stays unavailable when it cannot be resolved. Real-media decoding/browser behavior remains unverified here, and no AI worker job/frame transport is created by this endpoint.

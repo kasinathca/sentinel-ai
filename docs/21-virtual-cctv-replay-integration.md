@@ -985,6 +985,17 @@ The backend branch now includes:
 - a process-local singleton controller with explicit states and callbacks for first frame, playback position, loop restart, and source failure;
 - safe error envelopes and tests using a fake replay adapter.
 
-The default application has no real replay adapter configured. Consequently, list/select/status and controller-boundary tests are available, but `POST .../start` returns `SOURCE_UNAVAILABLE` in the default app. No video is decoded or looped by this implementation. No operator video is delivered, no AI worker receives frames from the selected clip, and normal camera health remains `unknown` because a mapping from `DEMO-CAM-01` to a persisted camera UUID has not been specified/configured.
+The application now configures an optional FFmpeg replay adapter when the executable is available from `PATH` or `SENTINEL_FFMPEG_BINARY`. It paces a catalog-resolved file, loops after successful EOF, and makes decoded JPEG frames available at the local-only canonical-camera MJPEG endpoint. When FFmpeg is unavailable, source start returns `SOURCE_UNAVAILABLE`. No AI worker receives frames from the selected clip, and actual media decoding, EOF timing, and browser playback remain unverified in this environment. The canonical camera UUID and health mapping are documented below.
 
-The implementation also records several lifecycle/API details as `PROPOSED` for team review in `docs/07-api-specification.md`; they are not new accepted product decisions. Real replay, playback pacing, EOF tests, camera-status mapping, and shared-source AI integration remain required before claiming the virtual-camera milestone complete.
+The implementation also records several lifecycle/API details as `PROPOSED` for team review in `docs/07-api-specification.md`; they are not new accepted product decisions. Component checks cover command construction and framing, but real replay timing, EOF behavior against approved media, browser playback, and shared-source AI integration remain required before claiming the virtual-camera milestone complete.
+
+# 2026-10-08 Canonical Camera Identity and Session Update
+
+The academic demo camera now has a stable seeded identity: display name `DEMO-CAM-01`, UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57`, and `source_kind=file`. No migration was added. The seed preserves unrelated camera rows and rejects identity drift instead of rewriting IDs or foreign keys.
+
+The controller status carries a current source-session UUID. A Start creates it, automatic loops and explicit Restart preserve it, and Stop clears it. The canonical camera health endpoint maps controller state for that UUID only; other camera rows remain unknown. The subsequent Replay adapter implementation status section below supersedes the earlier replay/video status statement. AI worker integration remains pending.
+
+
+## 2026-10-08 Replay adapter implementation status
+
+The backend implements an optional FFmpeg CLI adapter and GET /api/v1/cameras/{camera_id}/stream using multipart MJPEG. The endpoint is local-only and restricted to the canonical camera; it emits only in-memory JPEG data. Backend tests cover the command contract, safe JPEG frame extraction, and fake-adapter stream framing. They do not replace acceptance tests with an installed FFmpeg executable and approved positive/negative fixtures. The AI worker's existing whole-file execution is not connected to the replay frames: Gouri's source-session UUID is ready for correlation, while worker dispatch/frame synchronization remains Kasi's integration dependency. No new Python dependency or database migration was added.

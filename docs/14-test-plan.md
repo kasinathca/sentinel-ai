@@ -3281,3 +3281,19 @@ The backend controller/API boundary adds focused tests for the implementable lay
 These unit/API tests use a fake replay adapter. They do **not** pass `T-VCAM-001` through `T-VCAM-010`; real decoding, pacing, EOF looping, operator display, and AI synchronization require the integrated replay adapter.
 
 <!-- VIRTUAL_CCTV_BACKEND_CONTROLLER_20261008:END -->
+
+<!-- VIRTUAL_CCTV_CAMERA_SESSION_20261008:BEGIN -->
+
+# 2026-10-08 Canonical Camera, Session, and Health Tests
+
+| Test ID | Test | Required result |
+|---|---|---|
+| `T-VCAM-BE-008` | canonical camera seed | clean DB inserts the literal UUID/name/`file`; repeated seed does not duplicate or reset `enabled`; identity conflicts fail; unrelated cameras remain |
+| `T-VCAM-BE-009` | source-session lifecycle | Start creates a UUID; loops and explicit Restart retain it; Stop clears it; next Start creates a different UUID |
+| `T-VCAM-BE-010` | camera health mapping | only canonical demo camera maps controller lifecycle to stopped/starting/online/error; normal loop remains online; other cameras stay unknown |
+| `T-VCAM-BE-011` | FFmpeg command and JPEG extraction | natural-rate/image2pipe flags, partial/concatenated JPEG framing, and oversized-frame rejection |
+| `T-VCAM-BE-012` | canonical stream endpoint | local-only response, active-source requirement, canonical UUID restriction, multipart JPEG framing, and no media path leakage |
+
+These backend seed/controller/API/adapter tests do not verify actual FFmpeg decoding, measured timing, approved media behavior, browser playback, or raw-video AI behavior.
+
+<!-- VIRTUAL_CCTV_CAMERA_SESSION_20261008:END -->

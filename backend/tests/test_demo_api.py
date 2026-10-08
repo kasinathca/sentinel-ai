@@ -18,11 +18,14 @@ class FakeReplayAdapter:
         self.start_count = 0
         self.stop_count = 0
         self.restart_count = 0
+        self.frame_sequence = 0
+        self.frame_callbacks = None
 
     def start(self, clip, callbacks: PlaybackCallbacks) -> None:
         self.start_count += 1
         self.callbacks = callbacks
         callbacks.first_frame()
+        self.frame_callbacks = callbacks
 
     def stop(self) -> None:
         self.stop_count += 1
@@ -31,6 +34,15 @@ class FakeReplayAdapter:
         self.restart_count += 1
         self.callbacks = callbacks
         callbacks.first_frame()
+        self.frame_callbacks = callbacks
+
+    def wait_for_frame(self, after_sequence: int, timeout_seconds: float = 1.0):
+        if self.frame_sequence > after_sequence:
+            return self.frame_sequence, b"\xff\xd8demo-jpeg\xff\xd9"
+        self.frame_sequence += 1
+        result = (self.frame_sequence, b"\xff\xd8demo-jpeg\xff\xd9")
+        self.frame_callbacks.failed()
+        return result
 
 
 class DemoAPITests(unittest.TestCase):
@@ -92,6 +104,8 @@ class DemoAPITests(unittest.TestCase):
         started = self.client.post("/api/v1/demo/source/start")
         self.assertEqual(started.status_code, 200)
         self.assertEqual(started.json()["data"]["state"], "playing")
+        session_id = started.json()["data"]["session_id"]
+        self.assertIsNotNone(session_id)
         self.assertEqual(self.adapter.start_count, 1)
 
         status = self.client.get("/api/v1/demo/source/status")
@@ -102,11 +116,13 @@ class DemoAPITests(unittest.TestCase):
         restarted = self.client.post("/api/v1/demo/source/restart")
         self.assertEqual(restarted.status_code, 200)
         self.assertEqual(restarted.json()["data"]["state"], "playing")
+        self.assertEqual(restarted.json()["data"]["session_id"], session_id)
         self.assertEqual(self.adapter.restart_count, 1)
 
         stopped = self.client.post("/api/v1/demo/source/stop")
         self.assertEqual(stopped.status_code, 200)
         self.assertEqual(stopped.json()["data"]["state"], "stopped")
+        self.assertIsNone(stopped.json()["data"]["session_id"])
         self.assertEqual(self.adapter.stop_count, 1)
 
     def test_unknown_clip_and_path_body_fail_safely(self) -> None:
@@ -167,6 +183,28 @@ class DemoAPITests(unittest.TestCase):
         response = remote.get("/api/v1/demo/source/status")
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+
+    def test_local_camera_stream_returns_mjpeg_frames_without_paths(self) -> None:
+        camera_id = "02b1cbc6-d4a3-5630-8c4e-27cdcc062d57"
+        idle = self.client.get(f"/api/v1/cameras/{camera_id}/stream")
+        self.assertEqual(idle.status_code, 409)
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        self.client.post("/api/v1/demo/source/start")
+        response = self.client.get(f"/api/v1/cameras/{camera_id}/stream")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("multipart/x-mixed-replace", response.headers["content-type"])
+        self.assertIn(b"Content-Type: image/jpeg", response.content)
+        self.assertIn(b"\xff\xd8demo-jpeg\xff\xd9", response.content)
+        self.assertNotIn(str(self.root).encode(), response.content)
+
+    def test_camera_stream_is_local_and_canonical_only(self) -> None:
+        remote = TestClient(
+            create_app(demo_controller=self.controller), client=("192.0.2.10", 12345)
+        )
+        denied = remote.get("/api/v1/cameras/02b1cbc6-d4a3-5630-8c4e-27cdcc062d57/stream")
+        self.assertEqual(denied.status_code, 403)
+        other = self.client.get("/api/v1/cameras/00000000-0000-0000-0000-000000000001/stream")
+        self.assertEqual(other.status_code, 404)
 
 
 if __name__ == "__main__":

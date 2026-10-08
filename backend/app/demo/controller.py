@@ -8,9 +8,11 @@ adapter through a narrow interface when that implementation is available.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 import threading
 from typing import Callable, Protocol
+from uuid import UUID, uuid4
 
 from app.demo.clip_catalog import (
     DemoCatalogError,
@@ -70,6 +72,7 @@ class DemoSourceSnapshot:
     clip_id: str | None
     position_ms: int | None
     loop_count: int
+    session_id: UUID | None
 
     def to_public_dict(self) -> dict[str, object]:
         return {
@@ -77,6 +80,7 @@ class DemoSourceSnapshot:
             "clip_id": self.clip_id,
             "position_ms": self.position_ms,
             "loop_count": self.loop_count,
+            "session_id": str(self.session_id) if self.session_id else None,
         }
 
 
@@ -121,6 +125,8 @@ class VirtualCameraController:
         self._clip: DemoClip | None = None
         self._position_ms: int | None = None
         self._loop_count = 0
+        self._session_id: UUID | None = None
+        self._last_frame_at: datetime | None = None
         self._generation = 0
         self._state_lock = threading.RLock()
         self._operation_lock = threading.Lock()
@@ -143,6 +149,7 @@ class VirtualCameraController:
                 self._clip = clip
                 self._position_ms = 0
                 self._loop_count = 0
+                self._session_id = None
                 self._state = DemoSourceState.READY
                 return self.snapshot()
 
@@ -197,6 +204,7 @@ class VirtualCameraController:
                 self._state = DemoSourceState.STARTING
                 self._position_ms = 0
                 self._loop_count = 0
+                self._session_id = uuid4()
             try:
                 self._replay_adapter.start(clip, _SessionCallbacks(self, generation))
             except Exception as exc:
@@ -215,6 +223,7 @@ class VirtualCameraController:
                 self._generation += 1
                 self._state = DemoSourceState.STOPPED
                 self._position_ms = None
+                self._session_id = None
             if should_stop_adapter and self._replay_adapter is not None:
                 try:
                     self._replay_adapter.stop()
@@ -263,18 +272,30 @@ class VirtualCameraController:
                 clip_id=self._clip.clip_id if self._clip else None,
                 position_ms=self._position_ms,
                 loop_count=self._loop_count,
+                session_id=self._session_id,
             )
+
+    @property
+    def last_frame_at(self) -> datetime | None:
+        with self._state_lock:
+            return self._last_frame_at
+
+    @property
+    def replay_adapter(self) -> ReplayAdapter | None:
+        return self._replay_adapter
 
     def _first_frame(self, generation: int, position_ms: int) -> None:
         with self._state_lock:
             if generation == self._generation and self._state == DemoSourceState.STARTING:
                 self._state = DemoSourceState.PLAYING
                 self._position_ms = max(position_ms, 0)
+                self._last_frame_at = datetime.now(timezone.utc)
 
     def _position_changed(self, generation: int, position_ms: int) -> None:
         with self._state_lock:
             if generation == self._generation and self._state == DemoSourceState.PLAYING:
                 self._position_ms = max(position_ms, 0)
+                self._last_frame_at = datetime.now(timezone.utc)
 
     def _loop_restart_started(self, generation: int) -> None:
         with self._state_lock:

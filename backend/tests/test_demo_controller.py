@@ -76,6 +76,7 @@ class VirtualCameraControllerTests(unittest.TestCase):
         initial = self.controller.snapshot()
         self.assertEqual(initial.state, DemoSourceState.IDLE)
         self.assertIsNone(initial.clip_id)
+        self.assertIsNone(initial.session_id)
 
         selected = self.controller.select_source("scenario-01")
         self.assertEqual(selected.state, DemoSourceState.READY)
@@ -110,6 +111,8 @@ class VirtualCameraControllerTests(unittest.TestCase):
     def test_first_frame_loop_and_stop_transitions(self) -> None:
         self.controller.select_source("scenario-01")
         self.controller.start()
+        first_session = self.controller.snapshot().session_id
+        self.assertIsNotNone(first_session)
         callbacks = self.adapter.callbacks
         self.assertIsNotNone(callbacks)
 
@@ -124,15 +127,22 @@ class VirtualCameraControllerTests(unittest.TestCase):
         looping = self.controller.snapshot()
         self.assertEqual(looping.state, DemoSourceState.PLAYING)
         self.assertEqual(looping.loop_count, 1)
+        self.assertEqual(looping.session_id, first_session)
 
         stale_callbacks = callbacks
         stopped = self.controller.stop()
         self.assertEqual(stopped.state, DemoSourceState.STOPPED)
+        self.assertIsNone(stopped.session_id)
         self.assertEqual(self.adapter.stop_count, 1)
         self.controller.stop()
         self.assertEqual(self.adapter.stop_count, 1)
         stale_callbacks.first_frame()
         self.assertEqual(self.controller.snapshot().state, DemoSourceState.STOPPED)
+
+        self.controller.start()
+        next_session = self.controller.snapshot().session_id
+        self.assertIsNotNone(next_session)
+        self.assertNotEqual(next_session, first_session)
 
     def test_restart_requires_an_active_selected_source(self) -> None:
         with self.assertRaises(DemoControllerError) as no_selection:

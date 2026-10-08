@@ -18,12 +18,14 @@ The present implementation includes:
 
 - `GET /api/v1/health` — process liveness;
 - `GET /api/v1/health/readiness` — database/schema/migration readiness;
-- camera create/list/detail/update/health routes;
+- camera create/list/detail/update/health routes, plus a local-only MJPEG route for the canonical virtual camera;
 - event list/detail routes;
 - development HTTP adapter for structured violence-worker results;
 - local-only demo clip/source-control routes backed by the approved catalog and process-local controller.
 
-The demo source-control routes do not yet have a configured replay adapter. They do not decode or loop video, connect operator video delivery, update persisted camera health, or submit the selected source to the AI worker. Source start returns an explicit unavailable response until replay integration is supplied.
+The backend can use an external FFmpeg executable (if configured/available) to pace and loop approved local clips and expose a local-only MJPEG stream for the canonical camera. If FFmpeg is unavailable, source start returns an explicit unavailable response. Real media/browser playback has not yet been verified, and AI-worker source synchronization remains pending.
+
+Database initialization idempotently seeds `DEMO-CAM-01` with canonical UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` and `source_kind=file`; no schema migration is required. The controller issues an ephemeral source-session UUID on start, retains it through automatic loops and explicit restart, and clears it on stop. Replay code is implemented behind optional FFmpeg configuration; real-media verification and AI processing remain pending.
 
 This does **not** mean the full MVP is complete. Authentication, durable acknowledgement, evidence, real-time/WebSocket delivery, camera streaming, analytics, detector/tracker integration, deterministic intrusion/loitering/crowd rules, and final violence-event lifecycle policy remain separate implementation work unless later commits explicitly complete them.
 

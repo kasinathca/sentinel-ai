@@ -2288,3 +2288,8 @@ The stacked branch adds a process-local virtual-camera controller and the six do
 The new controller/API tests use a fake replay adapter. The default app has no actual replay adapter and returns `SOURCE_UNAVAILABLE` on source start. This result does not verify video decoding, real-time pacing, automatic EOF looping, operator playback, AI source synchronization, camera-health mapping, raw-video/GPU behavior, or any complete virtual-camera acceptance test. No database schema changed.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+
+## 2026-10-08 Virtual-camera backend implementation evidence
+
+The backend now seeds a canonical DEMO-CAM-01 camera, tracks a source-session UUID, maps controller health for that camera, and can run an optional external FFmpeg replay adapter that supplies a local-only MJPEG stream. Component tests verify seed behavior, source-session lifecycle, health mapping, FFmpeg command/frame parsing, and stream contract. Actual media decoding, natural-rate/EOF measurements, browser rendering, AI-worker synchronization, and end-to-end fixture qualification remain unverified. The replay adapter adds no Python package and requires FFmpeg plus approved local demo media to exercise in a deployment environment. No database migration was introduced.

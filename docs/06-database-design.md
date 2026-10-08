@@ -3218,3 +3218,15 @@ Existing camera metadata may represent the single logical camera, but the projec
 Actual demo-fixture metadata/provenance belongs in the dataset/demo registry or controlled manifest, not in the application database by default.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+## 2026-10-08 Canonical Academic Demo Camera Decision
+
+For the single-camera virtual-CCTV academic baseline, the persistent camera identity is fixed:
+
+```text
+Display name: DEMO-CAM-01
+Camera UUID: 02b1cbc6-d4a3-5630-8c4e-27cdcc062d57
+source_kind: file
+```
+
+This record uses the existing UUID camera schema and requires no migration. Database initialization seeds it idempotently. A same-name row under another UUID or canonical UUID with a mismatched name/source kind is an initialization identity conflict. Existing unrelated camera rows are preserved; `enabled` remains operational state. This accepted single-demo-camera decision supersedes the earlier unresolved source-kind value only for this canonical row; it does not globally baseline all source kinds or the broader proposed camera schema.

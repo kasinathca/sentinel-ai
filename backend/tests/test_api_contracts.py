@@ -14,10 +14,12 @@ from app.ai_integration.database_model_registry import DatabaseModelRegistry
 from app.ai_integration import router as ai_router
 from app.ai_integration.service import ViolenceWorkerResultService
 from app.cameras import router as camera_router
+from app.cameras.constants import DEMO_CAMERA_ID, DEMO_CAMERA_NAME
 from app.db.base import Base
 from app.db.models import Camera, Event, ViolenceEventContext
 from app.db.seed import seed_frozen_violence_model
 from app.db.session import build_engine, build_session_factory
+from app.demo.controller import PlaybackCallbacks, VirtualCameraController
 from app.events.persistence import ViolenceEventPersistenceService
 from app.events.violence_conditions import RecordingViolenceConditionConsumer, ViolenceConditionEvaluation
 from app.events import router as event_router
@@ -111,6 +113,66 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/v1/cameras/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa").status_code, 404)
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "", "source_kind": "file"}).status_code, 422)
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "x", "source_kind": "file", "unexpected": 1}).status_code, 422)
+
+    def test_canonical_demo_camera_health_uses_controller_and_others_stay_unknown(self):
+        with self.sessions.begin() as session:
+            session.add(
+                Camera(
+                    id=DEMO_CAMERA_ID,
+                    name=DEMO_CAMERA_NAME,
+                    description="Single logical virtual CCTV source.",
+                    source_kind="file",
+                    enabled=True,
+                )
+            )
+
+        class Clip:
+            clip_id = "scenario-01"
+
+        class Catalog:
+            def get_clip(self, clip_id: str) -> Clip:
+                return Clip()
+
+        class Adapter:
+            def start(self, clip: Clip, callbacks: PlaybackCallbacks) -> None:
+                self.callbacks = callbacks
+                callbacks.first_frame()
+
+            def stop(self) -> None:
+                pass
+
+            def restart(self, callbacks: PlaybackCallbacks) -> None:
+                self.callbacks = callbacks
+                callbacks.first_frame()
+
+        adapter = Adapter()
+        controller = VirtualCameraController(lambda: Catalog(), adapter)
+        self.app.state.demo_controller = controller
+
+        stopped = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(stopped["state"], "stopped")
+        self.assertIsNone(stopped["last_frame_at"])
+
+        controller.select_source("scenario-01")
+        controller.start()
+        online = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(online["state"], "online")
+        self.assertIsNotNone(online["last_frame_at"])
+        self.assertIsNotNone(online["last_health_check_at"])
+
+        adapter.callbacks.loop_restart_started()
+        looping = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(looping["state"], "online")
+
+        other = self.client.get(f"/api/v1/cameras/{CAMERA_ID}/health").json()["data"]
+        self.assertEqual(other["state"], "unknown")
+        self.assertIsNone(other["last_frame_at"])
 
     def test_worker_invalid_unknown_model_and_unknown_camera(self):
         invalid = self.client.post("/api/v1/ai/violence/results", json={**BASE_PAYLOAD, "unexpected": True})

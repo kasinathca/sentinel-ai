@@ -337,6 +337,7 @@ class APIContractTests(unittest.TestCase):
         event = detail.json()["data"]
         self.assertEqual(event["event_type"], "violence_fighting")
         self.assertEqual(event["camera"], {"id": str(CAMERA_ID), "name": "North Entrance"})
+        self.assertEqual(event["correlation_id"], str(evaluation.correlation_id))
         self.assertIn("severity", event)
         self.assertIn("status", event)
         self.assertEqual(event["acknowledgement"], {"acknowledged": False, "acknowledged_by": [], "first_acknowledged_at": None})

@@ -130,9 +130,13 @@ function CameraMonitoring({ cameras = [], onBack }) {
         <h2>Frozen Violence AI</h2>
         <div className="details-grid">
           <div><span>Runtime state</span><strong>{ai.state || "unavailable"}</strong></div>
-          <div><span>Processed windows</span><strong>{ai.processed_windows ?? 0}</strong></div>
+          <div><span>Processed windows (session)</span><strong>{ai.processed_windows_total ?? ai.processed_windows ?? 0}</strong></div>
+          <div><span>Analyzed replay passes</span><strong>{ai.analyzed_passes ?? 0}</strong></div>
           <div><span>Latest violence score</span><strong>{ai.latest_score == null ? "Not available" : ai.latest_score.toFixed(6)}</strong></div>
-          <div><span>Qualification</span><strong>{ai.candidate_condition ? "3-of-5 qualified" : "Not qualified"}</strong></div>
+          <div><span>Latest threshold result</span><strong>{ai.latest_score == null ? "Not available" : ai.latest_score_positive ? "At or above threshold" : "Below threshold"}</strong></div>
+          <div><span>Rolling history</span><strong>{ai.history_count ?? 0}/{ai.m_history ?? 5} windows · {ai.positive_count ?? 0} positive</strong></div>
+          <div><span>History readiness</span><strong>{ai.complete_history ? "Complete" : "Incomplete"}</strong></div>
+          <div><span>Qualified condition</span><strong>{ai.candidate_condition ? `${ai.n_required ?? 3}-of-${ai.m_history ?? 5} qualified` : "Not qualified"}</strong></div>
           <div><span>Frozen threshold</span><strong>{ai.threshold ?? 0.906}</strong></div>
           <div><span>Score meaning</span><strong>{ai.score_semantics || "uncalibrated fighting score"}</strong></div>
         </div>

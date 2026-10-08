@@ -42,6 +42,7 @@ class FakeAIOrchestrator:
     def __init__(self) -> None:
         self.starts = []
         self.restarts = []
+        self.loop_restarts = []
         self.stop_count = 0
 
     def start(self, clip, source_session_id) -> None:
@@ -49,6 +50,9 @@ class FakeAIOrchestrator:
 
     def restart(self, clip, source_session_id) -> None:
         self.restarts.append((clip.clip_id, source_session_id))
+
+    def loop_restarted(self, clip, source_session_id, started_at=None) -> None:
+        self.loop_restarts.append((clip.clip_id, source_session_id, started_at))
 
     def stop(self) -> None:
         self.stop_count += 1
@@ -201,6 +205,11 @@ class VirtualCameraControllerTests(unittest.TestCase):
         controller.select_source("scenario-01")
         started = controller.start()
         self.assertEqual(ai.starts, [("scenario-01", started.session_id)])
+        self.adapter.callbacks.first_frame()
+        self.adapter.callbacks.loop_restart_started()
+        self.adapter.callbacks.loop_restart_completed()
+        self.assertEqual(len(ai.loop_restarts), 1)
+        self.assertEqual(ai.loop_restarts[0][:2], ("scenario-01", started.session_id))
         restarted = controller.restart()
         self.assertEqual(restarted.session_id, started.session_id)
         self.assertEqual(ai.restarts, [("scenario-01", started.session_id)])

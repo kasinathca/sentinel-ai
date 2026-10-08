@@ -35,6 +35,16 @@ The React operator view now provides the approved-clip control panel, browser-vi
 
 ## Academic demo quick start
 
+On Windows, double-click `launch_sentinel_demo.cmd` for the complete local
+startup sequence. The single hybrid CMD/PowerShell file validates the external
+media and frozen model, runs AI preflight and database readiness, starts only
+loopback-bound backend/frontend child processes, and owns their cleanup. Press
+Ctrl+C in its console to request source shutdown before its own process trees
+are terminated. It defaults to `%USERPROFILE%\XD-Violence` and
+`%USERPROFILE%\Downloads\Ai training\SELECTED VIDEOS`; the documented
+`SENTINEL_*` variables override those locations. Occupied ports cause a safe
+failure and no unrelated process is killed.
+
 Configure machine-local paths before starting the backend:
 
 ```powershell

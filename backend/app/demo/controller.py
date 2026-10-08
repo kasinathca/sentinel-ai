@@ -71,6 +71,13 @@ class AIOrchestrator(Protocol):
 
     def restart(self, clip: DemoClip, source_session_id: UUID) -> None: ...
 
+    def loop_restarted(
+        self,
+        clip: DemoClip,
+        source_session_id: UUID,
+        started_at: datetime | None = None,
+    ) -> None: ...
+
     def stop(self) -> None: ...
 
 
@@ -343,11 +350,18 @@ class VirtualCameraController:
                 self._state = DemoSourceState.LOOP_RESTARTING
 
     def _loop_restart_completed(self, generation: int) -> None:
+        loop_context: tuple[DemoClip, UUID] | None = None
         with self._state_lock:
             if generation == self._generation and self._state == DemoSourceState.LOOP_RESTARTING:
                 self._loop_count += 1
                 self._position_ms = 0
                 self._state = DemoSourceState.PLAYING
+                if self._clip is not None and self._session_id is not None:
+                    loop_context = (self._clip, self._session_id)
+        if loop_context is not None and self._ai_orchestrator is not None:
+            self._ai_orchestrator.loop_restarted(
+                *loop_context, started_at=datetime.now(timezone.utc)
+            )
 
     def _failed(self, generation: int) -> None:
         with self._state_lock:

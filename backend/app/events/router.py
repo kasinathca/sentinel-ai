@@ -61,6 +61,7 @@ def event_to_dict(
         "camera": {"id": str(camera.id), "name": camera.name},
         "occurred_at": _utc(event.occurred_at),
         "created_at": _utc(event.created_at),
+        "correlation_id": str(event.correlation_id) if event.correlation_id else None,
         "requires_attention": event.requires_attention,
         "severity": event.severity_code,
         "status": event.lifecycle_status_code,

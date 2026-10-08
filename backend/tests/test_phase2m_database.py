@@ -9,7 +9,7 @@ from app.db.base import Base
 from app.db.models import AIModelVersion,Camera,Event,ViolenceEventContext,ViolenceEventPolicy
 from app.db.seed import seed_frozen_violence_model
 from app.db.session import build_engine,build_session_factory
-from app.events.persistence import ViolenceEventPersistenceError,ViolenceEventPersistenceService
+from app.events.persistence import SessionViolenceEventConsumer,ViolenceEventPersistenceError,ViolenceEventPersistenceService
 from app.events.violence_conditions import ViolenceConditionEvaluation
 CAMERA_ID=UUID("33333333-3333-4333-8333-333333333333"); MODEL_ID=UUID(MODEL_VERSION_ID); JOB_ID=UUID("11111111-1111-4111-8111-111111111111"); CORRELATION_ID=UUID("22222222-2222-4222-8222-222222222222")
 class Phase2MDatabaseTests(unittest.TestCase):
@@ -38,3 +38,11 @@ class Phase2MDatabaseTests(unittest.TestCase):
         e=self.evaluation(True); bad=ViolenceConditionEvaluation(**{**e.__dict__,"camera_id":UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")})
         with self.assertRaises(ViolenceEventPersistenceError): ViolenceEventPersistenceService(self.sessions).create_from_qualified_condition(evaluation=bad,requires_attention=True)
         with self.sessions() as session: self.assertEqual(len(list(session.scalars(select(Event)))),0)
+    def test_session_consumer_persists_exactly_one_event_per_source_session(self):
+        consumer=SessionViolenceEventConsumer(self.sessions)
+        first=consumer.consume(self.evaluation(True)); repeated=consumer.consume(self.evaluation(True))
+        self.assertEqual(first,repeated)
+        with self.sessions() as session: self.assertEqual(len(list(session.scalars(select(Event)))),1)
+        next_session=ViolenceConditionEvaluation(**{**self.evaluation(True).__dict__,"correlation_id":UUID("44444444-4444-4444-8444-444444444444")})
+        self.assertNotEqual(consumer.consume(next_session),first)
+        with self.sessions() as session: self.assertEqual(len(list(session.scalars(select(Event)))),2)

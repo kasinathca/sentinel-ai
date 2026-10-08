@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from pydantic import TypeAdapter, ValidationError
 
@@ -28,6 +30,12 @@ from .schemas import ViolenceWorkerFailure, WorkerViolenceResult
 _RESULT_ADAPTER = TypeAdapter(WorkerViolenceResult)
 
 
+@dataclass(frozen=True)
+class ViolenceProcessingOutcome:
+    evaluation: ViolenceConditionEvaluation
+    event_id: UUID | None
+
+
 class ViolenceWorkerResultService:
     def __init__(
         self,
@@ -41,6 +49,9 @@ class ViolenceWorkerResultService:
         self.criterion_engine = criterion_engine or RollingViolenceCriterionEngine()
 
     def consume_payload(self, payload: Any) -> ViolenceConditionEvaluation:
+        return self.consume_payload_with_outcome(payload).evaluation
+
+    def consume_payload_with_outcome(self, payload: Any) -> ViolenceProcessingOutcome:
         try:
             result = _RESULT_ADAPTER.validate_python(payload)
         except ValidationError as exc:
@@ -73,6 +84,7 @@ class ViolenceWorkerResultService:
         key = StreamKey(
             camera_id=result.camera_id,
             model_version_id=result.model.model_version_id,
+            source_session_id=result.correlation_id,
         )
 
         try:
@@ -106,5 +118,5 @@ class ViolenceWorkerResultService:
             score_semantics=model_version.score_semantics,
         )
 
-        self.condition_consumer.consume(evaluation)
-        return evaluation
+        event_id = self.condition_consumer.consume(evaluation)
+        return ViolenceProcessingOutcome(evaluation=evaluation, event_id=event_id)

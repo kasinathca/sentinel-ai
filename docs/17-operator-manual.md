@@ -2503,3 +2503,16 @@ For academic honesty, documentation and oral explanation should describe the sou
 Operationally, EOF loop restart is normal behavior and must not be treated as camera failure.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+# 2026-10-08 Verified Academic Demo Workflow
+
+1. Open the loopback frontend and choose **Camera Monitoring**.
+2. Confirm `DEMO-CAM-01` is identified as a single virtual CCTV source.
+3. Choose an approved clip by display name; no filesystem picker/path is exposed.
+4. Select **Start** and wait for `playing`; the MJPEG image shows the paced recorded feed.
+5. Read the Frozen Violence AI state, processed windows, latest uncalibrated score, and 3-of-5 qualification.
+6. A red qualified violence/fighting alert appears only after the backend persists the genuine event for the current session.
+7. Select **Stop** before changing clips. This clears the active session and terminates FFmpeg and AI processing.
+8. Choose the contrasting clip and start again. **Restart** begins the current clip again while retaining the same session/deduplication boundary.
+
+AI `failed` is not “normal.” Check the configured workspace/Python, hashes, extractor, and GPU. For video failures check the approved manifest and FFmpeg. EOF loop restart is normal and is not camera-offline state.

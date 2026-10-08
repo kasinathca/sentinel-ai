@@ -897,3 +897,105 @@ main {
 .error-state {
   border-color: #fca5a5;
 }
+
+.demo-control-panel,
+.camera-live-panel,
+.ai-status-panel {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+}
+
+.demo-control-panel label {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.demo-control-panel select,
+.demo-actions button {
+  padding: 11px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  font: inherit;
+}
+
+.demo-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.demo-actions button {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.demo-actions button:first-child {
+  background: #166534;
+  color: white;
+}
+
+.demo-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.live-video-frame {
+  display: flex;
+  min-height: 420px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+}
+
+.live-video-frame img {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.violence-alert {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  border: 2px solid #dc2626;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.violence-alert strong {
+  font-size: 20px;
+}
+
+.camera-health-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.camera-health-badge.online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ai-error {
+  padding: 12px;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #991b1b;
+}

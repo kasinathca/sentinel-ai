@@ -8,19 +8,28 @@ from fastapi.responses import JSONResponse, Response
 from app.core.config import SETTINGS
 from app.health.router import router as health_router
 from app.cameras.router import router as cameras_router
-from app.ai_integration.router import router as ai_router
+from app.ai_integration.router import router as ai_router, _worker_service
 from app.events.router import router as events_router
 from app.demo.clip_catalog import DemoClipCatalog
 from app.demo.controller import DemoControllerError, VirtualCameraController
 from app.demo.router import router as demo_router
 from app.demo.ffmpeg_replay import FFmpegReplayAdapter
+from app.demo.ai_orchestrator import DemoAIOrchestrator
 
 
 def create_app(demo_controller: VirtualCameraController | None = None) -> FastAPI:
-    controller = demo_controller or VirtualCameraController(
-        catalog_factory=DemoClipCatalog.from_environment,
-        replay_adapter=FFmpegReplayAdapter.from_environment(),
-    )
+    ai_orchestrator = None
+    if demo_controller is None:
+        ai_orchestrator = DemoAIOrchestrator(
+            _worker_service.consume_payload_with_outcome
+        )
+        controller = VirtualCameraController(
+            catalog_factory=DemoClipCatalog.from_environment,
+            replay_adapter=FFmpegReplayAdapter.from_environment(),
+            ai_orchestrator=ai_orchestrator,
+        )
+    else:
+        controller = demo_controller
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -42,6 +51,7 @@ def create_app(demo_controller: VirtualCameraController | None = None) -> FastAP
     application.include_router(demo_router)
     application.state.demo_controller = controller
     application.state.demo_replay_adapter = controller.replay_adapter
+    application.state.demo_ai_orchestrator = ai_orchestrator
 
     @application.exception_handler(DemoControllerError)
     async def demo_controller_error_handler(

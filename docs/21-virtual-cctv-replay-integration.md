@@ -1012,3 +1012,11 @@ The reserved identity is `DEMO-CAM-01` / `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` 
 `enabled=false` prevents canonical replay start and stream access. When an active canonical camera is disabled through the API, the controller must stop successfully before `enabled=false` is persisted. A stop failure returns a safe error and leaves the camera enabled and controller state unchanged. Re-enabling does not auto-start playback. Disabled health is `stopped`, not `offline`. The stream route checks the persisted canonical row and rejects disabled access even if process-local state is inconsistent.
 
 The PR's deterministic fake-process suite exercises first-frame delivery, natural EOF and a second pass, explicit restart, stop, spawn/nonzero/zero-frame/parser failures, and terminate-to-kill cleanup. It does not replace a real FFmpeg/media smoke test. General/production transport, frontend use of the MJPEG contract, and AI-worker source synchronization remain separate work.
+
+## 2026-10-08 Final implementation status
+
+`DemoAIOrchestrator` launches the qualified existing worker CLI as a background subprocess for the exact catalog-resolved clip selected by the controller. `source_session_id == worker correlation_id`; browser replay and AI therefore share one authoritative source/session. Genuine results are released according to their model-window timestamps. Stop terminates both FFmpeg and AI work, and stale canonical-session results are rejected.
+
+The backend persists at most one violence event per active session. Natural loops and continued positive windows do not flood events. The operator page implements approved clip selection, Start/Stop/Restart, MJPEG display, AI state/latest score, and the qualified alert using one-second polling.
+
+Real FFmpeg, the exact extractor, frozen temporal checkpoint, positive/negative fixtures, SQLite persistence, and Chrome rendering were exercised on 2026-10-08. This remains a single local virtual CCTV source; physical-camera and multi-camera behavior are outside the milestone.

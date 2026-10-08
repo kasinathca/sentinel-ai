@@ -4,6 +4,13 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
+from app.ai_integration.constants import (
+    LIVE_M_HISTORY,
+    LIVE_N_REQUIRED,
+    LIVE_THRESHOLD,
+    MODEL_VERSION_ID,
+    SCORE_SEMANTICS,
+)
 from app.cameras.constants import DEMO_CAMERA_ID
 from app.cameras.router import get_db
 from app.db.models import Camera
@@ -103,5 +110,27 @@ def restart_demo_source(controller: VirtualCameraController = Depends(get_demo_c
 
 
 @router.get("/source/status")
-def demo_source_status(controller: VirtualCameraController = Depends(get_demo_controller)):
-    return {"data": controller.snapshot().to_public_dict()}
+def demo_source_status(
+    request: Request,
+    controller: VirtualCameraController = Depends(get_demo_controller),
+):
+    data = controller.snapshot().to_public_dict()
+    orchestrator = request.app.state.demo_ai_orchestrator
+    data["ai"] = (
+        orchestrator.status().to_public_dict()
+        if orchestrator is not None
+        else {
+            "state": "unavailable",
+            "source_session_id": None,
+            "latest_score": None,
+            "candidate_condition": False,
+            "event_id": None,
+            "processed_windows": 0,
+            "error": "AI orchestration is not configured.",
+            "model_version_id": MODEL_VERSION_ID,
+            "threshold": LIVE_THRESHOLD,
+            "criterion": f"{LIVE_N_REQUIRED}-of-{LIVE_M_HISTORY}",
+            "score_semantics": SCORE_SEMANTICS,
+        }
+    )
+    return {"data": data}

@@ -66,6 +66,14 @@ class ReplayAdapter(Protocol):
     def restart(self, callbacks: PlaybackCallbacks) -> None: ...
 
 
+class AIOrchestrator(Protocol):
+    def start(self, clip: DemoClip, source_session_id: UUID) -> None: ...
+
+    def restart(self, clip: DemoClip, source_session_id: UUID) -> None: ...
+
+    def stop(self) -> None: ...
+
+
 @dataclass(frozen=True)
 class DemoSourceSnapshot:
     state: DemoSourceState
@@ -118,9 +126,11 @@ class VirtualCameraController:
         self,
         catalog_factory: Callable[[], DemoClipCatalog],
         replay_adapter: ReplayAdapter | None = None,
+        ai_orchestrator: AIOrchestrator | None = None,
     ) -> None:
         self._catalog_factory = catalog_factory
         self._replay_adapter = replay_adapter
+        self._ai_orchestrator = ai_orchestrator
         self._state = DemoSourceState.IDLE
         self._clip: DemoClip | None = None
         self._position_ms: int | None = None
@@ -219,6 +229,8 @@ class VirtualCameraController:
                 raise DemoControllerError(
                     "SOURCE_UNAVAILABLE", "The replay source could not be started.", 503
                 ) from exc
+            if self._ai_orchestrator is not None:
+                self._ai_orchestrator.start(clip, self._session_id)
             return self.snapshot()
 
     def stop(self) -> DemoSourceSnapshot:
@@ -250,6 +262,8 @@ class VirtualCameraController:
                 raise DemoControllerError(
                     "SOURCE_UNAVAILABLE", "The replay source could not be stopped.", 503
                 ) from exc
+        if self._ai_orchestrator is not None:
+            self._ai_orchestrator.stop()
         with self._state_lock:
             self._generation += 1
             self._state = DemoSourceState.STOPPED
@@ -278,6 +292,8 @@ class VirtualCameraController:
                 self._position_ms = 0
                 self._loop_count = 0
                 callbacks = _SessionCallbacks(self, generation)
+                clip = self._clip
+                session_id = self._session_id
             try:
                 self._replay_adapter.restart(callbacks)
             except Exception as exc:
@@ -285,6 +301,8 @@ class VirtualCameraController:
                 raise DemoControllerError(
                     "SOURCE_UNAVAILABLE", "The replay source could not be restarted.", 503
                 ) from exc
+            if self._ai_orchestrator is not None:
+                self._ai_orchestrator.restart(clip, session_id)
             return self.snapshot()
 
     def snapshot(self) -> DemoSourceSnapshot:

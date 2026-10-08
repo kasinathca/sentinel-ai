@@ -246,6 +246,43 @@ class APIContractTests(unittest.TestCase):
         unknown_camera["camera_id"] = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         self.assertEqual(self.client.post("/api/v1/ai/violence/results", json=unknown_camera).status_code, 404)
 
+    def test_canonical_camera_rejects_result_from_stale_source_session(self):
+        self._insert_demo_camera()
+
+        class Clip:
+            clip_id = "scenario-01"
+
+        class Catalog:
+            def get_clip(self, clip_id: str) -> Clip:
+                return Clip()
+
+        class Adapter:
+            def start(self, clip: Clip, callbacks: PlaybackCallbacks) -> None:
+                callbacks.first_frame()
+
+            def stop(self) -> None:
+                pass
+
+            def restart(self, callbacks: PlaybackCallbacks) -> None:
+                callbacks.first_frame()
+
+        controller = VirtualCameraController(lambda: Catalog(), Adapter())
+        controller.select_source("scenario-01")
+        active = controller.start()
+        self.app.state.demo_controller = controller
+
+        stale = self._worker_result(0)
+        stale["camera_id"] = str(DEMO_CAMERA_ID)
+        response = self.client.post("/api/v1/ai/violence/results", json=stale)
+
+        self.assertEqual(response.status_code, 409)
+        self.assertNotEqual(stale["correlation_id"], str(active.session_id))
+        self.assertEqual(
+            response.json()["detail"],
+            "Worker result does not belong to the active source session.",
+        )
+        self.assertEqual(self.consumer.evaluations, [])
+
     def test_worker_out_of_order_is_conflict_without_event(self):
         self.assertEqual(self.client.post("/api/v1/ai/violence/results", json=self._worker_result(3)).status_code, 200)
         out_of_order = self.client.post("/api/v1/ai/violence/results", json=self._worker_result(2))
@@ -273,7 +310,7 @@ class APIContractTests(unittest.TestCase):
         responses = [self.client.post("/api/v1/ai/violence/results", json=self._worker_result(i)) for i in range(7)]
         self.assertTrue(all(response.status_code == 200 for response in responses))
         self.assertTrue(responses[4].json()["data"]["candidate_condition"])
-        self.assertEqual(responses[4].json()["data"]["event_lifecycle"], "awaiting_domain_policy")
+        self.assertEqual(responses[4].json()["data"]["event_lifecycle"], "qualified_not_persisted")
         self.assertFalse(responses[4].json()["data"]["event_persisted"])
         self.assertTrue(responses[6].json()["data"]["candidate_condition"])
         with self.sessions() as session:

@@ -11,6 +11,7 @@ from uuid import UUID
 class StreamKey:
     camera_id: UUID
     model_version_id: UUID
+    source_session_id: UUID
 
 
 @dataclass
@@ -33,7 +34,7 @@ class OutOfOrderObservationError(ValueError):
 
 
 class RollingViolenceCriterionEngine:
-    """Frozen N-of-M violence criterion state, scoped per camera/model stream."""
+    """Frozen N-of-M criterion scoped per camera/model/source session."""
 
     def __init__(self) -> None:
         self._states: dict[StreamKey, _StreamState] = {}

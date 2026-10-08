@@ -1012,3 +1012,18 @@ The optional FFmpeg adapter, local canonical-camera MJPEG route, and focused uni
 Canonical camera identity is enforced by the backend camera routes, with no global uniqueness rule or schema migration. The exact `DEMO-CAM-01` name is reserved for its canonical UUID; canonical `name` and `source_kind` cannot be changed, while description and enabled state remain mutable.
 
 For the canonical camera, `enabled=false` prevents start and stream delivery, maps health to `stopped`, and disabling an active source stops it before the database update. A stop error prevents persistence of the disabled state. Re-enabling does not automatically start playback. Deterministic fake-process coverage now exercises FFmpeg first-frame, EOF/loop, restart, stop, process failures, zero-frame success, parser failure, and kill fallback. These are component tests; real-media and browser acceptance remain pending.
+
+# 2026-10-08 Narrow Academic Release Traceability
+
+| Requirement | Implementation/evidence | Status |
+|---|---|---|
+| FR-VCAM-001/002/011 | canonical seed, safe catalog, local-only routes and tests | PASS |
+| FR-VCAM-004/005/006/007/010 | controller/FFmpeg plus real browser replay | PASS |
+| FR-VCAM-008 | session UUID mapped to worker correlation ID | PASS |
+| FR-VIO-001/002/005 | separate orchestrator process and existing worker contract | PASS |
+| FR-VIO-003/004 | frozen session-scoped backend criterion and event context | PASS |
+| FR-EVT-001/007 | one-event-per-session consumer/test/real count | PASS |
+| FR-ALT-001 | polling UI alert observed in Chrome | PASS |
+| NFR-VCAM-003/005 | configured roots, no browser paths, ignored artifacts | PASS |
+
+Authentication, tracking, intrusion, loitering, crowd analysis, multiple cameras, physical CCTV/RTSP/ONVIF, evidence, WebSockets, analytics, and cloud deployment are `OUT_OF_CURRENT_ACADEMIC_SCOPE`, not unfinished release requirements.

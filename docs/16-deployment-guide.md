@@ -2174,3 +2174,29 @@ Demo readiness checklist:
 No RTSP server, CCTV credential, ONVIF service, NVR, or physical camera is required for the academic runbook.
 
 <!-- VIRTUAL_CCTV_BASELINE_20261007:END -->
+
+# 2026-10-08 Final Local Academic Demo Runbook
+
+Required: backend Python environment, qualified temporal Python/torch runtime, exact extractor environment in the external XD-Violence workspace, Node/npm, and FFmpeg/ffprobe. Services bind to loopback.
+
+```powershell
+$env:SENTINEL_DEMO_MEDIA_ROOT = "<absolute-approved-media-root>"
+$env:SENTINEL_VIOLENCE_ROOT = "<absolute-qualified-XD-Violence-root>"
+$env:SENTINEL_AI_PYTHON = "<qualified-temporal-Python-command-or-executable>"
+# Optional: $env:SENTINEL_FFMPEG_BINARY = "<ffmpeg-executable>"
+
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+.\.venv\Scripts\python.exe .\backend\scripts\init_database.py
+.\.venv\Scripts\python.exe .\backend\scripts\check_database.py
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir .\backend --host 127.0.0.1 --port 8000
+```
+
+Second terminal:
+
+```powershell
+Set-Location .\frontend
+npm ci
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+`SENTINEL_AI_PYTHON` is needed when the backend venv is separate from the qualified torch environment. Stop the source in the UI before shutting down; application shutdown also terminates replay and AI processes.

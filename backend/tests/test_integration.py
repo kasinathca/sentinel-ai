@@ -4,9 +4,9 @@ from app.ai_integration.errors import WorkerContractValidationError,WorkerReport
 from app.ai_integration.service import ViolenceWorkerResultService
 from app.events.violence_conditions import RecordingViolenceConditionConsumer
 BASE={'schema_version': '1', 'job_id': '11111111-1111-4111-8111-111111111111', 'correlation_id': '22222222-2222-4222-8222-222222222222', 'camera_id': '33333333-3333-4333-8333-333333333333', 'window': {'started_at': '2026-09-12T07:00:00.000Z', 'ended_at': '2026-09-12T07:00:02.667Z'}, 'status': 'success', 'model': {'model_version_id': '6d22f83d-17f8-5ecf-9f0f-246fa326ec72', 'task': 'violence_fighting'}, 'result': {'label': 'fighting', 'score': 0.94, 'score_semantics': 'uncalibrated sigmoid score for the fighting positive class from EXP-VIO-TEMPORAL-001; higher means more fighting-like'}}
-def payload(score,i,camera="33333333-3333-4333-8333-333333333333"):
+def payload(score,i,camera="33333333-3333-4333-8333-333333333333",correlation="22222222-2222-4222-8222-222222222222"):
     p=copy.deepcopy(BASE); p['camera_id']=camera; s=datetime(2026,9,12,7,0,tzinfo=timezone.utc)+timedelta(seconds=i); e=s+timedelta(seconds=1)
-    p['window']['started_at']=s.isoformat().replace('+00:00','Z'); p['window']['ended_at']=e.isoformat().replace('+00:00','Z'); p['result']['score']=score; p['job_id']=f"11111111-1111-4111-8111-{i:012d}"; return p
+    p['window']['started_at']=s.isoformat().replace('+00:00','Z'); p['window']['ended_at']=e.isoformat().replace('+00:00','Z'); p['result']['score']=score; p['job_id']=f"11111111-1111-4111-8111-{i:012d}"; p['correlation_id']=correlation; return p
 class IntegrationTests(unittest.TestCase):
     def svc(self): c=RecordingViolenceConditionConsumer(); return ViolenceWorkerResultService(condition_consumer=c),c
     def test_valid(self): s,c=self.svc(); r=s.consume_payload(copy.deepcopy(BASE)); self.assertEqual(r.score,.94); self.assertEqual(len(c.evaluations),1)
@@ -24,3 +24,5 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(s.consume_payload(payload(.99,0,B)).history_count,1); self.assertTrue(s.consume_payload(payload(0,4,A)).candidate_condition)
     def test_out_of_order(self):
         s,_=self.svc(); s.consume_payload(payload(.1,10)); self.assertRaises(OutOfOrderWorkerObservation,s.consume_payload,payload(.1,5))
+    def test_new_source_session_has_independent_ordering_and_history(self):
+        s,_=self.svc(); s.consume_payload(payload(.99,10)); result=s.consume_payload(payload(.01,0,correlation="55555555-5555-4555-8555-555555555555")); self.assertEqual(result.history_count,1); self.assertFalse(result.candidate_condition)

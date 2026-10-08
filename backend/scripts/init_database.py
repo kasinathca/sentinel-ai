@@ -13,7 +13,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.db.readiness import inspect_database_readiness  # noqa: E402
-from app.db.seed import seed_frozen_violence_model  # noqa: E402
+from app.db.seed import seed_demo_camera, seed_frozen_violence_model  # noqa: E402
 from app.db.session import (  # noqa: E402
     ensure_database_parent,
     get_database_url,
@@ -41,6 +41,7 @@ def main() -> int:
     )
 
     seed_frozen_violence_model(get_session_factory())
+    seed_demo_camera(get_session_factory())
 
     readiness = inspect_database_readiness(get_engine())
     if not readiness.ready:
@@ -53,6 +54,7 @@ def main() -> int:
 
     print("Sentinel database schema is at the expected Alembic head.")
     print("Frozen violence model/version/global policy seed is present.")
+    print("Canonical DEMO-CAM-01 camera seed is present.")
     print("Database readiness verification: PASS")
     print(f"Database URL: {database_url}")
     return 0

@@ -6,9 +6,16 @@ import tempfile
 import unittest
 
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlalchemy import create_engine
 
+from app.cameras import router as camera_router
+from app.cameras.constants import DEMO_CAMERA_ID, DEMO_CAMERA_NAME
 from app.demo.clip_catalog import DemoClipCatalog
 from app.demo.controller import PlaybackCallbacks, VirtualCameraController
+from app.db.base import Base
+from app.db.models import Camera
+from app.db.session import build_session_factory
 from app.main import create_app
 
 
@@ -18,19 +25,34 @@ class FakeReplayAdapter:
         self.start_count = 0
         self.stop_count = 0
         self.restart_count = 0
+        self.fail_stop = False
+        self.frame_sequence = 0
+        self.frame_callbacks = None
 
     def start(self, clip, callbacks: PlaybackCallbacks) -> None:
         self.start_count += 1
         self.callbacks = callbacks
         callbacks.first_frame()
+        self.frame_callbacks = callbacks
 
     def stop(self) -> None:
         self.stop_count += 1
+        if self.fail_stop:
+            raise RuntimeError("Replay stop failed.")
 
     def restart(self, callbacks: PlaybackCallbacks) -> None:
         self.restart_count += 1
         self.callbacks = callbacks
         callbacks.first_frame()
+        self.frame_callbacks = callbacks
+
+    def wait_for_frame(self, after_sequence: int, timeout_seconds: float = 1.0):
+        if self.frame_sequence > after_sequence:
+            return self.frame_sequence, b"\xff\xd8demo-jpeg\xff\xd9"
+        self.frame_sequence += 1
+        result = (self.frame_sequence, b"\xff\xd8demo-jpeg\xff\xd9")
+        self.frame_callbacks.failed()
+        return result
 
 
 class DemoAPITests(unittest.TestCase):
@@ -64,10 +86,42 @@ class DemoAPITests(unittest.TestCase):
         self.controller = VirtualCameraController(
             lambda: DemoClipCatalog(self.root), self.adapter
         )
-        self.client = TestClient(create_app(demo_controller=self.controller))
+        self.engine = create_engine(
+            "sqlite+pysqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        Base.metadata.create_all(self.engine)
+        self.sessions = build_session_factory(self.engine)
+        with self.sessions.begin() as session:
+            session.add(
+                Camera(
+                    id=DEMO_CAMERA_ID,
+                    name=DEMO_CAMERA_NAME,
+                    description="Single logical virtual CCTV source.",
+                    source_kind="file",
+                    enabled=True,
+                )
+            )
+        self.client = self._client(self.controller)
+
+    def _override_db(self):
+        with self.sessions() as session:
+            yield session
+
+    def _client(
+        self,
+        controller: VirtualCameraController,
+        *,
+        client: tuple[str, int] = ("testclient", 50000),
+    ) -> TestClient:
+        app = create_app(demo_controller=controller)
+        app.dependency_overrides[camera_router.get_db] = self._override_db
+        return TestClient(app, client=client)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+        self.engine.dispose()
 
     def test_catalog_response_uses_public_fields_only(self) -> None:
         response = self.client.get("/api/v1/demo/clips")
@@ -92,6 +146,8 @@ class DemoAPITests(unittest.TestCase):
         started = self.client.post("/api/v1/demo/source/start")
         self.assertEqual(started.status_code, 200)
         self.assertEqual(started.json()["data"]["state"], "playing")
+        session_id = started.json()["data"]["session_id"]
+        self.assertIsNotNone(session_id)
         self.assertEqual(self.adapter.start_count, 1)
 
         status = self.client.get("/api/v1/demo/source/status")
@@ -102,11 +158,13 @@ class DemoAPITests(unittest.TestCase):
         restarted = self.client.post("/api/v1/demo/source/restart")
         self.assertEqual(restarted.status_code, 200)
         self.assertEqual(restarted.json()["data"]["state"], "playing")
+        self.assertEqual(restarted.json()["data"]["session_id"], session_id)
         self.assertEqual(self.adapter.restart_count, 1)
 
         stopped = self.client.post("/api/v1/demo/source/stop")
         self.assertEqual(stopped.status_code, 200)
         self.assertEqual(stopped.json()["data"]["state"], "stopped")
+        self.assertIsNone(stopped.json()["data"]["session_id"])
         self.assertEqual(self.adapter.stop_count, 1)
 
     def test_unknown_clip_and_path_body_fail_safely(self) -> None:
@@ -138,9 +196,7 @@ class DemoAPITests(unittest.TestCase):
         unavailable_controller = VirtualCameraController(
             lambda: DemoClipCatalog(self.root), replay_adapter=None
         )
-        unavailable_client = TestClient(
-            create_app(demo_controller=unavailable_controller)
-        )
+        unavailable_client = self._client(unavailable_controller)
         unavailable_client.put(
             "/api/v1/demo/source", json={"clip_id": "scenario-01"}
         )
@@ -161,12 +217,105 @@ class DemoAPITests(unittest.TestCase):
         )
 
     def test_demo_control_route_is_local_only(self) -> None:
-        remote = TestClient(
-            create_app(demo_controller=self.controller), client=("192.0.2.10", 12345)
+        remote = self._client(
+            self.controller, client=("192.0.2.10", 12345)
         )
         response = remote.get("/api/v1/demo/source/status")
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.json()["error"]["code"], "FORBIDDEN")
+
+    def test_local_camera_stream_returns_mjpeg_frames_without_paths(self) -> None:
+        camera_id = "02b1cbc6-d4a3-5630-8c4e-27cdcc062d57"
+        idle = self.client.get(f"/api/v1/cameras/{camera_id}/stream")
+        self.assertEqual(idle.status_code, 409)
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        self.client.post("/api/v1/demo/source/start")
+        response = self.client.get(f"/api/v1/cameras/{camera_id}/stream")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("multipart/x-mixed-replace", response.headers["content-type"])
+        self.assertIn(b"Content-Type: image/jpeg", response.content)
+        self.assertIn(b"\xff\xd8demo-jpeg\xff\xd9", response.content)
+        self.assertNotIn(str(self.root).encode(), response.content)
+
+    def test_camera_stream_is_local_and_canonical_only(self) -> None:
+        remote = self._client(
+            self.controller, client=("192.0.2.10", 12345)
+        )
+        denied = remote.get("/api/v1/cameras/02b1cbc6-d4a3-5630-8c4e-27cdcc062d57/stream")
+        self.assertEqual(denied.status_code, 403)
+        other = self.client.get(
+            "/api/v1/cameras/00000000-0000-0000-0000-000000000001/stream"
+        )
+        self.assertEqual(other.status_code, 404)
+
+    def test_disabled_demo_camera_cannot_start_or_stream_and_is_not_online(self) -> None:
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        disabled = self.client.patch(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}", json={"enabled": False}
+        )
+        self.assertEqual(disabled.status_code, 200)
+        self.assertEqual(disabled.json()["data"]["health"]["state"], "stopped")
+
+        start = self.client.post("/api/v1/demo/source/start")
+        self.assertEqual(start.status_code, 409)
+        self.assertEqual(start.json()["error"]["code"], "DEMO_CAMERA_DISABLED")
+        self.assertEqual(self.adapter.start_count, 0)
+        self.assertIsNone(self.controller.snapshot().session_id)
+
+        stream = self.client.get(f"/api/v1/cameras/{DEMO_CAMERA_ID}/stream")
+        self.assertEqual(stream.status_code, 409)
+        health = self.client.get(f"/api/v1/cameras/{DEMO_CAMERA_ID}/health")
+        self.assertEqual(health.json()["data"]["state"], "stopped")
+
+    def test_stream_checks_persisted_enabled_state_even_if_controller_is_active(self) -> None:
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        self.client.post("/api/v1/demo/source/start")
+        with self.sessions.begin() as session:
+            session.get(Camera, DEMO_CAMERA_ID).enabled = False
+
+        response = self.client.get(f"/api/v1/cameras/{DEMO_CAMERA_ID}/stream")
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(self.controller.snapshot().state.value, "playing")
+
+    def test_disabling_active_demo_stops_before_persisting_and_reenable_is_explicit(self) -> None:
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        started = self.client.post("/api/v1/demo/source/start")
+        self.assertEqual(started.status_code, 200)
+        self.assertEqual(self.controller.snapshot().state.value, "playing")
+
+        disabled = self.client.patch(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}", json={"enabled": False}
+        )
+        self.assertEqual(disabled.status_code, 200)
+        self.assertEqual(self.adapter.stop_count, 1)
+        self.assertEqual(self.controller.snapshot().state.value, "stopped")
+        with self.sessions() as session:
+            camera = session.get(Camera, DEMO_CAMERA_ID)
+            self.assertFalse(camera.enabled)
+
+        enabled = self.client.patch(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}", json={"enabled": True}
+        )
+        self.assertEqual(enabled.status_code, 200)
+        self.assertEqual(self.adapter.start_count, 1)
+        self.assertEqual(self.controller.snapshot().state.value, "stopped")
+        restarted = self.client.post("/api/v1/demo/source/start")
+        self.assertEqual(restarted.status_code, 200)
+        self.assertEqual(self.adapter.start_count, 2)
+
+    def test_failed_active_stop_does_not_persist_disable_or_claim_stopped(self) -> None:
+        self.client.put("/api/v1/demo/source", json={"clip_id": "scenario-01"})
+        self.client.post("/api/v1/demo/source/start")
+        self.adapter.fail_stop = True
+
+        response = self.client.patch(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}", json={"enabled": False}
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(self.controller.snapshot().state.value, "playing")
+        with self.sessions() as session:
+            camera = session.get(Camera, DEMO_CAMERA_ID)
+            self.assertTrue(camera.enabled)
 
 
 if __name__ == "__main__":

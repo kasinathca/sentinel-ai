@@ -13,12 +13,13 @@ from app.events.router import router as events_router
 from app.demo.clip_catalog import DemoClipCatalog
 from app.demo.controller import DemoControllerError, VirtualCameraController
 from app.demo.router import router as demo_router
+from app.demo.ffmpeg_replay import FFmpegReplayAdapter
 
 
 def create_app(demo_controller: VirtualCameraController | None = None) -> FastAPI:
     controller = demo_controller or VirtualCameraController(
         catalog_factory=DemoClipCatalog.from_environment,
-        replay_adapter=None,
+        replay_adapter=FFmpegReplayAdapter.from_environment(),
     )
 
     @asynccontextmanager
@@ -40,6 +41,7 @@ def create_app(demo_controller: VirtualCameraController | None = None) -> FastAP
     application.include_router(events_router)
     application.include_router(demo_router)
     application.state.demo_controller = controller
+    application.state.demo_replay_adapter = controller.replay_adapter
 
     @application.exception_handler(DemoControllerError)
     async def demo_controller_error_handler(

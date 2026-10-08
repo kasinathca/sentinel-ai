@@ -14,10 +14,12 @@ from app.ai_integration.database_model_registry import DatabaseModelRegistry
 from app.ai_integration import router as ai_router
 from app.ai_integration.service import ViolenceWorkerResultService
 from app.cameras import router as camera_router
+from app.cameras.constants import DEMO_CAMERA_ID, DEMO_CAMERA_NAME
 from app.db.base import Base
 from app.db.models import Camera, Event, ViolenceEventContext
 from app.db.seed import seed_frozen_violence_model
 from app.db.session import build_engine, build_session_factory
+from app.demo.controller import PlaybackCallbacks, VirtualCameraController
 from app.events.persistence import ViolenceEventPersistenceService
 from app.events.violence_conditions import RecordingViolenceConditionConsumer, ViolenceConditionEvaluation
 from app.events import router as event_router
@@ -111,6 +113,128 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/v1/cameras/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa").status_code, 404)
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "", "source_kind": "file"}).status_code, 422)
         self.assertEqual(self.client.post("/api/v1/cameras", json={"name": "x", "source_kind": "file", "unexpected": 1}).status_code, 422)
+
+    def _insert_demo_camera(self, *, enabled: bool = True) -> None:
+        with self.sessions.begin() as session:
+            session.add(
+                Camera(
+                    id=DEMO_CAMERA_ID,
+                    name=DEMO_CAMERA_NAME,
+                    description="Single logical virtual CCTV source.",
+                    source_kind="file",
+                    enabled=enabled,
+                )
+            )
+
+    def test_canonical_camera_identity_is_protected_by_create_and_patch(self):
+        reserved_create = self.client.post(
+            "/api/v1/cameras",
+            json={"name": "DEMO-CAM-01", "source_kind": "file"},
+        )
+        self.assertEqual(reserved_create.status_code, 409)
+
+        normal_create = self.client.post(
+            "/api/v1/cameras", json={"name": "West Door", "source_kind": "file"}
+        )
+        self.assertEqual(normal_create.status_code, 201)
+        normal_id = normal_create.json()["data"]["id"]
+        normal_rename = self.client.patch(
+            f"/api/v1/cameras/{normal_id}", json={"name": "West Door 2"}
+        )
+        self.assertEqual(normal_rename.status_code, 200)
+
+        self._insert_demo_camera()
+        canonical_path = f"/api/v1/cameras/{DEMO_CAMERA_ID}"
+        rename = self.client.patch(canonical_path, json={"name": "North Camera"})
+        source_change = self.client.patch(
+            canonical_path, json={"source_kind": "rtsp"}
+        )
+        self.assertEqual(rename.status_code, 409)
+        self.assertEqual(source_change.status_code, 409)
+
+        unchanged = self.client.patch(
+            canonical_path,
+            json={"name": DEMO_CAMERA_NAME, "source_kind": "file"},
+        )
+        self.assertEqual(unchanged.status_code, 200)
+        described = self.client.patch(canonical_path, json={"description": "Updated"})
+        self.assertEqual(described.status_code, 200)
+        self.assertEqual(described.json()["data"]["description"], "Updated")
+
+        with self.sessions() as session:
+            canonical = session.get(Camera, DEMO_CAMERA_ID)
+            self.assertEqual(canonical.name, DEMO_CAMERA_NAME)
+            self.assertEqual(canonical.source_kind, "file")
+            self.assertEqual(canonical.description, "Updated")
+
+    def test_reserved_camera_name_cannot_be_assigned_to_another_camera(self):
+        response = self.client.patch(
+            f"/api/v1/cameras/{CAMERA_ID}", json={"name": "DEMO-CAM-01"}
+        )
+        self.assertEqual(response.status_code, 409)
+        with self.sessions() as session:
+            camera = session.get(Camera, CAMERA_ID)
+            self.assertEqual(camera.name, "North Entrance")
+
+    def test_canonical_demo_camera_health_uses_controller_and_others_stay_unknown(self):
+        with self.sessions.begin() as session:
+            session.add(
+                Camera(
+                    id=DEMO_CAMERA_ID,
+                    name=DEMO_CAMERA_NAME,
+                    description="Single logical virtual CCTV source.",
+                    source_kind="file",
+                    enabled=True,
+                )
+            )
+
+        class Clip:
+            clip_id = "scenario-01"
+
+        class Catalog:
+            def get_clip(self, clip_id: str) -> Clip:
+                return Clip()
+
+        class Adapter:
+            def start(self, clip: Clip, callbacks: PlaybackCallbacks) -> None:
+                self.callbacks = callbacks
+                callbacks.first_frame()
+
+            def stop(self) -> None:
+                pass
+
+            def restart(self, callbacks: PlaybackCallbacks) -> None:
+                self.callbacks = callbacks
+                callbacks.first_frame()
+
+        adapter = Adapter()
+        controller = VirtualCameraController(lambda: Catalog(), adapter)
+        self.app.state.demo_controller = controller
+
+        stopped = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(stopped["state"], "stopped")
+        self.assertIsNone(stopped["last_frame_at"])
+
+        controller.select_source("scenario-01")
+        controller.start()
+        online = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(online["state"], "online")
+        self.assertIsNotNone(online["last_frame_at"])
+        self.assertIsNotNone(online["last_health_check_at"])
+
+        adapter.callbacks.loop_restart_started()
+        looping = self.client.get(
+            f"/api/v1/cameras/{DEMO_CAMERA_ID}/health"
+        ).json()["data"]
+        self.assertEqual(looping["state"], "online")
+
+        other = self.client.get(f"/api/v1/cameras/{CAMERA_ID}/health").json()["data"]
+        self.assertEqual(other["state"], "unknown")
+        self.assertIsNone(other["last_frame_at"])
 
     def test_worker_invalid_unknown_model_and_unknown_camera(self):
         invalid = self.client.post("/api/v1/ai/violence/results", json={**BASE_PAYLOAD, "unexpected": True})

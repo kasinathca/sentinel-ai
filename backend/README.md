@@ -12,26 +12,33 @@ The backend is a FastAPI modular monolith. Violence inference remains in the sep
 | GET | `/api/v1/cameras` | List cameras; `enabled` filter implemented |
 | GET | `/api/v1/cameras/{camera_id}` | Read one camera |
 | PATCH | `/api/v1/cameras/{camera_id}` | Update camera metadata |
-| GET | `/api/v1/cameras/{camera_id}/health` | Current placeholder health state (`unknown`) |
+| GET | `/api/v1/cameras/{camera_id}/health` | Controller-derived state for canonical `DEMO-CAM-01`; other cameras remain `unknown` |
+| GET | `/api/v1/cameras/{camera_id}/stream` | Local-only MJPEG stream for the canonical demo camera while its replay session is active |
 | POST | `/api/v1/ai/violence/results` | Development adapter for structured worker results |
 | GET | `/api/v1/events` | List persisted events, newest first |
 | GET | `/api/v1/events/{event_id}` | Read event detail |
 | GET | `/api/v1/demo/clips` | List approved clip IDs/display names; local-only |
 | PUT | `/api/v1/demo/source` | Select a clip while no source session is active; local-only |
-| POST | `/api/v1/demo/source/start` | Delegate to replay adapter; default app returns unavailable until one is configured |
+| POST | `/api/v1/demo/source/start` | Start the optional FFmpeg adapter; returns unavailable if FFmpeg is not configured/available |
 | POST | `/api/v1/demo/source/stop` | Stop process-local source controller; local-only |
 | POST | `/api/v1/demo/source/restart` | Delegate restart of active clip to replay adapter; local-only |
 | GET | `/api/v1/demo/source/status` | Read process-local controller status; local-only |
 
-Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, source-health measurement, and stream/snapshot endpoints remain incomplete unless later commits explicitly add them.
+Pagination/filtering beyond current implemented parameters, authentication/authorization, evidence, acknowledgement persistence, realtime delivery, device-level source-health measurement, general/production streaming, and snapshot endpoints remain incomplete unless later commits explicitly add them.
 
 ## Demo media catalog foundation
 
 `app.demo.clip_catalog.DemoClipCatalog` reads a local `manifest.json` with schema version `1` beneath the machine-local absolute `SENTINEL_DEMO_MEDIA_ROOT`. It resolves registered relative paths beneath that root, rejects absolute/traversal/escaping paths, and exposes only `clip_id` and `display_name` through its public DTO helper. The demo API consumes this catalog.
 
-`app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The current app has no real replay adapter: catalog listing and clip selection work when the media root is configured, while starting a source returns `SOURCE_UNAVAILABLE`. Tests use a fake adapter only for controller/API behavior.
+`app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The app uses an external FFmpeg executable when available on `PATH` or configured through `SENTINEL_FFMPEG_BINARY`; it never installs or downloads FFmpeg. The adapter reads only catalog-resolved clips, paces input, loops after EOF, and exposes decoded JPEG frames through a local-only MJPEG endpoint. If FFmpeg is unavailable, starting returns `SOURCE_UNAVAILABLE`. Component tests use fakes; real media decoding and timing have not been verified in this environment.
 
-The controller is not connected to a decoder/replay loop, operator video delivery, or AI-worker processing. The default camera-health API remains `unknown` because no mapping from `DEMO-CAM-01` to an existing persisted camera UUID is configured. The catalog/controller do not establish media provenance/redistribution permission or verify that a file can be decoded. Do not treat these routes as evidence that virtual CCTV playback is implemented.
+
+
+For a local replay setup, set `SENTINEL_DEMO_MEDIA_ROOT` to an absolute directory containing `manifest.json` and the approved media files. The manifest must register each clip by an opaque `clip_id`, display name, and relative path. FFmpeg is resolved from `PATH` by default; set `SENTINEL_FFMPEG_BINARY` to an executable path when it is installed elsewhere. No endpoint accepts or returns arbitrary media paths.
+
+The controller is connected to the optional FFmpeg replay adapter and local MJPEG delivery. Camera APIs reserve the canonical identity and respect its persisted `enabled` value: disabled sources cannot start or stream, disabling an active source stops replay before persistence, and re-enabling does not auto-start. Health reports intentional disable as `stopped`, not `offline`. The controller is still not connected to AI-worker processing or an operator frontend. Database initialization now seeds canonical camera UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` as `DEMO-CAM-01` with `source_kind=file`. The idempotent seed preserves unrelated cameras and operational `enabled` state and fails on canonical identity conflicts. No migration is required.
+
+Camera health for that exact UUID maps controller states to `stopped`, `starting`, `online`, or `error`; other cameras remain `unknown`. A source-session UUID is created on start, retained through loop/restart, and cleared on stop. The catalog/controller do not establish media provenance/redistribution permission. Do not treat component tests as proof that an actual clip decodes or that browser playback works.
 
 ## Why `/health` can be 200 while a DB route fails
 

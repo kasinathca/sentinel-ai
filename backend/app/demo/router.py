@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy.orm import Session
 
+from app.cameras.constants import DEMO_CAMERA_ID
+from app.cameras.router import get_db
+from app.db.models import Camera
 from app.demo.clip_catalog import DemoCatalogError, DemoClipNotFound
 from app.demo.controller import DemoControllerError, VirtualCameraController
 
@@ -76,8 +80,16 @@ def select_demo_source(
 
 
 @router.post("/source/start")
-def start_demo_source(controller: VirtualCameraController = Depends(get_demo_controller)):
-    return {"data": controller.start().to_public_dict()}
+def start_demo_source(
+    controller: VirtualCameraController = Depends(get_demo_controller),
+    session: Session = Depends(get_db),
+):
+    camera = session.get(Camera, DEMO_CAMERA_ID)
+    if camera is None:
+        raise DemoControllerError(
+            "SOURCE_UNAVAILABLE", "The canonical demo camera is not initialized.", 503
+        )
+    return {"data": controller.start(enabled=camera.enabled).to_public_dict()}
 
 
 @router.post("/source/stop")

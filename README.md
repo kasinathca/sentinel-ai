@@ -1,5 +1,5 @@
 <!-- SENTINEL_20261008_SCOPE:BEGIN -->
-**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `docs/22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `docs/19-violence-model-and-runtime-qualification.md` remains unchanged. This note does not claim the end-to-end system is already operational.
+**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `docs/22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `docs/19-violence-model-and-runtime-qualification.md` remains unchanged. Executed end-to-end evidence is recorded in `docs/24-review-readiness-and-acceptance.md`.
 <!-- SENTINEL_20261008_SCOPE:END -->
 
 # Sentinel AI
@@ -27,11 +27,45 @@ The present implementation includes:
 - development HTTP adapter for structured violence-worker results;
 - local-only demo clip/source-control routes backed by the approved catalog and process-local controller.
 
-The backend can use an external FFmpeg executable (if configured/available) to pace and loop approved local clips and expose a local-only MJPEG stream for the canonical camera. The canonical camera identity is protected by the camera API, and its `enabled` state gates replay. This does not complete general/production camera streaming. If FFmpeg is unavailable, source start returns an explicit unavailable response. Real media/browser playback has not yet been verified, and AI-worker source synchronization remains pending.
+The backend uses an external FFmpeg executable to pace and loop approved local clips and exposes a local-only MJPEG stream for the canonical camera. Starting a source also launches the existing frozen violence runtime in a separate background process for that same catalog-resolved clip and source-session UUID. Genuine model windows are released against playback time, the backend applies the frozen `0.906` / 3-of-5 policy, and at most one violence event is persisted per active source session.
 
-Database initialization idempotently seeds `DEMO-CAM-01` with canonical UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` and `source_kind=file`; no schema migration is required. The controller issues an ephemeral source-session UUID on start, retains it through automatic loops and explicit restart, and clears it on stop. Replay code is implemented behind optional FFmpeg configuration; real-media verification and AI processing remain pending.
+Database initialization idempotently seeds `DEMO-CAM-01` with canonical UUID `02b1cbc6-d4a3-5630-8c4e-27cdcc062d57` and `source_kind=file`; no schema migration is required. The controller issues an ephemeral source-session UUID on start, retains it through automatic loops and explicit restart, and clears it on stop. Replay uses configured/discovered FFmpeg, and the final acceptance run verified real media, raw-video AI processing, event persistence, and browser alert visibility.
 
-This does **not** mean the full MVP is complete. Authentication, durable acknowledgement, evidence, real-time/WebSocket delivery, general/production camera streaming, analytics, detector/tracker integration, deterministic intrusion/loitering/crowd rules, and final violence-event lifecycle policy remain separate implementation work unless later commits explicitly complete them.
+The React operator view now provides the approved-clip control panel, browser-visible MJPEG feed, truthful AI state/latest score, and a polling-driven qualified violence alert. This is the complete narrowed academic demonstration, not a production or physical-CCTV deployment. Authentication, evidence, WebSockets, multiple cameras, RTSP/ONVIF, tracking, intrusion, loitering, crowd detection, and cloud deployment are intentionally outside this release.
+
+## Academic demo quick start
+
+Configure machine-local paths before starting the backend:
+
+```powershell
+$env:SENTINEL_DEMO_MEDIA_ROOT = "<absolute-path-to-approved-demo-media>"
+$env:SENTINEL_VIOLENCE_ROOT = "<absolute-path-to-qualified-XD-Violence-workspace>"
+$env:SENTINEL_AI_PYTHON = "<Python executable with the qualified temporal runtime>"
+# Optional when FFmpeg is not on PATH:
+$env:SENTINEL_FFMPEG_BINARY = "<path-to-ffmpeg.exe>"
+```
+
+`SENTINEL_DEMO_MEDIA_ROOT` must contain `manifest.json` plus the referenced clips. Manifest paths are relative; the browser sees only `clip_id` and `display_name`.
+
+Terminal 1, from the repository root:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r .\backend\requirements-dev.txt
+$env:PYTHONPATH = (Resolve-Path ".\backend").Path
+.\.venv\Scripts\python.exe .\backend\scripts\init_database.py
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir .\backend --host 127.0.0.1 --port 8000
+```
+
+Terminal 2:
+
+```powershell
+Set-Location .\frontend
+npm ci
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open `http://127.0.0.1:5173`, choose **Camera Monitoring**, select an approved clip, and use Start/Stop/Restart. A positive clip raises the red alert only after genuine model output satisfies the frozen backend criterion. A failed or unavailable worker is shown as an error, never as a negative prediction.
 
 ## Backend setup
 

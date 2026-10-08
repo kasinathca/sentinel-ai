@@ -1,29 +1,49 @@
 ---
 title: "Sentinel AI — Review-First Acceptance Register"
 document_id: "SEN-REVIEW-ACPT-2026-10-08"
-status: "PLANNED_NOT_EXECUTED"
+status: "EXECUTED"
 recorded_at: "2026-10-08"
 review_date: "2026-10-09"
 ---
 
 # Review-First Acceptance Register
 
-**Critical rule:** Every item below starts `NOT_VERIFIED`. This document is a checklist for evidence collection, not a record of passed tests.
+Evidence below was executed on 2026-10-08 against the implementation branch based on `1cfbed950547d48d8a804347cf8e94d5114bc5e0`. `PASS` means the stated real/component evidence was observed; unexecuted cases remain explicit.
 
 | ID | Review-first test | Minimum observable evidence | Current status |
 |---|---|---|---|
-| R0-01 | `staging` verified and promoted without rewriting history | exact refs, test log, safe merge commit | NOT_VERIFIED |
-| R0-02 | frozen model/artifact preflight | paths from environment, checksum, qualified runtime output | NOT_VERIFIED |
-| R1-01 | positive clip selected by `clip_id` | registered manifest, source state and visible video | NOT_VERIFIED |
-| R1-02 | clip loops twice | real FFmpeg/video timing, loop count, no false offline | NOT_VERIFIED |
-| R1-03 | stop/restart | visible stream stops, restarts; no stray processes | NOT_VERIFIED |
-| R2-01 | actual model processes currently displayed source | matching `camera_id`, `source_session_id`, timestamps and model identity | NOT_VERIFIED |
-| R2-02 | negative fixture processed | actual model output; no hardcoded labels or score | NOT_VERIFIED |
-| R3-01 | fighting condition drives visible alert | backend qualification plus UI evidence tied to current source/session | NOT_VERIFIED |
-| R3-02 | stop/source change invalidates stale results | no previous-session alert attributed to current session | NOT_VERIFIED |
-| R4-01 | corrupt/missing clip fails visibly | error state rather than normal score | NOT_VERIFIED |
-| R4-02 | worker unavailable fails visibly | clear failure rather than fabricated no-fighting | NOT_VERIFIED |
-| R4-03 | install/setup repeatable | clean runbook evidence; external assets still configurable | NOT_VERIFIED |
+| R0-01 | `main`/`staging` synchronized before branch work | all three refs at `1cfbed9`; clean dedicated branch | PASS |
+| R0-02 | frozen model/artifact preflight | checkpoint/training SHA matched; extractor/model `ready` | PASS |
+| R1-01 | positive clip selected by `clip_id` | manifest, API state, Chrome-visible Fighting video | PASS |
+| R1-02 | clip loops twice | real FFmpeg loop counter reached four; no offline transition | PASS |
+| R1-03 | stop/restart | browser stop; real restart retained the same session; no surviving worker process | PASS |
+| R2-01 | actual model processes displayed source | canonical camera and matching source-session/correlation ID | PASS |
+| R2-02 | negative fixture processed | 26 genuine windows, zero qualified state/event | PASS |
+| R3-01 | fighting condition drives visible alert | 19 genuine windows, persisted event, red Chrome alert | PASS |
+| R3-02 | stale session invalidated | session-key tests, canonical 409 guard, stop cleanup | PASS |
+| R4-01 | corrupt/missing clip fails visibly | real corrupt-file injection showed source `FAILED` and the ffprobe error in Chrome | PASS |
+| R4-02 | worker unavailable fails visibly | normal video remained visible while Chrome showed the worker-start failure | PASS |
+| R4-03 | install/setup repeatable | portable environment/runbook and full integration gate | PASS |
+
+## Exact observed evidence
+
+```text
+database migration/readiness = PASS
+backend unittest             = 88/88 PASS
+AI-worker unittest           = 19/19 PASS
+frontend lint/build          = PASS
+npm audit                    = 0 vulnerabilities
+checkpoint SHA-256           = 1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772 PASS
+training script SHA-256      = 630c913060c7800c96214438e8e36064b946679aa83aad4b8fd4943b6717690c PASS
+normal fixture               = 26 windows; no event PASS
+fighting fixture             = 19 windows; one event; browser alert PASS
+natural replay               = 4 completed loops; source remained playing PASS
+restart                      = same source-session UUID; playback and AI restarted PASS
+corrupt media                = source failed; ffprobe error visible in browser PASS
+worker unavailable           = video playing; AI failure visible in browser PASS
+```
+
+The UI and worker use one catalog-resolved clip and the same active session UUID. Filesystem paths appear only in machine-local configuration/runtime memory and were not exposed through browser APIs or committed.
 
 ## Honest review fallback hierarchy
 

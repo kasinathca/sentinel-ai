@@ -3313,3 +3313,23 @@ These backend seed/controller/API/adapter tests do not verify actual FFmpeg deco
 | `T-VCAM-BE-016` | deterministic FFmpeg adapter lifecycle | fake-process tests cover first frame, natural EOF/second pass, explicit restart, stop, spawn failure, nonzero exit, zero-frame exit, parser failure, terminate/kill cleanup |
 
 These lifecycle checks use an injected fake process and do not claim a real FFmpeg smoke test or formal pacing tolerance.
+
+# 2026-10-08 Narrow Academic Demo Execution Record
+
+| Level | Executed evidence | Status |
+|---|---|---|
+| Database | disposable Alembic migration, seed, readiness | PASS |
+| Backend automated | 88 unittest cases | PASS |
+| AI worker automated | 19 unittest cases | PASS |
+| Frontend | `oxlint src`; Vite production build | PASS |
+| Dependency audit | `npm audit --audit-level=high` | PASS, 0 vulnerabilities |
+| Frozen artifacts | checkpoint and training-script SHA-256 | PASS |
+| Runtime preflight | exact extractor and temporal model ready | PASS |
+| Real negative fixture | 26 genuine windows; no qualification; zero canonical events | PASS |
+| Real positive fixture | 19 genuine windows; qualification; one canonical event | PASS |
+| Browser | MJPEG visible; positive alert visible; stop/source switch and same-session restart visible | PASS |
+| Sustained replay | real normal fixture completed four loops without going offline | PASS |
+| Real corrupt-file run | source `FAILED`; ffprobe error visible in Chrome | PASS |
+| Worker-unavailable run | video remained visible; explicit AI worker-start failure visible in Chrome | PASS |
+
+The clips are previously qualified integration fixtures, not new field-generalization evidence, and no policy tuning occurred.

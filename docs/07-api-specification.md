@@ -2698,6 +2698,14 @@ The canonical camera's persisted `enabled=false` state prevents source start (`4
 
 Actual approved-media decoding, browser playback, AI worker launch/cancellation, and same-source E2E remain unverified.
 
+## 2026-10-08 Final academic-demo integration contract
+
+`GET /api/v1/demo/source/status` now includes an `ai` object with runtime state, source-session ID, latest score, qualification state, event ID, processed-window count, safe error, and frozen model/policy metadata. Local paths are never returned.
+
+Starting a source maps `session_id` to the worker `correlation_id`. Backend rolling state is keyed by `(camera_id, model_version_id, source_session_id)`. A canonical-camera result outside the active session is rejected with HTTP 409.
+
+The final lifecycle is one persisted violence event at the first qualified 3-of-5 state per active source session. Continued positive windows and natural loops reuse it; a new stop/start session may create one new event. The result endpoint reports `event_persisted`, nullable `event_id`, and `event_lifecycle`. The built-in orchestrator consumes the same validated worker contract after a separate worker process emits genuine model windows.
+
 
 ### 2026-10-08 Replay implementation addendum
 

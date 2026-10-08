@@ -2299,6 +2299,14 @@ The new controller/API tests use a fake replay adapter. The default app has no a
 
 The backend now seeds a canonical DEMO-CAM-01 camera, tracks a source-session UUID, maps controller health for that camera, and can run an optional external FFmpeg replay adapter that supplies a local-only MJPEG stream. Component tests verify seed behavior, source-session lifecycle, health mapping, FFmpeg command/frame parsing, and stream contract. Actual media decoding, natural-rate/EOF measurements, browser rendering, AI-worker synchronization, and end-to-end fixture qualification remain unverified. The replay adapter adds no Python package and requires FFmpeg plus approved local demo media to exercise in a deployment environment. No database migration was introduced.
 
+## 2026-10-08 Final Narrow Academic Implementation Result
+
+The completed academic application presents one catalog-controlled recorded clip as `DEMO-CAM-01`, streams real FFmpeg-decoded MJPEG frames to React, and asynchronously runs the existing exact I3D/frozen temporal worker on the identical catalog-resolved file. The session UUID is the worker correlation ID. Genuine windows are paced against playback, validated, evaluated with frozen `score >= 0.906` and 3-of-5 semantics, and persisted at most once per session. The UI polls status/events; no WebSocket subsystem was added.
+
+The qualified Normal fixture produced 26 windows and no canonical event. The Fighting fixture produced 19 windows, qualified, persisted exactly one event, and displayed a red Chrome-visible alert tied to that session. This is controlled academic fixture evidence, not a physical-CCTV, production-surveillance, or field-generalization claim.
+
+Verification: database readiness PASS; 88 backend tests PASS; 19 AI-worker tests PASS; frontend lint/build PASS; npm audit 0 vulnerabilities; checkpoint/training hashes PASS. The normal fixture remained online for four completed loops, and an explicit restart retained its source-session UUID while restarting playback and AI. Real browser fault injections also passed: corrupt media produced a visible source/ffprobe failure, while an unavailable worker left normal video playing and exposed a clear AI failure.
+
 ## 2026-10-08 PR #3 Review Hardening
 
 The canonical virtual camera identity is protected through ordinary camera create/update APIs. The persisted `enabled` value now gates source start and MJPEG delivery; disabling an active session stops replay before the database change, while failed stop leaves the prior enabled setting and truthful controller state. Re-enabling requires an explicit source start. Intentional disable is reported as `stopped`, not camera failure. Deterministic fake-process tests exercise the adapter lifecycle and cleanup paths. These checks do not constitute real-media playback, browser, or timing acceptance; general/production camera streaming and AI synchronization remain incomplete.

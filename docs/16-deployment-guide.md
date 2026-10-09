@@ -2133,6 +2133,13 @@ The 2026-10-07 run passed database migration/readiness, 35 backend tests, 19 AI-
 
 Raw-video/model preflight is intentionally separate because it requires the external qualified XD-Violence workspace and GPU runtime.
 
+The recovered, checksum-pinned staging procedure is maintained in
+`docs/25-qualified-runtime-staging-setup.md`. Run
+`ai_worker/scripts/verify_qualified_runtime.ps1` before preflight on every new
+machine; it verifies more than checkpoint load by checking the exact I3D
+weight/source, source revisions, qualification records, fixture hashes, CUDA,
+and the observed package versions.
+
 PostgreSQL remains unqualified as a runtime target.
 
 ---

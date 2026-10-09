@@ -64,6 +64,12 @@ background to `.sentinel/processed/<opaque-id>.mp4` with the original left
 untouched. The browser sees only the opaque ID, display name, ingest state, and
 safe media metadata.
 
+For a new staging workstation, follow the exact external-asset inventory,
+source revisions, recovered dependency versions, integrity checks, and Windows
+commands in [docs/25-qualified-runtime-staging-setup.md](docs/25-qualified-runtime-staging-setup.md).
+The repository intentionally does not contain the qualified model/I3D weights
+or approved research footage.
+
 Terminal 1, from the repository root:
 
 ```powershell
@@ -166,6 +172,19 @@ SENTINEL_RUNTIME_WORK_DIR
 ```
 
 Model identity and SHA-256 checks remain frozen; only machine-specific locations are configurable.
+
+Validate the complete qualified asset set, its source revisions, both Python
+environments, and the approved positive/negative fixtures before first use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\ai_worker\scripts\verify_qualified_runtime.ps1 `
+  -XDViolenceRoot $env:SENTINEL_VIOLENCE_ROOT `
+  -TemporalPython $env:SENTINEL_AI_PYTHON
+```
+
+The recorded hashes and exact observed versions live in
+`ai_worker/qualified_runtime_assets.json`.
 
 Generate the ignored local source map:
 

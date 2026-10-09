@@ -107,6 +107,14 @@ try {
     $env:SENTINEL_FFPROBE_BINARY = $ffprobe
     $env:PYTHONPATH = Join-Path $repoRoot "ai_worker"
 
+    Write-Host "Validating qualified external assets and environments..."
+    & (Join-Path $repoRoot "ai_worker\scripts\verify_qualified_runtime.ps1") `
+        -XDViolenceRoot $violenceRoot `
+        -TemporalPython $aiPython `
+        -ValidationPython $venvPython `
+        -SkipMedia
+    if ($LASTEXITCODE -ne 0) { Fail "Qualified runtime validation failed with exit code $LASTEXITCODE." }
+
     Write-Host "Running frozen AI preflight..."
     & $aiPython -m sentinel_violence_runtime.cli --root $violenceRoot --source-map $sourceMap --preflight-only
     if ($LASTEXITCODE -ne 0) { Fail "Frozen AI preflight failed with exit code $LASTEXITCODE." }

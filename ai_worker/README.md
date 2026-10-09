@@ -4,6 +4,12 @@ This package is the repository-side integration layer for the already-qualified 
 
 The heavy XD-Violence experiment/model workspace remains **external** to Git. The repository contains source, contracts, tests, examples, and machine-independent configuration logic only.
 
+The verified external inventory is machine-readable in
+`qualified_runtime_assets.json`. It includes source revisions, exact hashes and
+sizes, approved fixture metadata, and the recovered package versions. The full
+Windows transfer/setup runbook is
+`../docs/25-qualified-runtime-staging-setup.md`.
+
 ## Frozen identity — unchanged
 
 ```text
@@ -90,6 +96,17 @@ These tests do not claim that raw-video inference has run.
 ## Runtime preflight
 
 With `SENTINEL_VIOLENCE_ROOT` configured:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\ai_worker\scripts\verify_qualified_runtime.ps1 `
+  -XDViolenceRoot $env:SENTINEL_VIOLENCE_ROOT `
+  -TemporalPython $env:SENTINEL_AI_PYTHON
+```
+
+This performs byte-level asset/media validation, source-revision checks, and
+exact environment-version checks. It is deliberately stricter than merely
+loading a tensor with the expected shape.
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path ".\ai_worker").Path

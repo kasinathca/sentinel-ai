@@ -23,14 +23,14 @@ class Phase2MDatabaseTests(unittest.TestCase):
     def test_seed_idempotent_and_frozen(self):
         seed_frozen_violence_model(self.sessions)
         with self.sessions() as session: versions=list(session.scalars(select(AIModelVersion))); policies=list(session.scalars(select(ViolenceEventPolicy)))
-        self.assertEqual(len(versions),1); self.assertEqual(len(policies),1); self.assertEqual(policies[0].event_threshold_value,0.906); self.assertEqual(policies[0].n_required,3); self.assertEqual(policies[0].history_window_size,5); self.assertIsNone(policies[0].cooldown_ms)
+        self.assertEqual(len(versions),1); self.assertEqual(len(policies),1); self.assertEqual(policies[0].event_threshold_value,LIVE_THRESHOLD); self.assertEqual(policies[0].n_required,3); self.assertEqual(policies[0].history_window_size,5); self.assertIsNone(policies[0].cooldown_ms)
     def test_database_registry_reconstructs_frozen_contract(self):
         selected=DatabaseModelRegistry(self.sessions).get_violence_model_version(MODEL_ID)
-        self.assertEqual(selected.id,MODEL_ID); self.assertEqual(selected.event_threshold_value,0.906); self.assertEqual(selected.n_required,3); self.assertEqual(selected.history_window_size,5)
+        self.assertEqual(selected.id,MODEL_ID); self.assertEqual(selected.event_threshold_value,LIVE_THRESHOLD); self.assertEqual(selected.n_required,3); self.assertEqual(selected.history_window_size,5)
     def test_explicit_persistence_writes_event_and_context(self):
         persisted=ViolenceEventPersistenceService(self.sessions).create_from_qualified_condition(evaluation=self.evaluation(True),requires_attention=True)
         with self.sessions() as session: event=session.get(Event,persisted.event_id); context=session.get(ViolenceEventContext,persisted.event_id)
-        self.assertIsNotNone(event); self.assertIsNotNone(context); self.assertEqual(event.event_type_code,"violence_fighting"); self.assertEqual(event.camera_id,CAMERA_ID); self.assertTrue(event.requires_attention); self.assertEqual(event.correlation_id,CORRELATION_ID); self.assertEqual(context.model_version_id,MODEL_ID); self.assertEqual(context.output_label,"fighting"); self.assertAlmostEqual(context.score_value,0.9957476258277893); self.assertAlmostEqual(context.event_threshold_snapshot,0.906); self.assertEqual(context.n_required_snapshot,3); self.assertEqual(context.history_window_size_snapshot,5); self.assertEqual(context.positive_count_snapshot,3)
+        self.assertIsNotNone(event); self.assertIsNotNone(context); self.assertEqual(event.event_type_code,"violence_fighting"); self.assertEqual(event.camera_id,CAMERA_ID); self.assertTrue(event.requires_attention); self.assertEqual(event.correlation_id,CORRELATION_ID); self.assertEqual(context.model_version_id,MODEL_ID); self.assertEqual(context.output_label,"fighting"); self.assertAlmostEqual(context.score_value,0.9957476258277893); self.assertAlmostEqual(context.event_threshold_snapshot,LIVE_THRESHOLD); self.assertEqual(context.n_required_snapshot,3); self.assertEqual(context.history_window_size_snapshot,5); self.assertEqual(context.positive_count_snapshot,3)
     def test_nonqualifying_cannot_persist(self):
         with self.assertRaises(ViolenceEventPersistenceError): ViolenceEventPersistenceService(self.sessions).create_from_qualified_condition(evaluation=self.evaluation(False),requires_attention=True)
         with self.sessions() as session: self.assertEqual(len(list(session.scalars(select(Event)))),0)

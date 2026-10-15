@@ -7,7 +7,12 @@ import time
 import unittest
 from uuid import UUID, uuid4
 
-from app.ai_integration.constants import MODEL_VERSION_ID, SCORE_SEMANTICS
+from app.ai_integration.constants import (
+    EXPERIMENTAL_THRESHOLD_ACTIVE,
+    LIVE_THRESHOLD,
+    MODEL_VERSION_ID,
+    SCORE_SEMANTICS,
+)
 from app.ai_integration.service import ViolenceProcessingOutcome
 from app.demo.ai_orchestrator import DemoAIOrchestrator
 from app.demo.clip_catalog import DemoClip
@@ -104,6 +109,11 @@ class DemoAIOrchestratorTests(unittest.TestCase):
         self.assertFalse(public["session_violence_detected"])
         self.assertEqual(public["n_required"], 3)
         self.assertEqual(public["m_history"], 5)
+        self.assertEqual(public["threshold"], LIVE_THRESHOLD)
+        self.assertEqual(
+            public["policy_mode"],
+            "experimental" if EXPERIMENTAL_THRESHOLD_ACTIVE else "qualified",
+        )
 
     def test_session_detection_and_cumulative_evidence_latch_while_rolling_state_changes(self) -> None:
         orchestrator = DemoAIOrchestrator(lambda payload: payload)

@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.ai_integration.constants import (
+    EXPERIMENTAL_THRESHOLD_ACTIVE,
     LIVE_M_HISTORY,
     LIVE_N_REQUIRED,
     LIVE_THRESHOLD,
@@ -160,6 +161,9 @@ def demo_source_status(
             "error": "AI orchestration is not configured.",
             "model_version_id": MODEL_VERSION_ID,
             "threshold": LIVE_THRESHOLD,
+            "policy_mode": (
+                "experimental" if EXPERIMENTAL_THRESHOLD_ACTIVE else "qualified"
+            ),
             "n_required": LIVE_N_REQUIRED,
             "m_history": LIVE_M_HISTORY,
             "criterion": f"{LIVE_N_REQUIRED}-of-{LIVE_M_HISTORY}",

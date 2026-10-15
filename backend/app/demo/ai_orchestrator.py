@@ -16,6 +16,7 @@ from typing import Callable
 from uuid import UUID, uuid4
 
 from app.ai_integration.constants import (
+    EXPERIMENTAL_THRESHOLD_ACTIVE,
     LIVE_M_HISTORY,
     LIVE_N_REQUIRED,
     LIVE_THRESHOLD,
@@ -75,6 +76,9 @@ class DemoAIStatus:
             "error": self.error,
             "model_version_id": MODEL_VERSION_ID,
             "threshold": LIVE_THRESHOLD,
+            "policy_mode": (
+                "experimental" if EXPERIMENTAL_THRESHOLD_ACTIVE else "qualified"
+            ),
             "n_required": LIVE_N_REQUIRED,
             "m_history": LIVE_M_HISTORY,
             "criterion": f"{LIVE_N_REQUIRED}-of-{LIVE_M_HISTORY}",

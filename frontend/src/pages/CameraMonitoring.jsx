@@ -7,7 +7,7 @@ import {
   startDemoSource,
   stopDemoSource,
 } from "../services/demoService";
-import { describeRollingCondition, describeSessionDetection, isClipSelectable } from "../services/demoViewModel";
+import { describeRollingCondition, describeSessionDetection, describeThresholdPolicy, formatThreshold, isClipSelectable } from "../services/demoViewModel";
 
 const DEMO_CAMERA_ID = "02b1cbc6-d4a3-5630-8c4e-27cdcc062d57";
 const ACTIVE_STATES = new Set(["starting", "playing", "loop-restarting"]);
@@ -176,12 +176,13 @@ function CameraMonitoring({ cameras = [], onBack }) {
           <div><span>History</span><strong>{ai.history_count ?? 0} / {ai.m_history ?? 5} observations</strong></div>
           <div><span>Current rolling window</span><strong>{ai.positive_count ?? 0} / {ai.m_history ?? 5} positive</strong></div>
           <div><span>Current rolling qualification</span><strong>{describeRollingCondition(ai)}</strong></div>
+          <div><span>Rolling qualification</span><strong>{ai.n_required ?? "?"} of {ai.m_history ?? "?"}</strong></div>
           <div><span>Positive observations this session</span><strong>{ai.positive_windows_total ?? 0} / {ai.processed_windows_total ?? 0}</strong></div>
           <div><span>Strongest rolling result observed</span><strong>{ai.max_positive_count_observed_in_any_5_window ?? 0} / {ai.m_history ?? 5} positive</strong></div>
           <div><span>Violence detected this session</span><strong>{describeSessionDetection(ai)}</strong></div>
           <div><span>First qualified at</span><strong>{ai.first_qualified_at || "Not detected"}</strong></div>
           <div><span>Persisted event</span><strong>{ai.event_id || "None"}</strong></div>
-          <div><span>Frozen threshold</span><strong>{ai.threshold ?? 0.906}</strong></div>
+          <div><span>{describeThresholdPolicy(ai)}</span><strong>{formatThreshold(ai)}</strong></div>
           <div><span>Score meaning</span><strong>{ai.score_semantics || "uncalibrated fighting score"}</strong></div>
         </div>
         {ai.error && <p className="ai-error">{ai.error}</p>}

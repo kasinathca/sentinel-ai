@@ -15,7 +15,7 @@ class IntegrationTests(unittest.TestCase):
         s,c=self.svc(); p={'schema_version':'1','job_id':BASE['job_id'],'correlation_id':BASE['correlation_id'],'camera_id':BASE['camera_id'],'status':'failed','error':{'code':'INFERENCE_FAILED','message':'Inference failed.'}}
         self.assertRaises(WorkerReportedFailure,s.consume_payload,p); self.assertEqual(c.evaluations,[])
     def test_three_of_five(self):
-        s,_=self.svc(); states=[s.consume_payload(payload(x,i)) for i,x in enumerate([.896,.982,.987,.610,.996])]; self.assertTrue(states[4].candidate_condition); self.assertEqual(states[4].positive_count,3)
+        s,_=self.svc(); states=[s.consume_payload(payload(x,i)) for i,x in enumerate([.79,.982,.987,.610,.996])]; self.assertTrue(states[4].candidate_condition); self.assertEqual(states[4].positive_count,3)
     def test_normal_never(self):
         s,_=self.svc(); states=[s.consume_payload(payload(x,i)) for i,x in enumerate([.01,.02,.005,.1,.03,.02])]; self.assertFalse(any(x.candidate_condition for x in states))
     def test_camera_isolation(self):

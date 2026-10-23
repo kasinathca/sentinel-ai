@@ -23,7 +23,7 @@ authoritative_for:
 ---
 
 <!-- SENTINEL_20261008_SCOPE:BEGIN -->
-**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `docs/22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `docs/19-violence-model-and-runtime-qualification.md` remains unchanged. This note does not claim the end-to-end system is already operational.
+**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `19-violence-model-and-runtime-qualification.md` remains unchanged. Executed end-to-end evidence from 8–9 October 2026 is recorded in `24-review-readiness-and-acceptance.md`.
 <!-- SENTINEL_20261008_SCOPE:END -->
 
 
@@ -50,9 +50,9 @@ authoritative_for:
 
 ## 0.1 Current state
 
-Sentinel AI is still under implementation.
+The narrowed academic release is implemented and was accepted on the qualified workstation on 8–9 October 2026. The implemented operator workflow is summarized in **2026-10-08 Verified Academic Demo Workflow** and **2026-10-09 Refresh Videos workflow** near the end of this document.
 
-Therefore some workflows in this manual are:
+Most of Sections 1–136 below preserve the older broad operator/administrator design. Features outside the approved single-camera violence demo remain historical proposals and must not be presented as implemented. Their labels continue to use:
 
 ```text
 CONFIRMED

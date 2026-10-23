@@ -948,7 +948,7 @@ README.md
 Prefer portable relative Markdown links:
 
 ```md
-[Software Requirements Specification](docs/02-srs.md)
+[Software Requirements Specification](02-srs.md)
 ```
 
 Avoid relying exclusively on Obsidian `[[wikilinks]]` because they are less portable outside Obsidian.

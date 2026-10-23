@@ -24,7 +24,7 @@ authoritative_for:
 ---
 
 <!-- SENTINEL_20261008_SCOPE:BEGIN -->
-**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `docs/22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `docs/19-violence-model-and-runtime-qualification.md` remains unchanged. This note does not claim the end-to-end system is already operational.
+**Current academic release scope (project-lead decision, 2026-10-08):** The deliverable is the single looping virtual CCTV source -> **actual frozen violence inference** -> **operator-visible qualified alert**. See `22-academic-violence-demo-scope.md` for included/excluded features, non-hardcoded runtime paths, and review gates. Older broader features retained below are historical planning, not required for the narrowed academic release. The frozen qualification in `19-violence-model-and-runtime-qualification.md` remains unchanged. Executed end-to-end evidence from 8–9 October 2026 is recorded in `24-review-readiness-and-acceptance.md`.
 <!-- SENTINEL_20261008_SCOPE:END -->
 
 
@@ -54,6 +54,8 @@ authoritative_for:
 > 3. **TBD items that must not be guessed**
 >
 > The final version of this guide must be executable on a clean machine without relying on undocumented local state.
+
+> **Current-release navigation:** Sections 0–136 preserve the earlier broad deployment design and proposal history. For the implemented academic release, use the current root `README.md`, the **2026-10-09 Dynamic local ingest addendum** in this file, and `25-qualified-runtime-staging-setup.md`. Historical Docker, authentication, multi-feature, WebSocket, evidence, and PostgreSQL sections are not current setup requirements.
 
 ---
 

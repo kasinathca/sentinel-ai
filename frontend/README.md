@@ -12,9 +12,16 @@ GET /api/v1/cameras
 GET /api/v1/cameras/{id}
 GET /api/v1/events
 GET /api/v1/events/{id}
+GET /api/v1/demo/clips
+PUT /api/v1/demo/source
+POST /api/v1/demo/source/start
+POST /api/v1/demo/source/stop
+POST /api/v1/demo/source/restart
+GET /api/v1/demo/source/status
+GET /api/v1/cameras/{id}/stream
 ```
 
-The application truthfully displays unavailable states for backend capabilities that do not yet exist, including persisted acknowledgement and live stream/snapshot delivery.
+The Camera Monitoring view provides approved-source selection, start/stop/restart controls, the canonical MJPEG stream, AI/session diagnostics, and a qualified alert driven by backend state. The application truthfully displays unavailable states for capabilities that do not exist in this release, including persisted acknowledgement and snapshot/evidence delivery.
 
 ## Install and run
 

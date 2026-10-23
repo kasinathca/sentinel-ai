@@ -45,7 +45,7 @@ written to `.sentinel/temp`, validated with FFprobe, and atomically moved to
 fingerprint avoids repeated work and invalidates the cache when the source
 changes. The API never returns an absolute or relative filesystem path.
 
-`app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The app uses an external FFmpeg executable when available on `PATH` or configured through `SENTINEL_FFMPEG_BINARY`; it never installs or downloads FFmpeg. The adapter reads only catalog-resolved clips, paces input, loops after EOF, and exposes decoded JPEG frames through a local-only MJPEG endpoint. If FFmpeg is unavailable, starting returns `SOURCE_UNAVAILABLE`. Component tests use fakes; real media decoding and timing have not been verified in this environment.
+`app.demo.controller.VirtualCameraController` owns one process-local selection/session state and exposes a callback boundary for a replay adapter. The app uses an external FFmpeg executable when available on `PATH` or configured through `SENTINEL_FFMPEG_BINARY`; it never installs or downloads FFmpeg. The adapter reads only catalog-resolved clips, paces input, loops after EOF, and exposes decoded JPEG frames through a local-only MJPEG endpoint. If FFmpeg is unavailable, starting returns `SOURCE_UNAVAILABLE`. Component tests use fakes; the executed 8–9 October 2026 acceptance run separately verified real media decoding, looping, browser playback, and shared-source AI processing, as recorded in `../docs/24-review-readiness-and-acceptance.md`.
 
 
 
@@ -76,7 +76,7 @@ with `source_kind=file`. The idempotent seed preserves unrelated cameras and
 operational `enabled` state and fails on canonical identity conflicts. No
 migration is required.
 
-Camera health for that exact UUID maps controller states to `stopped`, `starting`, `online`, or `error`; other cameras remain `unknown`. A source-session UUID is created on start, retained through loop/restart, and cleared on stop. The catalog/controller do not establish media provenance/redistribution permission. Do not treat component tests as proof that an actual clip decodes or that browser playback works.
+Camera health for that exact UUID maps controller states to `stopped`, `starting`, `online`, or `error`; other cameras remain `unknown`. A source-session UUID is created on start, retained through loop/restart, and cleared on stop. The catalog/controller do not establish media provenance/redistribution permission. Component tests alone are not proof of real decoding or browser playback; the separate executed acceptance record supplies that evidence for the qualified workstation and fixtures.
 
 ## Why `/health` can be 200 while a DB route fails
 
@@ -205,17 +205,23 @@ qualification = at least 3 positive observations
 stride = 1
 ```
 
-A qualified candidate still returns:
+A qualified result for the active demo source session is consumed by
+`SessionViolenceEventConsumer`. It creates or reuses exactly one event for the
+correlation/source-session ID and returns the two states separately, for example:
 
 ```json
 {
   "candidate_condition": true,
-  "event_persisted": false,
-  "event_lifecycle": "awaiting_domain_policy"
+  "event_persisted": true,
+  "event_lifecycle": "persisted_for_source_session"
 }
 ```
 
-because cooldown/deduplication/episode semantics remain unresolved. This portability/readiness package intentionally does not invent that policy.
+`candidate_condition` describes the frozen temporal-model criterion;
+`event_persisted` describes the domain write outcome. They must not be treated
+as synonyms. The implemented demo boundary suppresses duplicates within one
+source session, while generalized cooldown, episode grouping, and retrigger
+semantics remain outside this release.
 
 ## Tests
 

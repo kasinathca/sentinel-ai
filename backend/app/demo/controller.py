@@ -19,6 +19,7 @@ from app.demo.clip_catalog import (
     DemoClip,
     DemoClipCatalog,
     DemoClipNotFound,
+    DemoClipNotReady,
 )
 
 
@@ -70,6 +71,13 @@ class AIOrchestrator(Protocol):
     def start(self, clip: DemoClip, source_session_id: UUID) -> None: ...
 
     def restart(self, clip: DemoClip, source_session_id: UUID) -> None: ...
+
+    def loop_restarted(
+        self,
+        clip: DemoClip,
+        source_session_id: UUID,
+        started_at: datetime | None = None,
+    ) -> None: ...
 
     def stop(self) -> None: ...
 
@@ -189,6 +197,15 @@ class VirtualCameraController:
 
             try:
                 clip = self._catalog_factory().get_clip(clip_id)
+            except DemoClipNotReady as exc:
+                with self._state_lock:
+                    self._state = DemoSourceState.FAILED
+                    self._position_ms = None
+                raise DemoControllerError(
+                    "DEMO_CLIP_NOT_READY",
+                    f"The selected demo video is not ready ({exc.state}).",
+                    409,
+                ) from exc
             except DemoClipNotFound as exc:
                 with self._state_lock:
                     self._state = DemoSourceState.FAILED
@@ -343,11 +360,18 @@ class VirtualCameraController:
                 self._state = DemoSourceState.LOOP_RESTARTING
 
     def _loop_restart_completed(self, generation: int) -> None:
+        loop_context: tuple[DemoClip, UUID] | None = None
         with self._state_lock:
             if generation == self._generation and self._state == DemoSourceState.LOOP_RESTARTING:
                 self._loop_count += 1
                 self._position_ms = 0
                 self._state = DemoSourceState.PLAYING
+                if self._clip is not None and self._session_id is not None:
+                    loop_context = (self._clip, self._session_id)
+        if loop_context is not None and self._ai_orchestrator is not None:
+            self._ai_orchestrator.loop_restarted(
+                *loop_context, started_at=datetime.now(timezone.utc)
+            )
 
     def _failed(self, generation: int) -> None:
         with self._state_lock:

@@ -35,6 +35,16 @@ The React operator view now provides the approved-clip control panel, browser-vi
 
 ## Academic demo quick start
 
+On Windows, double-click `launch_sentinel_demo.cmd` for the complete local
+startup sequence. The single hybrid CMD/PowerShell file validates the external
+media and frozen model, runs AI preflight and database readiness, starts only
+loopback-bound backend/frontend child processes, and owns their cleanup. Press
+Ctrl+C in its console to request source shutdown before its own process trees
+are terminated. It defaults to `%USERPROFILE%\XD-Violence` and
+`%USERPROFILE%\Downloads\Ai training\SELECTED VIDEOS`; the documented
+`SENTINEL_*` variables override those locations. Occupied ports cause a safe
+failure and no unrelated process is killed.
+
 Configure machine-local paths before starting the backend:
 
 ```powershell
@@ -45,7 +55,20 @@ $env:SENTINEL_AI_PYTHON = "<Python executable with the qualified temporal runtim
 $env:SENTINEL_FFMPEG_BINARY = "<path-to-ffmpeg.exe>"
 ```
 
-`SENTINEL_DEMO_MEDIA_ROOT` must contain `manifest.json` plus the referenced clips. Manifest paths are relative; the browser sees only `clip_id` and `display_name`.
+`SENTINEL_DEMO_MEDIA_ROOT` is a controlled local drop folder. No manifest is
+required: copy a supported top-level video (`.mp4`, `.mov`, `.m4v`, `.mkv`,
+`.avi`, or `.webm`) into it and select **Refresh Videos**. Sentinel inspects
+the source with FFprobe. A compatible 1280×720 H.264/yuv420p/30 FPS MP4 is
+validated and used directly; other decodable inputs are normalized in the
+background to `.sentinel/processed/<opaque-id>.mp4` with the original left
+untouched. The browser sees only the opaque ID, display name, ingest state, and
+safe media metadata.
+
+For a new staging workstation, follow the exact external-asset inventory,
+source revisions, recovered dependency versions, integrity checks, and Windows
+commands in [docs/25-qualified-runtime-staging-setup.md](docs/25-qualified-runtime-staging-setup.md).
+The repository intentionally does not contain the qualified model/I3D weights
+or approved research footage.
 
 Terminal 1, from the repository root:
 
@@ -65,7 +88,12 @@ npm ci
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Open `http://127.0.0.1:5173`, choose **Camera Monitoring**, select an approved clip, and use Start/Stop/Restart. A positive clip raises the red alert only after genuine model output satisfies the frozen backend criterion. A failed or unavailable worker is shown as an error, never as a negative prediction.
+Open `http://127.0.0.1:5173`, choose **Camera Monitoring**, refresh the available
+videos, select a Ready source, and use Start/Stop/Restart. Playback and frozen
+AI inference receive the same validated canonical file. A red alert appears
+only after genuine model output satisfies the frozen criterion. The current
+rolling latest-five result may later become nonqualifying while the truthful
+session-level detection and persisted event remain visible.
 
 ## Backend setup
 
@@ -144,6 +172,19 @@ SENTINEL_RUNTIME_WORK_DIR
 ```
 
 Model identity and SHA-256 checks remain frozen; only machine-specific locations are configurable.
+
+Validate the complete qualified asset set, its source revisions, both Python
+environments, and the approved positive/negative fixtures before first use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\ai_worker\scripts\verify_qualified_runtime.ps1 `
+  -XDViolenceRoot $env:SENTINEL_VIOLENCE_ROOT `
+  -TemporalPython $env:SENTINEL_AI_PYTHON
+```
+
+The recorded hashes and exact observed versions live in
+`ai_worker/qualified_runtime_assets.json`.
 
 Generate the ignored local source map:
 

@@ -1,0 +1,131 @@
+{
+  "schema_version": "1",
+  "qualification": {
+    "experiment_id": "EXP-VIO-TEMPORAL-001",
+    "model_version_id": "6d22f83d-17f8-5ecf-9f0f-246fa326ec72",
+    "model_label": "MODEL-VIO-BIGRU-ATTN-XD-V1",
+    "checkpoint_sha256": "1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772",
+    "input_shape": [
+      "T",
+      5,
+      2048
+    ],
+    "sequence_length": 64,
+    "parameter_count": 822530,
+    "policy": {
+      "window": "W1",
+      "stride_feature_steps": 1,
+      "score_threshold": 0.906,
+      "positive_windows_required": 3,
+      "history_windows": 5
+    }
+  },
+  "repositories": [
+    {
+      "path": "sentinel_runtime_validation/extractor_exact_jherng/inappropriate-video-detection",
+      "url": "https://github.com/hongjiaherng/inappropriate-video-detection.git",
+      "commit": "4900184eb9febf3f6c018faae14947772ce1ea57"
+    },
+    {
+      "path": "sentinel_runtime_validation/extractor_exact_jherng/mmaction2-v1.2.0-source",
+      "url": "https://github.com/open-mmlab/mmaction2.git",
+      "commit": "4d6c93474730cad2f25e51109adcf96824efc7a3"
+    }
+  ],
+  "files": [
+    {
+      "role": "qualified_temporal_checkpoint",
+      "path": "sentinel_temporal/artifacts/best_model.pt",
+      "size": 3295541,
+      "sha256": "1fa01d1be82ab3c63d33b4d5f1d5ef4ab2a176d1d2842afc842955ff72896772"
+    },
+    {
+      "role": "frozen_temporal_training_implementation",
+      "path": "sentinel_temporal/train_temporal_gru.py",
+      "size": 14249,
+      "sha256": "630c913060c7800c96214438e8e36064b946679aa83aad4b8fd4943b6717690c"
+    },
+    {
+      "role": "persistent_exact_extractor_worker",
+      "path": "sentinel_runtime_validation/scripts/phase2g_persistent_extractor_worker.py",
+      "size": 6065,
+      "sha256": "641595304bf910c5e1c311fc984c97263ada5cb5da0573039e9fac3f76d71135"
+    },
+    {
+      "role": "exact_extractor_entrypoint",
+      "path": "sentinel_runtime_validation/extractor_exact_jherng/inappropriate-video-detection/feature-extractor/src/main.py",
+      "size": 10783,
+      "sha256": "6f7bf4d91f653507d1521d29421ceff730b17b4720fa1f84d7bce660c31f4310"
+    },
+    {
+      "role": "exact_i3d_model_implementation",
+      "path": "sentinel_runtime_validation/extractor_exact_jherng/inappropriate-video-detection/feature-extractor/src/models/i3d_imagenet-pretrained-r50-nl-dot-product_8xb8-32x2x1-100e_kinetics400-rgb.py",
+      "size": 9734,
+      "sha256": "8bd8110ee3b5b0810e53d6f57eeb4a6747809cd3789cd94133edef68e1395534"
+    },
+    {
+      "role": "exact_i3d_checkpoint",
+      "path": "sentinel_runtime_validation/extractor_exact_jherng/inappropriate-video-detection/feature-extractor/pretrained/i3d_imagenet-pretrained-r50-nl-dot-product_8xb8-32x2x1-100e_kinetics400-rgb_20220812-8e1f2148.pth",
+      "size": 141979657,
+      "sha256": "8e1f21482dd3987f0b6329886fc61b00e45a782c4356797df1e4aaa088707bb0"
+    },
+    {
+      "role": "extractor_compatibility_record",
+      "path": "sentinel_runtime_validation/reports/EXP-VIO-RUNTIME-COMPAT-001-phase2d-exact-jherng.json",
+      "size": 7487,
+      "sha256": "fcafdeca5d5231215ef0408ab9415607ae7dea9aa60a49592bb00b796c058936"
+    },
+    {
+      "role": "raw_video_parity_record",
+      "path": "sentinel_runtime_validation/reports/EXP-VIO-LIVE-RUNTIME-001-phase2j-raw-video-parity.json",
+      "size": 7340,
+      "sha256": "b6cbeaed87a666d9fff89d32c7d456ae3cd2960aafa58518ec6f94cf02899768"
+    }
+  ],
+  "media": [
+    {
+      "role": "approved_negative_normal_fixture",
+      "label": "normal",
+      "path": "sentinel_runtime_validation/videos/A.Beautiful.Mind.2001__#00-40-52_00-42-01_label_A.mp4",
+      "size": 6584398,
+      "sha256": "7a1a996415f180293cf741a691d140527f2e8b4a98918e9b4918dfca06d2bf16"
+    },
+    {
+      "role": "approved_positive_fighting_fixture",
+      "label": "fighting",
+      "path": "sentinel_runtime_validation/videos/Braveheart.1995__#00-56-30_00-57-20_label_B1-0-0.mp4",
+      "size": 5465018,
+      "sha256": "4bd9f2df9a87cb2800809f2376f51daf986ae4c6b28b862b9590f9a6f1626de2"
+    }
+  ],
+  "environments": {
+    "extractor": {
+      "python_path": "sentinel_runtime_validation/extractor_exact_jherng/.venv/Scripts/python.exe",
+      "python_version": "3.10.11",
+      "cuda_required": true,
+      "cuda_runtime": "11.8",
+      "packages": {
+        "torch": "2.1.2+cu118",
+        "torchvision": "0.16.2+cu118",
+        "numpy": "1.26.4",
+        "opencv-python": "4.8.1.78",
+        "mmcv": "2.1.0",
+        "mmengine": "0.10.7",
+        "mmaction2": "1.2.0",
+        "decord": "0.6.0"
+      }
+    },
+    "temporal": {
+      "python_version": "3.10.11",
+      "cuda_required": true,
+      "cuda_runtime": "13.0",
+      "packages": {
+        "torch": "2.13.0+cu130",
+        "numpy": "2.2.6",
+        "pandas": "2.3.3",
+        "scikit-learn": "1.7.2",
+        "scipy": "1.15.3"
+      }
+    }
+  }
+}

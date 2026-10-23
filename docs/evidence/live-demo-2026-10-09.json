@@ -1,0 +1,40 @@
+{
+  "schema_version": "1",
+  "captured_at": "2026-10-09",
+  "frozen_policy": {
+    "model_version_id": "6d22f83d-17f8-5ecf-9f0f-246fa326ec72",
+    "threshold": 0.906,
+    "n_required": 3,
+    "m_history": 5,
+    "feature_policy": "W1 / stride 1"
+  },
+  "baseline": [
+    {"clip_id":"fight-1","filename":"FIGHT 1.mp4","session_id":"00d85127-92be-42b6-9d87-8e468e31bcc4","state":"completed","processed_windows":4,"latest_score":0.888862133026123,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":2,"scores":[0.0759616643190384,0.99359256029129,0.980282545089722,0.888862133026123]},
+    {"clip_id":"fight-2","filename":"FIGHT 2.mp4","session_id":"49fb3f0d-7caa-4aef-9868-47c20f17f356","state":"completed","processed_windows":4,"latest_score":0.40126681327819824,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":2,"scores":[0.0254874471575022,0.989203035831451,0.996226072311401,0.401266813278198]},
+    {"clip_id":"fight-3","filename":"FIGHT 3.mp4","session_id":"f8b32d4e-2787-4afd-a4b0-893ebc2159d6","state":"completed","processed_windows":6,"latest_score":0.24763032793998718,"latest_score_positive":false,"candidate_condition":true,"event_id":"39cd2941-20d8-4810-9185-ff4b3294bc48","loop_count":1,"scores":[0.0834289789199829,0.990693509578705,0.967904627323151,0.993685781955719,0.824158310890198,0.247630327939987]},
+    {"clip_id":"nor-fight-1","filename":"NOR-FIGHT 1.mp4","session_id":"fc55edeb-8d08-4b0b-a0f0-0ac9f631563d","state":"completed","processed_windows":3,"latest_score":0.9117677807807922,"latest_score_positive":true,"candidate_condition":false,"event_id":null,"loop_count":2,"scores":[0.0207569487392902,0.0129125760868192,0.9117677807807922]},
+    {"clip_id":"nor-fight-2","filename":"NOR-FIGHT 2.mp4","session_id":"2c08321e-7a12-4ae4-a884-9ecb0fbb9d45","state":"completed","processed_windows":3,"latest_score":0.28077495098114014,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":2,"scores":[0.0117065953090787,0.171305447816849,0.28077495098114]},
+    {"clip_id":"normal-1","filename":"NORMAL.mp4","session_id":"1d1c11f8-b5b1-4e2c-b5ac-231a3c0aacce","state":"completed","processed_windows":5,"latest_score":0.05333816260099411,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":1,"scores":[0.00385155808180571,0.00284321652725339,0.00686409324407578,0.0303095541894436,0.0533381626009941]},
+    {"clip_id":"normal-2","filename":"NORMAL 2.mp4","session_id":"8efa5a73-5af9-4ed7-8d85-3e67029ceb05","state":"completed","processed_windows":16,"latest_score":0.38039517402648926,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":1,"scores":[0.0108982305973768,0.0353634133934975,0.1274623721838,0.0107011962682009,0.0059217344969511,0.00477890344336629,0.0294899623841047,0.00672507798299193,0.0127344531938434,0.0715837329626083,0.0305129196494818,0.00470524933189154,0.00467718532308936,0.00685003865510225,0.294412851333618,0.380395174026489]},
+    {"clip_id":"normal-3","filename":"NORMAL 3.mp4","session_id":"fd97854f-46db-4d20-9cdf-fcb6a84227a9","state":"completed","processed_windows":6,"latest_score":0.13749735057353973,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":1,"scores":[0.0211453661322594,0.015533777885139,0.00812147371470928,0.0040655885823071,0.00388511130586267,0.13749735057354]},
+    {"clip_id":"normal-4","filename":"NORMAL 4.mp4","session_id":"8f84bfe2-43bd-4dae-bfe0-1ea5ec53fdc4","state":"completed","processed_windows":4,"latest_score":0.041624877601861954,"latest_score_positive":false,"candidate_condition":false,"event_id":null,"loop_count":2,"scores":[0.392842441797256,0.0105469198897481,0.927065551280975,0.041624877601862]}
+  ],
+  "post_fix_browser": [
+    {"clip_id":"fight-1","session_id":"1016f004-bd4c-400f-8785-30b189dd65a0","state":"processing","processed_windows_total":12,"analyzed_passes":3,"latest_score":0.888862,"latest_score_positive":false,"history_count":5,"positive_count":2,"complete_history":true,"candidate_condition_at_capture":false,"event_id":"98d98f17-fb73-4301-8da1-98a4380cf665","loop_count":6,"current_session_event_count":1},
+    {"clip_id":"fight-2","session_id":"9dcdea1a-f056-47aa-8bb5-4613e788301f","state":"processing","processed_windows_total":8,"analyzed_passes":2,"latest_score":0.401267,"latest_score_positive":false,"history_count":5,"positive_count":2,"complete_history":true,"candidate_condition_at_capture":false,"event_id":"056770be-fe6c-408a-bb22-16cc5a15446b","loop_count":4,"current_session_event_count":1},
+    {"clip_id":"fight-3","session_id":"84b33fdb-1d59-4d8b-ab96-354d74dc1a2f","state":"processing","processed_windows_total":6,"analyzed_passes":1,"latest_score":0.247630,"latest_score_positive":false,"history_count":5,"positive_count":3,"complete_history":true,"candidate_condition_at_capture":true,"event_id":"cd49e685-b548-4382-aaa3-84ef37f66df7","loop_count":1,"current_session_event_count":1},
+    {"clip_id":"nor-fight-1","session_id":"da794831-855e-4179-b88b-4d1bfc22da48","state":"processing","processed_windows_total":3,"analyzed_passes":1,"latest_score":0.911768,"latest_score_positive":true,"history_count":3,"positive_count":1,"complete_history":false,"candidate_condition_at_capture":false,"event_id":null,"loop_count":2,"current_session_event_count":0},
+    {"clip_id":"nor-fight-2","session_id":"84368e16-221f-4355-baf6-9cb7ebc0f64a","state":"processing","processed_windows_total":3,"analyzed_passes":1,"latest_score":0.280775,"latest_score_positive":false,"history_count":3,"positive_count":0,"complete_history":false,"candidate_condition_at_capture":false,"event_id":null,"loop_count":3,"current_session_event_count":0},
+    {"clip_id":"normal-1","session_id":"ac911e2d-1a22-49de-8abd-207035f1082b","state":"processing","processed_windows_total":5,"analyzed_passes":1,"latest_score":0.053338,"latest_score_positive":false,"history_count":5,"positive_count":0,"complete_history":true,"candidate_condition_at_capture":false,"event_id":null,"loop_count":1,"current_session_event_count":0},
+    {"clip_id":"normal-2","session_id":"05ec943f-1cf4-4f28-a303-50b9462743a2","state":"processing","processed_windows_total":16,"analyzed_passes":1,"latest_score":0.380395,"latest_score_positive":false,"history_count":5,"positive_count":0,"complete_history":true,"candidate_condition_at_capture":false,"event_id":null,"loop_count":1,"current_session_event_count":0},
+    {"clip_id":"normal-3","session_id":"61bd52bf-3b1b-4afb-9678-20bad0ac5336","state":"processing","processed_windows_total":6,"analyzed_passes":1,"latest_score":0.137497,"latest_score_positive":false,"history_count":5,"positive_count":0,"complete_history":true,"candidate_condition_at_capture":false,"event_id":null,"loop_count":1,"current_session_event_count":0},
+    {"clip_id":"normal-4","session_id":"0a86ce68-b194-4a00-a8d9-e11fc5a4bd57","state":"processing","processed_windows_total":4,"analyzed_passes":1,"latest_score":0.041625,"latest_score_positive":false,"history_count":4,"positive_count":1,"complete_history":false,"candidate_condition_at_capture":false,"event_id":null,"loop_count":2,"current_session_event_count":0}
+  ],
+  "notes": [
+    "Scores were produced by the unchanged frozen runtime; filenames and human labels were not inference inputs.",
+    "Fight 1 and Fight 2 each persisted one event during an earlier qualifying rolling window across repeated real passes; the current rolling window at capture was no longer qualified.",
+    "The dashboard count changed from 7 to 8 immediately on return after the Fight 1 run, without a browser refresh.",
+    "While Fight 3 session ec8d60bd-3d00-4bc6-ba2c-66f368299dd6 remained active, returning to the dashboard showed Current Session Alerts = 1 and event 5dd1f67d-802f-4e6a-89f0-cb385201111b in the Current Live Session section.",
+    "All nine browser runs displayed the real MJPEG stream and were stopped before the next clip."
+  ]
+}

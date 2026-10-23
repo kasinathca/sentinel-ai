@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getEvents } from "../services/eventService";
 import { getCameras } from "../services/cameraService";
 import { getHealth } from "../services/healthService";
+import { getDemoStatus } from "../services/demoService";
+import {
+  currentSessionAttentionEvents,
+  historicalAttentionEvents,
+} from "../services/dashboardViewModel";
 import EventCard from "../components/EventCard";
 import CameraCard from "../components/CameraCard";
 import EventDetails from "./EventDetails";
@@ -15,6 +20,7 @@ function Dashboard() {
 
   const [health, setHealth] = useState(null);
   const [healthError, setHealthError] = useState(null);
+  const [demoStatus, setDemoStatus] = useState(null);
 
   const [showHistory, setShowHistory] = useState(false);
   const [showCameras, setShowCameras] = useState(false);
@@ -22,18 +28,18 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      setLoading(true);
-      setError(null);
-      setHealthError(null);
+  const loadDashboardData = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(null);
+    setHealthError(null);
 
-      const [eventResult, cameraResult, healthResult] =
-        await Promise.allSettled([
-          getEvents(),
-          getCameras(),
-          getHealth(),
-        ]);
+    const [eventResult, cameraResult, healthResult, demoResult] =
+      await Promise.allSettled([
+        getEvents(),
+        getCameras(),
+        getHealth(),
+        getDemoStatus(),
+      ]);
 
       if (eventResult.status === "fulfilled") {
         setEvents(eventResult.value);
@@ -71,15 +77,23 @@ function Dashboard() {
         );
       }
 
-      setLoading(false);
-    }
+      if (demoResult.status === "fulfilled") {
+        setDemoStatus(demoResult.value);
+      } else {
+        console.error("Failed to load demo status:", demoResult.reason);
+        setDemoStatus(null);
+      }
 
-    loadDashboardData();
+    setLoading(false);
   }, []);
 
-  const attentionEvents = events.filter(
-    (event) => event.requires_attention
-  );
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- loading external API state is the effect's purpose.
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const currentAttentionEvents = currentSessionAttentionEvents(events, demoStatus);
+  const historicalAttention = historicalAttentionEvents(events, demoStatus);
 
   const acknowledgedEvents = events.filter(
     (event) => event.acknowledgement?.acknowledged === true
@@ -114,7 +128,10 @@ function Dashboard() {
     return (
       <CameraMonitoring
         cameras={cameras}
-        onBack={() => setShowCameras(false)}
+        onBack={() => {
+          setShowCameras(false);
+          loadDashboardData(false);
+        }}
       />
     );
   }
@@ -227,13 +244,13 @@ function Dashboard() {
 
         <section className="dashboard-summary">
           <div className="summary-card">
-            <span>Total Events</span>
+            <span>Persisted Events</span>
             <strong>{events.length}</strong>
           </div>
 
           <div className="summary-card">
-            <span>Requires Attention</span>
-            <strong>{attentionEvents.length}</strong>
+            <span>Current Session Alerts</span>
+            <strong>{currentAttentionEvents.length}</strong>
           </div>
 
           <div className="summary-card">
@@ -270,21 +287,21 @@ function Dashboard() {
 
         <section className="attention-section">
           <div className="section-heading">
-            <h2>Attention Required</h2>
-            <span>{attentionEvents.length} events</span>
+            <h2>Current Live Session</h2>
+            <span>{currentAttentionEvents.length} alerts</span>
           </div>
 
-          {attentionEvents.length === 0 ? (
+          {currentAttentionEvents.length === 0 ? (
             <div className="state-card">
-              <h3>No events require attention</h3>
+              <h3>No qualified alert in the current session</h3>
               <p>
-                There are currently no events requiring
-                operator attention.
+                Historical records are listed separately below and are not
+                presented as live alerts.
               </p>
             </div>
           ) : (
             <div className="event-list">
-              {attentionEvents.map((event) => (
+              {currentAttentionEvents.map((event) => (
                 <EventCard
                   key={event.id}
                   event={event}
@@ -297,8 +314,8 @@ function Dashboard() {
 
         <section className="events-section">
           <div className="section-heading">
-            <h2>Recent Events</h2>
-            <span>{events.length} events</span>
+            <h2>Persisted Event History</h2>
+            <span>{events.length} events · {historicalAttention.length} historical attention records</span>
           </div>
 
           {events.length === 0 ? (

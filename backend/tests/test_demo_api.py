@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,7 +10,7 @@ from sqlalchemy import create_engine
 
 from app.cameras import router as camera_router
 from app.cameras.constants import DEMO_CAMERA_ID, DEMO_CAMERA_NAME
-from app.demo.clip_catalog import DemoClipCatalog
+from app.demo.clip_catalog import DemoCatalogError, DemoClip, DemoClipNotFound
 from app.demo.controller import PlaybackCallbacks, VirtualCameraController
 from app.db.base import Base
 from app.db.models import Camera
@@ -55,6 +54,22 @@ class FakeReplayAdapter:
         return result
 
 
+class StaticCatalog:
+    def __init__(self, clips: list[DemoClip]) -> None:
+        self.clips = {clip.clip_id: clip for clip in clips}
+
+    def list_clips(self) -> list[DemoClip]:
+        return list(self.clips.values())
+
+    def get_clip(self, clip_id: str) -> DemoClip:
+        if clip_id not in self.clips:
+            raise DemoClipNotFound("Unknown demo clip ID.")
+        clip = self.clips[clip_id]
+        if clip.resolved_path is None or not clip.resolved_path.is_file():
+            raise DemoCatalogError("Selected source is unavailable.")
+        return clip
+
+
 class DemoAPITests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -62,30 +77,14 @@ class DemoAPITests(unittest.TestCase):
         (self.root / "clips").mkdir()
         (self.root / "clips" / "scenario.mp4").write_bytes(b"test media")
         (self.root / "clips" / "scenario_02.mp4").write_bytes(b"test media 2")
-        (self.root / "manifest.json").write_text(
-            json.dumps(
-                {
-                    "schema_version": "1",
-                    "clips": [
-                        {
-                            "clip_id": "scenario-01",
-                            "display_name": "Scenario 01",
-                            "relative_path": "clips/scenario.mp4",
-                        },
-                        {
-                            "clip_id": "scenario-02",
-                            "display_name": "Scenario 02",
-                            "relative_path": "clips/scenario_02.mp4",
-                        },
-                    ],
-                }
-            ),
-            encoding="utf-8",
+        self.catalog = StaticCatalog(
+            [
+                DemoClip("scenario-01", "Scenario 01", "clips/scenario.mp4", self.root / "clips" / "scenario.mp4"),
+                DemoClip("scenario-02", "Scenario 02", "clips/scenario_02.mp4", self.root / "clips" / "scenario_02.mp4"),
+            ]
         )
         self.adapter = FakeReplayAdapter()
-        self.controller = VirtualCameraController(
-            lambda: DemoClipCatalog(self.root), self.adapter
-        )
+        self.controller = VirtualCameraController(lambda: self.catalog, self.adapter)
         self.engine = create_engine(
             "sqlite+pysqlite:///:memory:",
             connect_args={"check_same_thread": False},
@@ -130,8 +129,8 @@ class DemoAPITests(unittest.TestCase):
         self.assertEqual(
             body["data"],
             [
-                {"clip_id": "scenario-01", "display_name": "Scenario 01"},
-                {"clip_id": "scenario-02", "display_name": "Scenario 02"},
+                {"clip_id": "scenario-01", "display_name": "Scenario 01", "state": "ready", "normalization": None, "media": None, "reason": None},
+                {"clip_id": "scenario-02", "display_name": "Scenario 02", "state": "ready", "normalization": None, "media": None, "reason": None},
             ],
         )
         self.assertNotIn(str(self.root), response.text)
@@ -194,7 +193,7 @@ class DemoAPITests(unittest.TestCase):
         )
 
         unavailable_controller = VirtualCameraController(
-            lambda: DemoClipCatalog(self.root), replay_adapter=None
+            lambda: self.catalog, replay_adapter=None
         )
         unavailable_client = self._client(unavailable_controller)
         unavailable_client.put(

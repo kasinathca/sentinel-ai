@@ -14,7 +14,7 @@ Evidence below was executed on 2026-10-08 against the implementation branch base
 |---|---|---|---|
 | R0-01 | `main`/`staging` synchronized before branch work | all three refs at `1cfbed9`; clean dedicated branch | PASS |
 | R0-02 | frozen model/artifact preflight | checkpoint/training SHA matched; extractor/model `ready` | PASS |
-| R1-01 | positive clip selected by `clip_id` | manifest, API state, Chrome-visible Fighting video | PASS |
+| R1-01 | positive clip selected by `clip_id` | folder catalog, API state, Chrome-visible fighting video | PASS |
 | R1-02 | clip loops twice | real FFmpeg loop counter reached four; no offline transition | PASS |
 | R1-03 | stop/restart | browser stop; real restart retained the same session; no surviving worker process | PASS |
 | R2-01 | actual model processes displayed source | canonical camera and matching source-session/correlation ID | PASS |
@@ -54,13 +54,54 @@ The UI and worker use one catalog-resolved clip and the same active session UUID
 ## Minimal demo operating sequence
 
 1. Initialize the existing database/seed and start FastAPI and React using the repository runbook.
-2. Register two approved local clips in `SENTINEL_DEMO_MEDIA_ROOT/manifest.json` (one fighting-like, one non-fighting), keeping clips outside Git.
+2. Place approved local clips directly in `SENTINEL_DEMO_MEDIA_ROOT` (one fighting-like, one non-fighting), keeping clips outside Git. No manifest is used.
 3. Open the separate Demo Control Panel and the normal operator view.
 4. Select a clip, start the virtual camera, and verify the browser is showing it through the backend stream.
 5. Show the true worker state, model identity, candidate result, and alert (if actual integration is ready).
 6. Let the clip loop and show that it remains online.
 7. Stop and repeat with the contrasting fixture.
 8. Explain limitations with measured evidence, not speculative claims.
+
+## 2026-10-09 dynamic-ingest continuation evidence
+
+The controlled top-level media directory is now the only catalog authority.
+The browser receives deterministic opaque clip IDs, state, normalization mode,
+and safe media metadata; it never receives a filesystem path. Stable inputs
+are inspected with FFprobe and noncanonical inputs are atomically normalized
+under `.sentinel` before they become selectable.
+
+Real Chrome acceptance used `launch_sentinel_demo.cmd`, the qualified external
+XD-Violence workspace, and the frozen model. A noncanonical 340×256, 28-FPS MOV
+source outside the media root was copied as `sir_live_test.mov` while the
+application was running. Refresh Videos showed waiting/preparing and then
+ready without a manifest edit, backend restart, database edit, or manual
+FFmpeg command. The resulting public metadata was 1280×720, H.264, yuv420p,
+30 FPS, constant frame rate. Replay and the AI source map resolved the same
+`.sentinel/processed/demo-1b22db93f2f45658897ac058d6978cff.mp4` asset.
+
+The three identical external source bytes copied as `fight_video.mp4`,
+`normal_video.mp4`, and `banana_123.mov` produced identical canonical SHA-256
+`2b982044e472440515cdf68f29c05f7abd5c1aca5eeec232a6deac5542e32d53`.
+`sir_live_test.mov` and `fight_video.mp4` also produced the same first-pass
+score sequence and final score `0.40805870294570923`; filename text had no
+effect on inference.
+
+Executed browser sessions produced one event each for FIGHT 1, FIGHT 2, and
+FIGHT 3. FIGHT 1 and FIGHT 2 first qualified across natural replay passes and
+later showed a truthful nonqualifying current 2/5 window while the session
+detection and original event ID remained latched. NOR-FIGHT 1, NOR-FIGHT 2,
+NORMAL, NORMAL 2, NORMAL 3, and NORMAL 4 produced no event; repeated looping
+alone did not create one. Returning to Dashboard showed the current session's
+event without a browser reload and kept historical events separate.
+
+Ctrl+C during a real 69-second normalization removed both listeners and left
+zero `.partial.mp4` files. Immediate relaunch recovered the input as a valid
+canonical derivative, with no address conflict or stale source session.
+
+Final automated evidence: disposable migration/readiness PASS; backend
+96/96 PASS; AI-worker 19/19 PASS; frontend view-model 5/5 PASS; lint PASS;
+production build PASS; npm audit 0 vulnerabilities; frozen runtime preflight
+ready for model version `6d22f83d-17f8-5ecf-9f0f-246fa326ec72`.
 
 ## No hardcoded path and no unnecessary implementation rule
 
